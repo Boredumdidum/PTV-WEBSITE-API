@@ -110,7 +110,7 @@ def main():
     parser = argparse.ArgumentParser(description="Setup Raspberry Pi for PTV GTFS-RT web app")
     parser.add_argument("--domain", default="ptv-tracker.duckdns.org")
     parser.add_argument("--email", required=True)
-    parser.add_argument("--app-dir", default="/opt/ptv-tracker")
+    parser.add_argument("--app-dir")
     parser.add_argument("--service-user", default="ptvtracker")
     parser.add_argument("--port", default="3000")
     parser.add_argument("--duck-token", default=os.environ.get("DUCKDNS_TOKEN"))
@@ -128,11 +128,12 @@ def main():
     if not args.skip_node:
         install_node()
 
-    app_dir = os.path.abspath(args.app_dir)
-    if not os.path.exists(app_dir):
-        print(f"App directory not found: {app_dir}")
-        print("Copy the project to this path before running the script.")
-        sys.exit(1)
+    if args.app_dir:
+        app_dir = os.path.abspath(args.app_dir)
+    else:
+        app_dir = os.path.abspath(pathlib.Path(__file__).resolve().parent.parent)
+
+    pathlib.Path(app_dir).mkdir(parents=True, exist_ok=True)
 
     ensure_user(args.service_user, app_dir)
     run(["chown", "-R", f"{args.service_user}:{args.service_user}", app_dir])
