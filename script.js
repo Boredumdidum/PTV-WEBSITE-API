@@ -9,6 +9,7 @@ const previewEl = document.getElementById("preview");
 const mapEl = document.getElementById("map");
 const mapHintEl = document.getElementById("map-hint");
 const mapEmptyEl = document.getElementById("map-empty");
+const routeSearchInput = document.getElementById("route-search");
 const navButtons = document.querySelectorAll(".nav-btn");
 const panels = document.querySelectorAll(".panel");
 const themeToggle = document.getElementById("theme-toggle");
@@ -24,6 +25,9 @@ const FEED_COLORS = {
 
 let mapInstance = null;
 let markerLayer = null;
+let lastPayload = null;
+let lastFeed = null;
+let lastIsMock = false;
 
 function setStatus(state, text) {
 	statusEl.dataset.state = state;
@@ -79,6 +83,36 @@ function formatEnum(value) {
 		return null;
 	}
 	return String(value).replace(/_/g, " ").toLowerCase();
+}
+
+function getEntityRouteIds(entity) {
+	const routes = [];
+	if (entity && entity.vehicle && entity.vehicle.trip && entity.vehicle.trip.routeId) {
+		routes.push(entity.vehicle.trip.routeId);
+	}
+	if (entity && entity.tripUpdate && entity.tripUpdate.trip && entity.tripUpdate.trip.routeId) {
+		routes.push(entity.tripUpdate.trip.routeId);
+	}
+	if (entity && entity.alert && Array.isArray(entity.alert.informedEntity)) {
+		entity.alert.informedEntity.forEach((info) => {
+			if (info && info.routeId) {
+				routes.push(info.routeId);
+			}
+		});
+	}
+	return routes;
+}
+
+function filterEntitiesByRoute(entities, query) {
+	const trimmed = query ? query.trim().toLowerCase() : "";
+	if (!trimmed) {
+		return entities;
+	}
+
+	return entities.filter((entity) => {
+		const routes = getEntityRouteIds(entity);
+		return routes.some((route) => String(route).toLowerCase().includes(trimmed));
+	});
 }
 
 function showToast(message, iconName = "check-circle") {
@@ -189,7 +223,7 @@ function initMap() {
 	setTimeout(() => mapInstance.invalidateSize(), 0);
 }
 
-function updateMap(feed, entities) {
+function updateMap(feed, entities, routeQuery) {
 	if (!mapEl) {
 		return;
 	}
@@ -231,8 +265,13 @@ function updateMap(feed, entities) {
 		})
 		.filter(Boolean);
 
+	const hasFilter = routeQuery && routeQuery.trim().length > 0;
 	if (positions.length === 0) {
-		setMapMessage("No vehicle positions available in this response.");
+		setMapMessage(
+			hasFilter
+				? "No vehicle positions match that route."
+				: "No vehicle positions available in this response."
+		);
 		mapInstance.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
 		return;
 	}
@@ -407,16 +446,26 @@ function buildMockData(feed) {
 
 function applyData(data, isMock, feed) {
 	const entities = Array.isArray(data.entity) ? data.entity : [];
+	const routeQuery = routeSearchInput ? routeSearchInput.value.trim() : "";
+	const filteredEntities = filterEntitiesByRoute(entities, routeQuery);
+
+	lastPayload = data;
+	lastFeed = feed;
+	lastIsMock = isMock;
 
 	const timestampRaw = data.header && data.header.timestamp ? data.header.timestamp : null;
 	const timestamp = timestampRaw ? Number(timestampRaw) : 0;
 	const formattedTime = timestamp ? new Date(timestamp * 1000).toLocaleString() : "Unknown";
 
 	updatedEl.textContent = formattedTime;
-	countEl.textContent = `${entities.length}`;
-	previewEl.textContent = JSON.stringify(entities.slice(0, 5), null, 2) || "No entities";
+	countEl.textContent = `${filteredEntities.length}`;
+	previewEl.textContent = filteredEntities.length
+		? JSON.stringify(filteredEntities.slice(0, 5), null, 2)
+		: routeQuery
+			? "No entities match that route."
+			: "No entities";
 	setStatus("ok", isMock ? "Mock" : "OK");
-	updateMap(feed, entities);
+	updateMap(feed, filteredEntities, routeQuery);
 }
 
 async function loadFeed() {
@@ -451,6 +500,9 @@ async function loadFeed() {
 		updatedEl.textContent = "-";
 		countEl.textContent = "-";
 		setMapMessage("Unable to load feed data.");
+		lastPayload = null;
+		lastFeed = null;
+		lastIsMock = false;
 	}
 }
 
@@ -465,6 +517,23 @@ if (themeToggle) {
 	themeToggle.addEventListener("click", () => {
 		const nextTheme = document.body.classList.contains("dark") ? "light" : "dark";
 		setTheme(nextTheme);
+	});
+}
+
+if (routeSearchInput) {
+	routeSearchInput.addEventListener("input", () => {
+		if (lastPayload && lastFeed) {
+			applyData(lastPayload, lastIsMock, lastFeed);
+		}
+	});
+
+	routeSearchInput.addEventListener("keydown", (event) => {
+		if (event.key === "Enter") {
+			event.preventDefault();
+			if (lastPayload && lastFeed) {
+				applyData(lastPayload, lastIsMock, lastFeed);
+			}
+		}
 	});
 }
 
