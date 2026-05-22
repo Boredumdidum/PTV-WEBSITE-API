@@ -186,11 +186,18 @@ def main():
     print()
 
     if not args.skip_npm:
-        print("[4/7] Installing Node.js dependencies (npm install)...")
-        run(["bash", "-c", f"cd {app_dir} && npm install"])
-        print("  ✓ Dependencies installed")
+        node_modules = pathlib.Path(app_dir) / "node_modules"
+        if node_modules.exists():
+            print("[4/7] node_modules already exists, skipping npm install")
+        else:
+            print("[4/7] Installing Node.js dependencies (npm install)...")
+            run(["bash", "-c", f"cd {app_dir} && npm install"])
+            print("  ✓ Dependencies installed")
     else:
         print("[4/7] Skipping npm install")
+        if not (pathlib.Path(app_dir) / "node_modules").exists():
+            print("  WARNING: node_modules not found — service will fail to start.")
+            print("  Run: cd {app_dir} && npm install")
     print()
 
     print("[5/7] Creating configuration files...")
@@ -230,6 +237,12 @@ def main():
     if not server_js.is_file():
         print(f"ERROR: {server_js} not found.")
         print(f"Make sure the project is at {app_dir} or use --app-dir.")
+        sys.exit(1)
+
+    if not (pathlib.Path(app_dir) / "node_modules").exists():
+        print(f"ERROR: node_modules not found at {app_dir}/node_modules.")
+        print(f"Run: cd {app_dir} && npm install")
+        print("Then re-run this script, or: sudo systemctl restart ptv-tracker")
         sys.exit(1)
 
     write_systemd(args.service_user, app_dir, node_path)
