@@ -80,7 +80,27 @@ def check_local_nginx():
     return False
 
 
-def provision_cert(domain, email):
+def write_http_nginx(domain, port):
+    """Write a temporary HTTP-only nginx config (no SSL references)."""
+    nginx_text = f"""server {{
+    listen 80;
+    server_name {domain};
+
+    location / {{
+        proxy_pass http://127.0.0.1:{port};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }}
+}}
+"""
+    with open("/etc/nginx/sites-available/ptv-tracker", "w") as f:
+        f.write(nginx_text)
+    print("  ✓ Temporary HTTP-only nginx config written")
+
+
+def provision_cert(domain, email, port):
     """Run certbot to get a real certificate."""
 
     live_dir = pathlib.Path(f"/etc/letsencrypt/live/{domain}")
@@ -89,7 +109,12 @@ def provision_cert(domain, email):
     if live_dir.exists():
         print(f"Removing old certificate directory: {live_dir}")
         shutil.rmtree(str(live_dir))
-        print("  (Self-signed cert backed up if you still have generate_certs.py)")
+
+    # Switch nginx to HTTP-only temporarily so certbot's --nginx plugin can work
+    write_http_nginx(domain, port)
+    run(["nginx", "-t"])
+    run(["systemctl", "reload", "nginx"])
+    print()
 
     print("Requesting Let's Encrypt certificate...")
     print(f"  Domain: {domain}")
@@ -179,6 +204,8 @@ def main():
                         help="Email for Let's Encrypt notifications")
     parser.add_argument("--skip-check", action="store_true",
                         help="Skip prerequisite checks")
+    parser.add_argument("--port", type=int, default=3000,
+                        help="Local backend port (default: 3000)")
     args = parser.parse_args()
 
     ensure_root()
@@ -197,7 +224,7 @@ def main():
 
     print()
 
-    provision_cert(args.domain, args.email)
+    provision_cert(args.domain, args.email, args.port)
     verify_cert(args.domain)
 
     print()
