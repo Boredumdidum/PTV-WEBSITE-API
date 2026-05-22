@@ -9,19 +9,20 @@ This guide assumes:
 
 1. Copy this project to the Pi:
    ```bash
-   scp -r ./PTV-WEBSITE-API pi@<pi-ip>:/home/pi/ptv-tracker
+   scp -r ./PTV-WEBSITE-API pi@<pi-ip>:/opt/ptv-tracker
    ```
 
-2. Run the setup script as root:
+2. Run the setup script as root with `--app-dir`:
    ```bash
-   sudo python3 /home/pi/ptv-tracker/scripts/setup_pi.py \
+   sudo python3 /opt/ptv-tracker/scripts/setup_pi.py \
+     --app-dir /opt/ptv-tracker \
      --duck-token "your-duckdns-token"
    ```
 
-3. Set the API key:
+3. Add your PTV API key:
    ```bash
-   sudo nano /home/pi/ptv-tracker/.env
-   # Add: PTV_API_KEY=your-key-here
+   sudo nano /opt/ptv-tracker/.env
+   # Set: PTV_API_KEY=your-key-here
    sudo systemctl restart ptv-tracker
    ```
 
@@ -33,25 +34,42 @@ This guide assumes:
 
 | Flag | Purpose |
 |---|---|
+| `--app-dir PATH` | **Required** for system deployment (e.g. `/opt/ptv-tracker`) |
 | `--domain ptv-tracker.duckdns.org` | Domain for cert and nginx (default: ptv-tracker.duckdns.org) |
 | `--duck-token TOKEN` | DuckDNS token for dynamic DNS updates |
-| `--app-dir PATH` | Install to a custom path (default: parent of `scripts/`) |
 | `--skip-ssl` | Skip certificate generation (HTTP only) |
 | `--skip-duckdns` | Skip DuckDNS cron setup |
 | `--skip-node` | Skip Node.js installation |
 | `--skip-npm` | Skip `npm install` |
 | `--cert-days N` | Certificate validity in days (default: 3650) |
 
+### Important: always use `--app-dir`
+
+The script defaults `app-dir` to the *parent of the `scripts/` folder* (wherever you cloned the repo). For system deployment, always pass `--app-dir` explicitly:
+
+```bash
+sudo python3 scripts/setup_pi.py --app-dir /opt/ptv-tracker --duck-token "<token>"
+```
+
+If you omit `--app-dir`, the systemd service will point to your clone location and fail.
+
 ## What the script does
 
 1. Installs system packages: nginx, git, curl, Python cryptography library
-2. Installs Node.js (unless skipped)
-3. Creates the `ptvtracker` system user and sets directory permissions
+2. Installs Node.js (unless `--skip-node`)
+3. Creates the `ptvtracker` system user
 4. Runs `npm install`
-5. Generates a self-signed TLS certificate via `generate_certs.py --install`
-6. Writes a systemd service for the Node.js app
-7. Configures nginx as an HTTPS reverse proxy with HTTP→HTTPS redirect
-8. Sets up DuckDNS cron job for dynamic DNS (if token provided)
+5. Creates `.env` if it doesn't exist
+6. Changes ownership of `app-dir` to `ptvtracker` — **after** npm install and .env creation
+7. Generates a self-signed TLS certificate via `generate_certs.py --install`
+8. Verifies `node` binary and `server.js` exist before writing configs
+9. Writes a systemd service for the Node.js app
+10. Configures nginx as an HTTPS reverse proxy with HTTP→HTTPS redirect
+11. Sets up DuckDNS cron job for dynamic DNS (if token provided)
+
+### Why this order matters
+
+The script runs `npm install` and creates `.env` **before** `chown -R`. This ensures the `ptvtracker` service user owns all files — including `node_modules` and `.env`. Running `chown` too early would leave those files owned by root, causing the "No such file or directory" error when systemd tries to read them.
 
 ## Manual setup (no script)
 
@@ -77,15 +95,20 @@ npm install
 
 # Create .env with your API key
 echo "PTV_API_KEY=your-key-here" > .env
+
+# Important: set ownership BEFORE starting the service
+sudo chown -R ptvtracker:ptvtracker /opt/ptv-tracker
 ```
 
 ### 3) Generate TLS certificate
 
 ```bash
-python3 scripts/generate_certs.py --install
+python3 scripts/generate_certs.py --hostname ptv-tracker.duckdns.org --install
 ```
 
 This creates `/etc/letsencrypt/live/ptv-tracker.duckdns.org/{fullchain.pem, privkey.pem}`.
+
+Run `python3 scripts/generate_certs.py --help` for all options.
 
 ### 4) Systemd service
 
@@ -174,6 +197,65 @@ Run it once to set the initial IP:
 sudo bash /etc/duckdns/duck.sh
 ```
 
+## Troubleshooting
+
+### Service fails with "No such file or directory"
+
+```
+Failed to load environment files: No such file or directory
+Failed to spawn 'start' task: No such file or directory
+```
+
+**Cause:** The systemd unit points to a path where files don't exist, or files are owned by root instead of `ptvtracker`.
+
+**Fix:**
+```bash
+# Check what the service expects
+cat /etc/systemd/system/ptv-tracker.service
+
+# Verify the paths exist
+ls -la /path/from/unit/server.js
+ls -la /path/from/unit/.env
+
+# Fix ownership
+sudo chown -R ptvtracker:ptvtracker /opt/ptv-tracker
+sudo systemctl restart ptv-tracker
+```
+
+### Service exits with code 1
+
+```
+Process: 12345 ExecStart=/usr/bin/node server.js (code=exited, status=1/FAILURE)
+```
+
+**Cause:** Node.js process crashed — usually a missing dependency or incorrect `.env`.
+
+**Fix:**
+```bash
+# View the actual error
+sudo journalctl -xeu ptv-tracker.service --no-pager | tail -20
+
+# Likely fixes:
+sudo chown -R ptvtracker:ptvtracker /opt/ptv-tracker   # fix ownership
+sudo npm install                                        # reinstall deps
+# Check /opt/ptv-tracker/.env has PTV_API_KEY set
+```
+
+### nginx fails to start
+
+```
+nginx: [emerg] cannot load certificate key
+```
+
+**Cause:** Self-signed cert not yet generated, or path mismatch.
+
+**Fix:**
+```bash
+python3 /opt/ptv-tracker/scripts/generate_certs.py --install
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
 ## Validate
 
 ```bash
@@ -189,4 +271,4 @@ Open `https://<pi-ip>` in a browser and load a feed.
 - The app listens on port 3000 internally; nginx terminates TLS on 443.
 - GTFS-RT responses are cached for 30 seconds by the proxy.
 - The self-signed certificate triggers a browser warning. This is expected and safe for local/private use.
-- To use a proper Let's Encrypt certificate later, open port 80 on your router and run `certbot --nginx`.
+- To replace with a proper Let's Encrypt certificate later, open port 80 on your router and run `certbot --nginx`.

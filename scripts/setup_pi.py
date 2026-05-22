@@ -164,7 +164,6 @@ def main():
 
     ensure_user(args.service_user, app_dir)
     ensure_service_access(app_dir)
-    run(["chown", "-R", f"{args.service_user}:{args.service_user}", app_dir])
 
     if not args.skip_npm:
         run(["bash", "-c", f"cd {app_dir} && npm install"])
@@ -173,6 +172,8 @@ def main():
     if not env_path.exists():
         env_path.write_text("PTV_API_KEY=\n", encoding="utf-8")
         print(f"Created {env_path}. Add your PTV_API_KEY before starting the service.")
+
+    run(["chown", "-R", f"{args.service_user}:{args.service_user}", app_dir])
 
     if not args.skip_ssl:
         print("Generating self-signed TLS certificate...")
@@ -187,6 +188,17 @@ def main():
         print("Skipping TLS certificate — HTTP only.")
 
     node_path = shutil.which("node") or "/usr/bin/node"
+
+    if not pathlib.Path(node_path).is_file():
+        print(f"ERROR: node not found at {node_path}")
+        sys.exit(1)
+
+    server_js = pathlib.Path(app_dir) / "server.js"
+    if not server_js.is_file():
+        print(f"ERROR: {server_js} not found.")
+        print(f"Make sure the project is at {app_dir} or use --app-dir.")
+        sys.exit(1)
+
     write_systemd(args.service_user, app_dir, node_path)
 
     write_nginx(args.domain, args.port)
