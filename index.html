@@ -10,7 +10,12 @@
 			href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Space+Grotesk:wght@400;600;700&display=swap"
 			rel="stylesheet"
 		/>
+		<link
+			rel="stylesheet"
+			href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+		/>
 		<link rel="stylesheet" href="style.css" />
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 		<script src="script.js" defer></script>
 	</head>
 	<body>
@@ -66,6 +71,15 @@
 						<span class="label">Entities in preview</span>
 						<strong id="count">-</strong>
 					</div>
+				</div>
+
+				<div class="map-wrap">
+					<div class="map-header">
+						<span class="label">Map view</span>
+						<span id="map-hint" class="note">Vehicle positions only</span>
+					</div>
+					<div id="map" class="map" role="img" aria-label="Vehicle positions map"></div>
+					<div id="map-empty" class="map-empty" role="status" aria-live="polite"></div>
 				</div>
 
 				<div class="preview">
