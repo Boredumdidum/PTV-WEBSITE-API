@@ -32,9 +32,9 @@ def ensure_root():
         sys.exit(1)
 
 
-def check_prerequisites(domain):
-    """Check that the domain resolves and port 80 is reachable."""
-    print("Checking prerequisites...")
+def check_domain(domain):
+    """Check that the domain resolves to this machine's public IP."""
+    print("Checking domain...")
 
     public_ip = subprocess.run(
         ["curl", "-s", "https://ifconfig.me"],
@@ -42,61 +42,92 @@ def check_prerequisites(domain):
     ).stdout.strip()
 
     if not public_ip:
-        print("WARNING: Could not determine public IP.")
-        print("Make sure port 80 is forwarded to this machine.")
+        print("  Could not determine public IP.")
         return
 
     try:
         domain_ip = socket.getaddrinfo(domain, 80)[0][4][0]
     except socket.gaierror:
-        print(f"ERROR: Domain {domain} does not resolve via DNS.")
-        print("Make sure you've registered it at https://duckdns.org")
+        print(f"  ERROR: Domain {domain} does not resolve via DNS.")
+        print("  Make sure you've registered it at https://duckdns.org")
         sys.exit(1)
 
     if domain_ip != public_ip:
-        print(f"WARNING: {domain} resolves to {domain_ip}")
+        print(f"  WARNING: {domain} resolves to {domain_ip}")
         print(f"  but this machine's public IP is {public_ip}")
         print("  Update your DuckDNS A record or wait for propagation.")
         print(f"  Run: curl 'https://www.duckdns.org/update?domains={domain.split('.')[0]}&token=YOUR_TOKEN&ip='")
         sys.exit(1)
 
-    print(f"  {domain} resolves to {domain_ip} ✓")
-    print(f"  Public IP matches  ✓")
-    print()
+    print(f"  ✓ {domain} resolves to {public_ip}")
 
-    check = subprocess.run(
-        ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
-         f"http://{domain}/.well-known/acme-challenge/test"],
-        capture_output=True, text=True, timeout=10,
-    )
-    if check.returncode != 0 or check.stdout != "404":
-        print("WARNING: Port 80 does not appear to be reachable from the internet.")
-        print("  Make sure port 80 is forwarded to this machine.")
-        print("  Certbot may still work, but may timeout during the challenge.")
-    else:
-        print("  Port 80 reachable ✓")
+
+def check_local_nginx():
+    """Verify nginx is running locally on port 80."""
+    try:
+        result = subprocess.run(
+            ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
+             "http://localhost"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode == 0 and result.stdout not in ("", "000"):
+            print(f"  ✓ nginx is responding locally (HTTP {result.stdout})")
+            return True
+    except subprocess.TimeoutExpired:
+        pass
+    print("  WARNING: nginx doesn't appear to be running locally.")
+    print("  Check: sudo systemctl status nginx")
+    return False
 
 
 def provision_cert(domain, email):
     """Run certbot to get a real certificate."""
-    print("Installing certbot...")
-    run(["apt-get", "install", "-y", "certbot", "python3-certbot-nginx"])
-    print()
+
+    live_dir = pathlib.Path(f"/etc/letsencrypt/live/{domain}")
+
+    # Remove old self-signed cert directory so certbot can create it fresh
+    if live_dir.exists():
+        print(f"Removing old certificate directory: {live_dir}")
+        shutil.rmtree(str(live_dir))
+        print("  (Self-signed cert backed up if you still have generate_certs.py)")
 
     print("Requesting Let's Encrypt certificate...")
     print(f"  Domain: {domain}")
     print(f"  Email:  {email}")
     print()
 
-    run([
+    result = subprocess.run([
         "certbot", "--nginx",
         "-d", domain,
         "--agree-tos",
         "--email", email,
         "--redirect",
         "--non-interactive",
-    ])
-    print()
+    ], capture_output=True, text=True)
+
+    print(result.stdout)
+    if result.stderr:
+        for line in result.stderr.strip().split("\n"):
+            print("  " + line)
+
+    if result.returncode != 0:
+        print()
+        print("=" * 50)
+        print("  Certbot failed. Most common causes:")
+        print()
+        print("  1. Port 80 is not forwarded to this Pi")
+        print("     → On your router, forward TCP 80 to 192.168.1.35")
+        print()
+        print("  2. Your router's web interface is on port 80")
+        print("     → Change the router's admin interface to a different port")
+        print()
+        print("  3. A firewall is blocking port 80")
+        print("     → Check your router's firewall rules")
+        print()
+        print("  After fixing, re-run this script.")
+        print("=" * 50)
+        sys.exit(1)
+
     print("✓ Certificate obtained from Let's Encrypt!")
     print()
 
@@ -115,7 +146,7 @@ def verify_cert(domain):
     print(f"  Key:         {key_path} ✓")
 
     result = subprocess.run(
-        ["openssl", "x509", "-in", str(cert_path), "-noout", "-dates"],
+        ["openssl", "x509", "-in", str(cert_path), "-noout", "-dates", "-subject"],
         capture_output=True, text=True,
     )
     if result.returncode == 0:
@@ -128,11 +159,11 @@ def verify_cert(domain):
     run(["systemctl", "reload", "nginx"])
 
     result = subprocess.run(
-        ["curl", "-o", "/dev/null", "-s", "-w", "%{http_code}", f"https://localhost"],
+        ["curl", "-o", "/dev/null", "-s", "-w", "%{http_code}", "https://localhost"],
         capture_output=True, text=True, timeout=10,
     )
     if result.stdout == "200":
-        print("✓ HTTPS is working!")
+        print("✓ HTTPS is working locally!")
     else:
         print(f"  HTTPS returned status {result.stdout}")
         print("  Check: sudo systemctl status nginx")
@@ -159,10 +190,12 @@ def main():
     print()
 
     if not args.skip_check:
-        check_prerequisites(args.domain)
+        check_domain(args.domain)
+        check_local_nginx()
     else:
         print("Skipping prerequisite checks.")
-        print()
+
+    print()
 
     provision_cert(args.domain, args.email)
     verify_cert(args.domain)
