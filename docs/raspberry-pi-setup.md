@@ -271,4 +271,9 @@ Open `https://<pi-ip>` in a browser and load a feed.
 - The app listens on port 3000 internally; nginx terminates TLS on 443.
 - GTFS-RT responses are cached for 30 seconds by the proxy.
 - The self-signed certificate triggers a browser warning. This is expected and safe for local/private use.
-- To replace with a proper Let's Encrypt certificate later, open port 80 on your router and run `certbot --nginx`.
+- To replace with a proper Let's Encrypt certificate (no browser warning), forward ports 80 and 443 to this Pi on your router, then run:
+  ```bash
+  sudo python3 scripts/provision_ssl.py \
+    --domain ptv-tracker.duckdns.org \
+    --email you@example.com
+  ```
