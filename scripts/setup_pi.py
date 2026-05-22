@@ -9,7 +9,7 @@ import textwrap
 
 
 def run(cmd, check=True):
-    print("+", " ".join(cmd))
+    print("  +", " ".join(cmd))
     subprocess.run(cmd, check=check)
 
 
@@ -148,35 +148,65 @@ def main():
 
     ensure_root()
 
+    print()
+    print("=== PTV Tracker — Raspberry Pi Setup ===")
+    print(f"  App dir:   {args.app_dir or '(auto)'}")
+    print(f"  Domain:    {args.domain}")
+    print(f"  DuckDNS:   {'yes' if args.duck_token else 'no'}")
+    print(f"  SSL:       {'self-signed' if not args.skip_ssl else 'no (HTTP)'}")
+    print()
+
+    print("[1/7] Installing system packages...")
     run(["apt-get", "update"])
     run(["apt-get", "install", "-y", "nginx", "git", "curl", "ca-certificates",
          "python3-cryptography"])
+    print("  ✓ System packages installed")
+    print()
 
     if not args.skip_node:
+        print("[2/7] Installing Node.js...")
         install_node()
+        node_ver = subprocess.run(["node", "--version"], capture_output=True, text=True).stdout.strip()
+        print(f"  ✓ Node.js {node_ver}")
+    else:
+        print("[2/7] Skipping Node.js installation")
+    print()
 
     if args.app_dir:
         app_dir = os.path.abspath(args.app_dir)
     else:
         app_dir = os.path.abspath(pathlib.Path(__file__).resolve().parent.parent)
-
     pathlib.Path(app_dir).mkdir(parents=True, exist_ok=True)
 
+    print("[3/7] Setting up app directory and service user...")
     ensure_user(args.service_user, app_dir)
     ensure_service_access(app_dir)
+    print(f"  ✓ User '{args.service_user}' ready")
+    print(f"  ✓ Directory: {app_dir}")
+    print()
 
     if not args.skip_npm:
+        print("[4/7] Installing Node.js dependencies (npm install)...")
         run(["bash", "-c", f"cd {app_dir} && npm install"])
+        print("  ✓ Dependencies installed")
+    else:
+        print("[4/7] Skipping npm install")
+    print()
 
+    print("[5/7] Creating configuration files...")
     env_path = pathlib.Path(app_dir) / ".env"
     if not env_path.exists():
         env_path.write_text("PTV_API_KEY=\n", encoding="utf-8")
-        print(f"Created {env_path}. Add your PTV_API_KEY before starting the service.")
+        print(f"  Created {env_path} — add your PTV_API_KEY")
+    else:
+        print(f"  {env_path} already exists, keeping as-is")
 
     run(["chown", "-R", f"{args.service_user}:{args.service_user}", app_dir])
+    print("  ✓ File ownership set")
+    print()
 
     if not args.skip_ssl:
-        print("Generating self-signed TLS certificate...")
+        print("[6/7] Generating self-signed TLS certificate...")
         certs_script = pathlib.Path(__file__).resolve().parent / "generate_certs.py"
         run([
             sys.executable, str(certs_script),
@@ -184,9 +214,12 @@ def main():
             "--days", str(args.cert_days),
             "--install",
         ])
+        print("  ✓ TLS certificate generated")
     else:
-        print("Skipping TLS certificate — HTTP only.")
+        print("[6/7] Skipping TLS certificate — HTTP only")
+    print()
 
+    print("[7/7] Configuring services...")
     node_path = shutil.which("node") or "/usr/bin/node"
 
     if not pathlib.Path(node_path).is_file():
@@ -200,24 +233,47 @@ def main():
         sys.exit(1)
 
     write_systemd(args.service_user, app_dir, node_path)
+    print("  ✓ systemd unit written")
 
     write_nginx(args.domain, args.port)
+    print("  ✓ nginx config written")
+
     run(["nginx", "-t"])
     run(["systemctl", "reload", "nginx"])
+    print("  ✓ nginx running")
 
     run(["systemctl", "daemon-reload"])
     run(["systemctl", "enable", "ptv-tracker"])
     run(["systemctl", "start", "ptv-tracker"])
+    print("  ✓ ptv-tracker service started")
 
     if not args.skip_duckdns:
         if not args.duck_token:
-            print("DuckDNS token missing. Set DUCKDNS_TOKEN or pass --duck-token.")
+            print("  DuckDNS token missing. Set DUCKDNS_TOKEN or pass --duck-token.")
         else:
             write_duckdns(args.domain, args.duck_token)
             run(["bash", "/etc/duckdns/duck.sh"], check=False)
-
-    print("Setup complete.")
+            print("  ✓ DuckDNS cron set up")
     print()
-    print("  The web app uses a self-signed certificate.")
-    print("  Your browser will show a security warning — that is expected.")
-    print("  You can accept it and proceed.")
+
+    print("=" * 50)
+    print("  Setup complete!")
+    print()
+    if args.app_dir:
+        print(f"  App directory:    {app_dir}")
+        print(f"  .env file:        {env_path}")
+        print(f"  Service:          ptv-tracker.service")
+        print(f"  Nginx config:     /etc/nginx/sites-available/ptv-tracker")
+        if not args.skip_ssl:
+            print(f"  TLS cert:         /etc/letsencrypt/live/{args.domain}/")
+    else:
+        print("  IMPORTANT: You didn't use --app-dir.")
+        print("  The systemd unit points to the clone directory.")
+        print("  For production, re-run with --app-dir /opt/ptv-tracker")
+    print()
+    if args.skip_ssl:
+        print("  Access: http://<pi-ip>")
+    else:
+        print("  Access: https://<pi-ip>")
+        print("  (Your browser will show a security warning — this is expected)")
+    print("=" * 50)
