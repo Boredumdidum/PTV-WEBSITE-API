@@ -104,11 +104,24 @@ def provision_cert(domain, email, port):
     """Run certbot to get a real certificate."""
 
     live_dir = pathlib.Path(f"/etc/letsencrypt/live/{domain}")
+    archive_dir = pathlib.Path(f"/etc/letsencrypt/archive/{domain}")
+    renewal_file = pathlib.Path(f"/etc/letsencrypt/renewal/{domain}.conf")
 
-    # Remove old self-signed cert directory so certbot can create it fresh
-    if live_dir.exists():
-        print(f"Removing old certificate directory: {live_dir}")
-        shutil.rmtree(str(live_dir))
+    # Remove old cert data so certbot creates a fresh live directory
+    for d in [live_dir, archive_dir]:
+        if d.exists():
+            print(f"Removing old certificate data: {d}")
+            shutil.rmtree(str(d))
+    if renewal_file.exists():
+        renewal_file.unlink()
+
+    # Also handle -0001 suffixed directories from previous failed runs
+    for p in pathlib.Path("/etc/letsencrypt/live").glob(f"{domain}-*"):
+        print(f"Removing stale cert directory: {p}")
+        shutil.rmtree(str(p))
+    for p in pathlib.Path("/etc/letsencrypt/archive").glob(f"{domain}-*"):
+        print(f"Removing stale archive directory: {p}")
+        shutil.rmtree(str(p))
 
     # Switch nginx to HTTP-only temporarily so certbot's --nginx plugin can work
     write_http_nginx(domain, port)
@@ -159,11 +172,22 @@ def provision_cert(domain, email, port):
 
 def verify_cert(domain):
     """Verify the certificate is in place and nginx is working."""
-    cert_path = pathlib.Path(f"/etc/letsencrypt/live/{domain}/fullchain.pem")
-    key_path = pathlib.Path(f"/etc/letsencrypt/live/{domain}/privkey.pem")
+    live_dir = pathlib.Path(f"/etc/letsencrypt/live/{domain}")
+
+    if not live_dir.exists():
+        print(f"ERROR: Certificate directory not found at {live_dir}")
+        print("Checking for alternate paths...")
+        alternates = list(pathlib.Path("/etc/letsencrypt/live").glob(f"{domain}*"))
+        if alternates:
+            print(f"  Found: {alternates[0]}")
+            print("  Re-run with clean state to fix.")
+        sys.exit(1)
+
+    cert_path = live_dir / "fullchain.pem"
+    key_path = live_dir / "privkey.pem"
 
     if not cert_path.exists() or not key_path.exists():
-        print(f"ERROR: Certificate not found at /etc/letsencrypt/live/{domain}/")
+        print(f"ERROR: Certificate files not found in {live_dir}")
         sys.exit(1)
 
     print("Verifying certificate...")
