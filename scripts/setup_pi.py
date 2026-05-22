@@ -209,7 +209,7 @@ def main():
 
         resolve_domain(args.domain)
 
-        run(["pip3", "install", "certbot-dns-duckdns"])
+        run(["pip3", "install", "--break-system-packages", "certbot-dns-duckdns"])
 
         write_duckdns_creds(args.duck_token)
 
