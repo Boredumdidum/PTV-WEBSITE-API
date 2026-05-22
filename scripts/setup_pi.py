@@ -3,6 +3,7 @@ import argparse
 import os
 import pathlib
 import shutil
+import socket
 import subprocess
 import sys
 import textwrap
@@ -136,8 +137,9 @@ def write_duckdns_creds(token):
 
 
 def resolve_domain(domain):
-    result = subprocess.run(["host", domain], capture_output=True, text=True)
-    if result.returncode != 0:
+    try:
+        socket.getaddrinfo(domain, None)
+    except socket.gaierror:
         print(f"ERROR: Domain {domain} does not resolve via DNS.")
         print("Make sure you've registered this domain at https://duckdns.org")
         print("and that it has not expired.")
