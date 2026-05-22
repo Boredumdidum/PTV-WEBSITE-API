@@ -1,53 +1,97 @@
-# Raspberry Pi 5 deployment (DuckDNS + HTTPS)
+# Raspberry Pi deployment (DuckDNS + HTTPS)
 
 This guide assumes:
 - Raspberry Pi OS 64-bit
-- You control router port forwarding
-- Domain: ptv-tracker.duckdns.org
-- Port 443 is forwarded to the Pi (and port 80 temporarily for certbot)
+- Domain: `ptv-tracker.duckdns.org`
+- **No port forwarding required** — uses a self-signed certificate generated locally
 
-## Quick start (recommended)
+## Quick start
 
-1. Copy this project to the Pi (example):
-   - `scp -r ./PTV\ WEBSITE\ API pi@<pi-ip>:/opt/ptv-tracker`
-2. Log into the Pi and run the setup script:
-   - `sudo python3 /opt/ptv-tracker/scripts/setup_pi.py --domain ptv-tracker.duckdns.org --email you@example.com`
-3. Set the API key on the Pi:
-   - `sudo nano /opt/ptv-tracker/.env`
-   - Add `PTV_API_KEY=your-key-here`
-4. Start the service:
-   - `sudo systemctl restart ptv-tracker`
-5. Open https://ptv-tracker.duckdns.org
+1. Copy this project to the Pi:
+   ```bash
+   scp -r ./PTV-WEBSITE-API pi@<pi-ip>:/home/pi/ptv-tracker
+   ```
 
-If you cannot open port 80, skip certbot in the script and use a DNS challenge later.
+2. Run the setup script as root:
+   ```bash
+   sudo python3 /home/pi/ptv-tracker/scripts/setup_pi.py \
+     --duck-token "your-duckdns-token"
+   ```
+
+3. Set the API key:
+   ```bash
+   sudo nano /home/pi/ptv-tracker/.env
+   # Add: PTV_API_KEY=your-key-here
+   sudo systemctl restart ptv-tracker
+   ```
+
+4. Open `https://<pi-ip>` in your browser.
+   - The browser will show a security warning — this is expected for a self-signed certificate.
+   - Accept the warning and proceed.
+
+### Options
+
+| Flag | Purpose |
+|---|---|
+| `--domain ptv-tracker.duckdns.org` | Domain for cert and nginx (default: ptv-tracker.duckdns.org) |
+| `--duck-token TOKEN` | DuckDNS token for dynamic DNS updates |
+| `--app-dir PATH` | Install to a custom path (default: parent of `scripts/`) |
+| `--skip-ssl` | Skip certificate generation (HTTP only) |
+| `--skip-duckdns` | Skip DuckDNS cron setup |
+| `--skip-node` | Skip Node.js installation |
+| `--skip-npm` | Skip `npm install` |
+| `--cert-days N` | Certificate validity in days (default: 3650) |
+
+## What the script does
+
+1. Installs system packages: nginx, git, curl, Python cryptography library
+2. Installs Node.js (unless skipped)
+3. Creates the `ptvtracker` system user and sets directory permissions
+4. Runs `npm install`
+5. Generates a self-signed TLS certificate via `generate_certs.py --install`
+6. Writes a systemd service for the Node.js app
+7. Configures nginx as an HTTPS reverse proxy with HTTP→HTTPS redirect
+8. Sets up DuckDNS cron job for dynamic DNS (if token provided)
 
 ## Manual setup (no script)
 
 ### 1) System prep
-- Ensure the Pi has a static IP or DHCP reservation
-- Forward ports on the router:
-  - TCP 443 -> Pi
-  - TCP 80 -> Pi (temporary, for certbot)
 
-Install dependencies:
-- `sudo apt-get update`
-- `sudo apt-get install -y nginx git curl ca-certificates python3-certbot-nginx`
+```bash
+sudo apt-get update
+sudo apt-get install -y nginx git curl ca-certificates python3-cryptography
+```
 
-Install Node.js (LTS):
-- `curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -`
-- `sudo apt-get install -y nodejs`
+Install Node.js:
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
 
 ### 2) App install
-- Place the project at `/opt/ptv-tracker`
-- `cd /opt/ptv-tracker`
-- `npm install`
-- Create `/opt/ptv-tracker/.env` with:
-  - `PTV_API_KEY=your-key-here`
 
-### 3) Systemd service
+```bash
+# Place project at your chosen path
+cd /opt/ptv-tracker
+npm install
+
+# Create .env with your API key
+echo "PTV_API_KEY=your-key-here" > .env
+```
+
+### 3) Generate TLS certificate
+
+```bash
+python3 scripts/generate_certs.py --install
+```
+
+This creates `/etc/letsencrypt/live/ptv-tracker.duckdns.org/{fullchain.pem, privkey.pem}`.
+
+### 4) Systemd service
+
 Create `/etc/systemd/system/ptv-tracker.service`:
 
-```
+```ini
 [Unit]
 Description=PTV GTFS-RT proxy
 After=network-online.target
@@ -66,17 +110,29 @@ RestartSec=3
 WantedBy=multi-user.target
 ```
 
-Enable it:
-- `sudo systemctl daemon-reload`
-- `sudo systemctl enable --now ptv-tracker`
+Enable and start:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now ptv-tracker
+```
 
-### 4) Nginx reverse proxy
+### 5) Nginx reverse proxy
+
 Create `/etc/nginx/sites-available/ptv-tracker`:
 
-```
+```nginx
 server {
     listen 80;
     server_name ptv-tracker.duckdns.org;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name ptv-tracker.duckdns.org;
+
+    ssl_certificate /etc/letsencrypt/live/ptv-tracker.duckdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ptv-tracker.duckdns.org/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
@@ -89,34 +145,48 @@ server {
 ```
 
 Enable and reload:
-- `sudo ln -s /etc/nginx/sites-available/ptv-tracker /etc/nginx/sites-enabled/ptv-tracker`
-- `sudo nginx -t`
-- `sudo systemctl reload nginx`
+```bash
+sudo ln -s /etc/nginx/sites-available/ptv-tracker /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
-### 5) DuckDNS updater
+### 6) DuckDNS updater
+
 Create `/etc/duckdns/duck.sh`:
 
-```
+```bash
 #!/bin/sh
 curl -k "https://www.duckdns.org/update?domains=ptv-tracker&token=YOUR_TOKEN&ip="
 ```
 
-Then:
-- `sudo chmod 700 /etc/duckdns/duck.sh`
-- Create `/etc/cron.d/duckdns` with:
-  - `*/5 * * * * root /etc/duckdns/duck.sh >/dev/null 2>&1`
+```bash
+sudo chmod 700 /etc/duckdns/duck.sh
+```
 
-### 6) HTTPS cert (certbot)
-- `sudo certbot --nginx -d ptv-tracker.duckdns.org --agree-tos --email you@example.com --redirect`
+Create `/etc/cron.d/duckdns`:
+```
+*/5 * * * * root /etc/duckdns/duck.sh >/dev/null 2>&1
+```
 
-If certbot fails, check that port 80 is forwarded and not blocked.
+Run it once to set the initial IP:
+```bash
+sudo bash /etc/duckdns/duck.sh
+```
 
 ## Validate
-- `systemctl status ptv-tracker`
-- `curl -I https://ptv-tracker.duckdns.org`
-- Open https://ptv-tracker.duckdns.org and load a feed
+
+```bash
+systemctl status ptv-tracker
+curl -k -I https://localhost
+```
+
+Open `https://<pi-ip>` in a browser and load a feed.
 
 ## Notes
-- Keep the API key in `/opt/ptv-tracker/.env`, never in frontend JS.
-- The app listens on port 3000 internally; Nginx terminates TLS on 443.
+
+- Keep the API key in `.env`, never in frontend JS.
+- The app listens on port 3000 internally; nginx terminates TLS on 443.
 - GTFS-RT responses are cached for 30 seconds by the proxy.
+- The self-signed certificate triggers a browser warning. This is expected and safe for local/private use.
+- To use a proper Let's Encrypt certificate later, open port 80 on your router and run `certbot --nginx`.
