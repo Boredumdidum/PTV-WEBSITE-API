@@ -3,10 +3,17 @@ import argparse
 import os
 import pathlib
 import shutil
-import socket
 import subprocess
 import sys
 import textwrap
+from datetime import datetime, timedelta
+
+from cryptography import x509
+from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
 
 
 def run(cmd, check=True):
@@ -16,7 +23,10 @@ def run(cmd, check=True):
 
 def write_file(path, content, mode=None):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding="utf-8")
+    if isinstance(content, str):
+        path.write_text(content, encoding="utf-8")
+    else:
+        path.write_bytes(content)
     if mode is not None:
         os.chmod(path, mode)
 
@@ -84,6 +94,76 @@ def write_systemd(service_user, app_dir, node_path):
     write_file(pathlib.Path("/etc/systemd/system/ptv-tracker.service"), service_text)
 
 
+def generate_self_signed_cert(domain, cert_dir, days_valid=3650):
+    """Generate a self-signed TLS certificate for the given domain."""
+    cert_dir = pathlib.Path(cert_dir)
+    cert_dir.mkdir(parents=True, exist_ok=True)
+
+    print("  Generating private key...")
+    key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+        backend=default_backend(),
+    )
+
+    print("  Building certificate...")
+    subject = issuer = x509.Name([
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "AU"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "PTV Tracker"),
+        x509.NameAttribute(NameOID.COMMON_NAME, domain),
+    ])
+
+    san = x509.SubjectAlternativeName([x509.DNSName(domain)])
+
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.utcnow())
+        .not_valid_after(datetime.utcnow() + timedelta(days=days_valid))
+        .add_extension(san, critical=False)
+        .add_extension(
+            x509.BasicConstraints(ca=False, path_length=None),
+            critical=True,
+        )
+        .add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                key_encipherment=True,
+                content_commitment=False,
+                data_encipherment=False,
+                key_agreement=False,
+                key_cert_sign=False,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False,
+            ),
+            critical=True,
+        )
+        .add_extension(
+            x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256(), default_backend())
+    )
+
+    print("  Saving files...")
+    key_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    write_file(cert_dir / "privkey.pem", key_pem, mode=0o600)
+
+    cert_pem = cert.public_bytes(serialization.Encoding.PEM)
+    write_file(cert_dir / "fullchain.pem", cert_pem)
+
+    print(f"    Private key:  {cert_dir / 'privkey.pem'}")
+    print(f"    Certificate:  {cert_dir / 'fullchain.pem'}")
+
+
 def write_nginx(domain, port):
     ssl_cert = f"/etc/letsencrypt/live/{domain}/fullchain.pem"
     ssl_key = f"/etc/letsencrypt/live/{domain}/privkey.pem"
@@ -128,42 +208,17 @@ def write_duckdns(domain, token):
     write_file(pathlib.Path("/etc/cron.d/duckdns"), cron_text)
 
 
-def write_duckdns_creds(token):
-    write_file(
-        pathlib.Path("/etc/letsencrypt/duckdns.ini"),
-        f"dns_duckdns_token = {token}\n",
-        mode=0o600,
-    )
-
-
-def setup_certbot_venv():
-    venv_path = pathlib.Path("/opt/ptv-tracker-venv")
-    if not (venv_path / "bin" / "certbot").exists():
-        run(["python3", "-m", "venv", str(venv_path)])
-        run([str(venv_path / "bin" / "pip"), "install", "certbot", "certbot-dns-duckdns"])
-    return str(venv_path / "bin" / "certbot")
-
-
-def resolve_domain(domain):
-    try:
-        socket.getaddrinfo(domain, None)
-    except socket.gaierror:
-        print(f"ERROR: Domain {domain} does not resolve via DNS.")
-        print("Make sure you've registered this domain at https://duckdns.org")
-        print("and that it has not expired.")
-        sys.exit(1)
-
-
 def main():
     parser = argparse.ArgumentParser(description="Setup Raspberry Pi for PTV GTFS-RT web app")
     parser.add_argument("--domain", default="ptv-tracker.duckdns.org")
-    parser.add_argument("--email", required=True)
     parser.add_argument("--app-dir")
     parser.add_argument("--service-user", default="ptvtracker")
     parser.add_argument("--port", default="3000")
     parser.add_argument("--duck-token", default=os.environ.get("DUCKDNS_TOKEN"))
-    parser.add_argument("--certbot-propagation-seconds", type=int, default=120)
-    parser.add_argument("--skip-certbot", action="store_true")
+    parser.add_argument("--cert-days", type=int, default=3650,
+                        help="Self-signed certificate validity in days (default: 3650)")
+    parser.add_argument("--skip-ssl", action="store_true",
+                        help="Skip self-signed certificate generation (HTTP only)")
     parser.add_argument("--skip-node", action="store_true")
     parser.add_argument("--skip-npm", action="store_true")
     parser.add_argument("--skip-duckdns", action="store_true")
@@ -173,7 +228,7 @@ def main():
 
     run(["apt-get", "update"])
     run(["apt-get", "install", "-y", "nginx", "git", "curl", "ca-certificates",
-         "python3-venv", "python3-pip"])
+         "python3-cryptography"])
 
     if not args.skip_node:
         install_node()
@@ -197,50 +252,34 @@ def main():
         env_path.write_text("PTV_API_KEY=\n", encoding="utf-8")
         print(f"Created {env_path}. Add your PTV_API_KEY before starting the service.")
 
+    cert_dir = pathlib.Path("/etc/letsencrypt/live") / args.domain
+
+    if not args.skip_ssl:
+        print("Generating self-signed TLS certificate...")
+        generate_self_signed_cert(args.domain, cert_dir, args.cert_days)
+    else:
+        print("Skipping TLS certificate — HTTP only.")
+
     node_path = shutil.which("node") or "/usr/bin/node"
     write_systemd(args.service_user, app_dir, node_path)
 
+    write_nginx(args.domain, args.port)
+    run(["nginx", "-t"])
+    run(["systemctl", "reload", "nginx"])
+
     run(["systemctl", "daemon-reload"])
     run(["systemctl", "enable", "ptv-tracker"])
+    run(["systemctl", "start", "ptv-tracker"])
 
     if not args.skip_duckdns:
         if not args.duck_token:
             print("DuckDNS token missing. Set DUCKDNS_TOKEN or pass --duck-token.")
         else:
             write_duckdns(args.domain, args.duck_token)
-            write_duckdns_creds(args.duck_token)
             run(["bash", "/etc/duckdns/duck.sh"], check=False)
 
-    if not args.skip_certbot:
-        if not args.duck_token:
-            print("ERROR: DuckDNS token required for certbot DNS-01 challenge.")
-            print("Set DUCKDNS_TOKEN or pass --duck-token.")
-            sys.exit(1)
-
-        resolve_domain(args.domain)
-
-        certbot_bin = setup_certbot_venv()
-
-        write_duckdns_creds(args.duck_token)
-
-        run([
-            certbot_bin, "certonly",
-            "--authenticator", "dns-duckdns",
-            "--dns-duckdns-credentials", "/etc/letsencrypt/duckdns.ini",
-            "--dns-duckdns-propagation-seconds", str(args.certbot_propagation_seconds),
-            "-d", args.domain,
-            "--agree-tos", "--email", args.email,
-            "--non-interactive",
-        ])
-
-    write_nginx(args.domain, args.port)
-    run(["nginx", "-t"])
-    run(["systemctl", "reload", "nginx"])
-
-    run(["systemctl", "start", "ptv-tracker"])
-
     print("Setup complete.")
-
-
-if __name__ == "__main__":
-    main()
+    print()
+    print("  The web app uses a self-signed certificate.")
+    print("  Your browser will show a security warning — that is expected.")
+    print("  You can accept it and proceed.")
