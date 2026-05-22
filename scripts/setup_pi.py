@@ -208,6 +208,7 @@ def main():
         else:
             write_duckdns(args.domain, args.duck_token)
             write_duckdns_creds(args.duck_token)
+            run(["bash", "/etc/duckdns/duck.sh"], check=False)
 
     if not args.skip_certbot:
         if not args.duck_token:
