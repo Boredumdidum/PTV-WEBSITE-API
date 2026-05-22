@@ -232,6 +232,8 @@ body {
 .control-grid {
 	display: grid;
 	gap: 16px;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	align-items: end;
 }
 
 .field {
@@ -276,6 +278,7 @@ textarea:focus-visible {
 	gap: 10px;
 	font-size: 14px;
 	font-weight: 600;
+	grid-column: 1 / -1;
 }
 
 .checkbox {
