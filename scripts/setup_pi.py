@@ -136,6 +136,14 @@ def write_duckdns_creds(token):
     )
 
 
+def setup_certbot_venv():
+    venv_path = pathlib.Path("/opt/ptv-tracker-venv")
+    if not (venv_path / "bin" / "certbot").exists():
+        run(["python3", "-m", "venv", str(venv_path)])
+        run([str(venv_path / "bin" / "pip"), "install", "certbot", "certbot-dns-duckdns"])
+    return str(venv_path / "bin" / "certbot")
+
+
 def resolve_domain(domain):
     try:
         socket.getaddrinfo(domain, None)
@@ -164,7 +172,7 @@ def main():
 
     run(["apt-get", "update"])
     run(["apt-get", "install", "-y", "nginx", "git", "curl", "ca-certificates",
-         "python3-certbot-nginx", "python3-pip"])
+         "python3-venv", "python3-pip"])
 
     if not args.skip_node:
         install_node()
@@ -209,12 +217,12 @@ def main():
 
         resolve_domain(args.domain)
 
-        run(["pip3", "install", "--break-system-packages", "certbot-dns-duckdns"])
+        certbot_bin = setup_certbot_venv()
 
         write_duckdns_creds(args.duck_token)
 
         run([
-            "certbot", "certonly",
+            certbot_bin, "certonly",
             "--authenticator", "dns-duckdns",
             "--dns-duckdns-credentials", "/etc/letsencrypt/duckdns.ini",
             "-d", args.domain,
