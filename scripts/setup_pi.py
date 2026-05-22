@@ -6,14 +6,6 @@ import shutil
 import subprocess
 import sys
 import textwrap
-from datetime import datetime, timedelta
-
-from cryptography import x509
-from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
 
 
 def run(cmd, check=True):
@@ -92,76 +84,6 @@ def write_systemd(service_user, app_dir, node_path):
     ).strip() + "\n"
 
     write_file(pathlib.Path("/etc/systemd/system/ptv-tracker.service"), service_text)
-
-
-def generate_self_signed_cert(domain, cert_dir, days_valid=3650):
-    """Generate a self-signed TLS certificate for the given domain."""
-    cert_dir = pathlib.Path(cert_dir)
-    cert_dir.mkdir(parents=True, exist_ok=True)
-
-    print("  Generating private key...")
-    key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048,
-        backend=default_backend(),
-    )
-
-    print("  Building certificate...")
-    subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "AU"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "PTV Tracker"),
-        x509.NameAttribute(NameOID.COMMON_NAME, domain),
-    ])
-
-    san = x509.SubjectAlternativeName([x509.DNSName(domain)])
-
-    cert = (
-        x509.CertificateBuilder()
-        .subject_name(subject)
-        .issuer_name(issuer)
-        .public_key(key.public_key())
-        .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.utcnow())
-        .not_valid_after(datetime.utcnow() + timedelta(days=days_valid))
-        .add_extension(san, critical=False)
-        .add_extension(
-            x509.BasicConstraints(ca=False, path_length=None),
-            critical=True,
-        )
-        .add_extension(
-            x509.KeyUsage(
-                digital_signature=True,
-                key_encipherment=True,
-                content_commitment=False,
-                data_encipherment=False,
-                key_agreement=False,
-                key_cert_sign=False,
-                crl_sign=False,
-                encipher_only=False,
-                decipher_only=False,
-            ),
-            critical=True,
-        )
-        .add_extension(
-            x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]),
-            critical=False,
-        )
-        .sign(key, hashes.SHA256(), default_backend())
-    )
-
-    print("  Saving files...")
-    key_pem = key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.TraditionalOpenSSL,
-        encryption_algorithm=serialization.NoEncryption(),
-    )
-    write_file(cert_dir / "privkey.pem", key_pem, mode=0o600)
-
-    cert_pem = cert.public_bytes(serialization.Encoding.PEM)
-    write_file(cert_dir / "fullchain.pem", cert_pem)
-
-    print(f"    Private key:  {cert_dir / 'privkey.pem'}")
-    print(f"    Certificate:  {cert_dir / 'fullchain.pem'}")
 
 
 def write_nginx(domain, port):
@@ -252,11 +174,15 @@ def main():
         env_path.write_text("PTV_API_KEY=\n", encoding="utf-8")
         print(f"Created {env_path}. Add your PTV_API_KEY before starting the service.")
 
-    cert_dir = pathlib.Path("/etc/letsencrypt/live") / args.domain
-
     if not args.skip_ssl:
         print("Generating self-signed TLS certificate...")
-        generate_self_signed_cert(args.domain, cert_dir, args.cert_days)
+        certs_script = pathlib.Path(__file__).resolve().parent / "generate_certs.py"
+        run([
+            sys.executable, str(certs_script),
+            "--hostname", args.domain,
+            "--days", str(args.cert_days),
+            "--install",
+        ])
     else:
         print("Skipping TLS certificate — HTTP only.")
 

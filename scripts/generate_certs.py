@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Generate self-signed TLS certificates for SMTP tunnel.
-Creates server certificate that mimics a real mail server.
+Generate self-signed TLS certificates for the PTV web app.
+Creates a CA and a server certificate signed by it,
+saved in the format nginx expects (fullchain.pem, privkey.pem).
 
-Version: 1.3.0
+Version: 2.0.0
 """
 
 import os
@@ -30,15 +31,13 @@ def generate_private_key(key_size: int = 2048) -> rsa.RSAPrivateKey:
 
 def generate_ca_certificate(
     private_key: rsa.RSAPrivateKey,
-    common_name: str = "SMTP Tunnel CA",
-    days_valid: int = 3650
+    common_name: str = "PTV Tracker CA",
+    days_valid: int = 3650,
 ) -> x509.Certificate:
     """Generate self-signed CA certificate."""
     subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "California"),
-        x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "SMTP Tunnel"),
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "AU"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "PTV Tracker"),
         x509.NameAttribute(NameOID.COMMON_NAME, common_name),
     ])
 
@@ -78,25 +77,18 @@ def generate_server_certificate(
     ca_key: rsa.RSAPrivateKey,
     ca_cert: x509.Certificate,
     server_key: rsa.RSAPrivateKey,
-    hostname: str = "mail.example.com",
-    days_valid: int = 1095
+    hostname: str = "ptv-tracker.duckdns.org",
+    days_valid: int = 3650,
 ) -> x509.Certificate:
-    """
-    Generate server certificate signed by CA.
-    Mimics a real mail server certificate.
-    """
+    """Generate server certificate signed by CA, for nginx HTTPS."""
     subject = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "California"),
-        x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Example Mail Services"),
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "AU"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "PTV Tracker"),
         x509.NameAttribute(NameOID.COMMON_NAME, hostname),
     ])
 
-    # Subject Alternative Names (important for TLS validation)
     san = x509.SubjectAlternativeName([
         x509.DNSName(hostname),
-        x509.DNSName(f"smtp.{hostname.split('.', 1)[-1] if '.' in hostname else hostname}"),
         x509.DNSName("localhost"),
     ])
 
@@ -128,10 +120,7 @@ def generate_server_certificate(
             critical=True,
         )
         .add_extension(
-            x509.ExtendedKeyUsage([
-                ExtendedKeyUsageOID.SERVER_AUTH,
-                ExtendedKeyUsageOID.CLIENT_AUTH,
-            ]),
+            x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]),
             critical=False,
         )
         .sign(ca_key, hashes.SHA256(), default_backend())
@@ -141,7 +130,7 @@ def generate_server_certificate(
 
 
 def save_private_key(key: rsa.RSAPrivateKey, path: str, password: bytes = None):
-    """Save private key to PEM file."""
+    """Save private key to PEM file with secure permissions."""
     encryption = (
         serialization.BestAvailableEncryption(password)
         if password
@@ -154,69 +143,74 @@ def save_private_key(key: rsa.RSAPrivateKey, path: str, password: bytes = None):
         encryption_algorithm=encryption,
     )
 
-    with open(path, 'wb') as f:
+    with open(path, "wb") as f:
         f.write(pem)
 
-    # Secure file permissions (owner read-only)
     try:
         os.chmod(path, 0o600)
     except (OSError, AttributeError):
-        pass  # Windows doesn't support chmod the same way
+        pass
 
 
 def save_certificate(cert: x509.Certificate, path: str):
     """Save certificate to PEM file."""
     pem = cert.public_bytes(serialization.Encoding.PEM)
 
-    with open(path, 'wb') as f:
+    with open(path, "wb") as f:
         f.write(pem)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Generate TLS certificates for SMTP tunnel'
+        description="Generate self-signed TLS certificates for the PTV web app"
     )
     parser.add_argument(
-        '--hostname',
-        default='mail.example.com',
-        help='Server hostname for certificate (default: mail.example.com)'
+        "--hostname",
+        default="ptv-tracker.duckdns.org",
+        help="Server hostname for certificate (default: ptv-tracker.duckdns.org)",
     )
     parser.add_argument(
-        '--output-dir',
-        default='.',
-        help='Output directory for certificates (default: current directory)'
+        "--output-dir",
+        default=".",
+        help="Output directory for certificates (default: current directory)",
     )
     parser.add_argument(
-        '--days',
+        "--days",
         type=int,
-        default=1095,
-        help='Certificate validity in days (default: 1095 = 3 years)'
+        default=3650,
+        help="Certificate validity in days (default: 3650 = 10 years)",
     )
     parser.add_argument(
-        '--key-size',
+        "--key-size",
         type=int,
         default=2048,
-        help='RSA key size in bits (default: 2048)'
+        help="RSA key size in bits (default: 2048)",
+    )
+    parser.add_argument(
+        "--install",
+        action="store_true",
+        help="Install to /etc/letsencrypt/live/{hostname}/ (nginx-ready paths)",
     )
 
     args = parser.parse_args()
 
-    # Create output directory if needed
+    if args.install:
+        args.output_dir = f"/etc/letsencrypt/live/{args.hostname}"
+
     os.makedirs(args.output_dir, exist_ok=True)
 
     print(f"Generating certificates for hostname: {args.hostname}")
     print(f"Key size: {args.key_size} bits")
     print(f"Validity: {args.days} days")
+    print(f"Output:   {args.output_dir}")
     print()
 
-    # Generate CA
     print("Generating CA private key...")
     ca_key = generate_private_key(args.key_size)
 
     print("Generating CA certificate...")
-    ca_cert = generate_ca_certificate(ca_key, days_valid=args.days * 10)
+    ca_cert = generate_ca_certificate(ca_key, days_valid=args.days)
 
-    # Generate server certificate
     print("Generating server private key...")
     server_key = generate_private_key(args.key_size)
 
@@ -224,17 +218,21 @@ def main():
     server_cert = generate_server_certificate(
         ca_key, ca_cert, server_key,
         hostname=args.hostname,
-        days_valid=args.days
+        days_valid=args.days,
     )
-
-    # Save files
-    ca_key_path = os.path.join(args.output_dir, 'ca.key')
-    ca_cert_path = os.path.join(args.output_dir, 'ca.crt')
-    server_key_path = os.path.join(args.output_dir, 'server.key')
-    server_cert_path = os.path.join(args.output_dir, 'server.crt')
 
     print()
     print("Saving files...")
+
+    ca_key_path = os.path.join(args.output_dir, "ca.key")
+    ca_cert_path = os.path.join(args.output_dir, "ca.crt")
+
+    if args.install:
+        server_key_path = os.path.join(args.output_dir, "privkey.pem")
+        server_cert_path = os.path.join(args.output_dir, "fullchain.pem")
+    else:
+        server_key_path = os.path.join(args.output_dir, "server.key")
+        server_cert_path = os.path.join(args.output_dir, "server.crt")
 
     save_private_key(ca_key, ca_key_path)
     print(f"  CA private key:      {ca_key_path}")
@@ -251,15 +249,19 @@ def main():
     print()
     print("Certificate generation complete!")
     print()
-    print("For the server, you need:")
-    print(f"  - {server_cert_path}")
-    print(f"  - {server_key_path}")
+    print("For nginx, you need:")
+    if args.install:
+        print(f"  ssl_certificate     {server_cert_path};")
+        print(f"  ssl_certificate_key {server_key_path};")
+    else:
+        print(f"  - {server_cert_path}")
+        print(f"  - {server_key_path}")
     print()
-    print("For the client (to verify server), copy:")
+    print("For clients to verify the server, distribute:")
     print(f"  - {ca_cert_path}")
     print()
-    print("Or disable certificate verification in the client config (less secure).")
+    print("To install system-wide, re-run with --install")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
