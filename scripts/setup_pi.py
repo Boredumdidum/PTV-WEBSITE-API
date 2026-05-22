@@ -162,6 +162,7 @@ def main():
     parser.add_argument("--service-user", default="ptvtracker")
     parser.add_argument("--port", default="3000")
     parser.add_argument("--duck-token", default=os.environ.get("DUCKDNS_TOKEN"))
+    parser.add_argument("--certbot-propagation-seconds", type=int, default=120)
     parser.add_argument("--skip-certbot", action="store_true")
     parser.add_argument("--skip-node", action="store_true")
     parser.add_argument("--skip-npm", action="store_true")
@@ -226,6 +227,7 @@ def main():
             certbot_bin, "certonly",
             "--authenticator", "dns-duckdns",
             "--dns-duckdns-credentials", "/etc/letsencrypt/duckdns.ini",
+            "--dns-duckdns-propagation-seconds", str(args.certbot_propagation_seconds),
             "-d", args.domain,
             "--agree-tos", "--email", args.email,
             "--non-interactive",
