@@ -41,6 +41,15 @@ def ensure_user(username, app_dir):
         ])
 
 
+def ensure_service_access(app_dir):
+    resolved = pathlib.Path(app_dir).resolve()
+    for parent in [resolved] + list(resolved.parents):
+        if parent.exists():
+            st = parent.stat()
+            if not (st.st_mode & 0o011):
+                os.chmod(parent, st.st_mode | 0o011)
+
+
 def install_node():
     if shutil.which("node"):
         return
@@ -166,6 +175,7 @@ def main():
     pathlib.Path(app_dir).mkdir(parents=True, exist_ok=True)
 
     ensure_user(args.service_user, app_dir)
+    ensure_service_access(app_dir)
     run(["chown", "-R", f"{args.service_user}:{args.service_user}", app_dir])
 
     if not args.skip_npm:
@@ -180,7 +190,7 @@ def main():
     write_systemd(args.service_user, app_dir, node_path)
 
     run(["systemctl", "daemon-reload"])
-    run(["systemctl", "enable", "--now", "ptv-tracker"])
+    run(["systemctl", "enable", "ptv-tracker"])
 
     if not args.skip_duckdns:
         if not args.duck_token:
@@ -213,6 +223,8 @@ def main():
     write_nginx(args.domain, args.port)
     run(["nginx", "-t"])
     run(["systemctl", "reload", "nginx"])
+
+    run(["systemctl", "start", "ptv-tracker"])
 
     print("Setup complete.")
 
