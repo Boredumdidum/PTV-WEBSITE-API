@@ -6,6 +6,20 @@ const errorEl = document.getElementById("error");
 const updatedEl = document.getElementById("updated");
 const countEl = document.getElementById("count");
 const previewEl = document.getElementById("preview");
+const mapEl = document.getElementById("map");
+const mapHintEl = document.getElementById("map-hint");
+const mapEmptyEl = document.getElementById("map-empty");
+
+const DEFAULT_MAP_CENTER = [-37.8136, 144.9631];
+const DEFAULT_MAP_ZOOM = 11;
+const VEHICLE_FEEDS = new Set(["metro-vehicle-positions", "bus-vehicle-positions"]);
+const FEED_COLORS = {
+	"metro-vehicle-positions": "#0f5b61",
+	"bus-vehicle-positions": "#e27d60",
+};
+
+let mapInstance = null;
+let markerLayer = null;
 
 function setStatus(state, text) {
 	statusEl.dataset.state = state;
@@ -14,6 +28,169 @@ function setStatus(state, text) {
 
 function setError(message) {
 	errorEl.textContent = message || "";
+}
+
+function setMapMessage(message) {
+	if (!mapEmptyEl) {
+		return;
+	}
+	mapEmptyEl.textContent = message || "";
+}
+
+function setMapHint(message) {
+	if (!mapHintEl) {
+		return;
+	}
+	mapHintEl.textContent = message || "";
+}
+
+function isVehicleFeed(feed) {
+	return VEHICLE_FEEDS.has(feed);
+}
+
+function escapeHtml(value) {
+	return String(value)
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/\"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+}
+
+function formatTimestamp(value) {
+	const numeric = Number(value);
+	if (!Number.isFinite(numeric) || numeric <= 0) {
+		return "Unknown";
+	}
+	return new Date(numeric * 1000).toLocaleTimeString();
+}
+
+function formatSpeed(speed) {
+	if (!Number.isFinite(speed)) {
+		return null;
+	}
+	const kmh = speed * 3.6;
+	return `${kmh.toFixed(1)} km/h`;
+}
+
+function formatEnum(value) {
+	if (!value) {
+		return null;
+	}
+	return String(value).replace(/_/g, " ").toLowerCase();
+}
+
+function initMap() {
+	if (!mapEl || mapInstance) {
+		return;
+	}
+
+	if (typeof L === "undefined") {
+		setMapMessage("Map library failed to load.");
+		return;
+	}
+
+	mapInstance = L.map(mapEl, { scrollWheelZoom: false }).setView(
+		DEFAULT_MAP_CENTER,
+		DEFAULT_MAP_ZOOM
+	);
+
+	L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+		maxZoom: 19,
+		attribution: "&copy; OpenStreetMap contributors",
+	}).addTo(mapInstance);
+
+	markerLayer = L.layerGroup().addTo(mapInstance);
+	setTimeout(() => mapInstance.invalidateSize(), 0);
+}
+
+function updateMap(feed, entities) {
+	if (!mapEl) {
+		return;
+	}
+
+	if (typeof L === "undefined") {
+		setMapMessage("Map library failed to load.");
+		return;
+	}
+
+	initMap();
+	if (!mapInstance || !markerLayer) {
+		return;
+	}
+
+	const showVehicles = isVehicleFeed(feed);
+	setMapHint(showVehicles ? "Vehicle positions only" : "Select a vehicle positions feed");
+
+	markerLayer.clearLayers();
+
+	if (!showVehicles) {
+		setMapMessage("Select a vehicle positions feed to see markers.");
+		mapInstance.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
+		return;
+	}
+
+	const positions = (Array.isArray(entities) ? entities : [])
+		.map((entity) => {
+			const vehicle = entity.vehicle;
+			const position = vehicle && vehicle.position ? vehicle.position : null;
+			if (!position) {
+				return null;
+			}
+			const latitude = Number(position.latitude);
+			const longitude = Number(position.longitude);
+			if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+				return null;
+			}
+			return { entity, vehicle, latitude, longitude, position };
+		})
+		.filter(Boolean);
+
+	if (positions.length === 0) {
+		setMapMessage("No vehicle positions available in this response.");
+		mapInstance.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
+		return;
+	}
+
+	setMapMessage("");
+	const markerColor = FEED_COLORS[feed] || "#0f5b61";
+	const bounds = [];
+
+	positions.forEach((item) => {
+		const routeId =
+			(item.vehicle.trip && item.vehicle.trip.routeId) || "Unknown route";
+		const updated = formatTimestamp(item.vehicle.timestamp);
+		const speed = formatSpeed(item.position.speed);
+		const occupancy = formatEnum(item.vehicle.occupancyStatus);
+		const congestion = formatEnum(item.vehicle.congestionLevel);
+
+		const popupLines = [
+			`<strong>${escapeHtml(routeId)}</strong>`,
+			`Updated: ${escapeHtml(updated)}`,
+		];
+		if (speed) {
+			popupLines.push(`Speed: ${escapeHtml(speed)}`);
+		}
+		if (occupancy) {
+			popupLines.push(`Occupancy: ${escapeHtml(occupancy)}`);
+		}
+		if (congestion) {
+			popupLines.push(`Congestion: ${escapeHtml(congestion)}`);
+		}
+
+		const marker = L.circleMarker([item.latitude, item.longitude], {
+			radius: 7,
+			color: markerColor,
+			fillColor: markerColor,
+			fillOpacity: 0.85,
+			weight: 2,
+		});
+		marker.bindPopup(popupLines.join("<br />"));
+		marker.addTo(markerLayer);
+		bounds.push([item.latitude, item.longitude]);
+	});
+
+	mapInstance.fitBounds(bounds, { padding: [24, 24], maxZoom: 15 });
 }
 
 function buildMockData(feed) {
@@ -143,7 +320,7 @@ function buildMockData(feed) {
 	};
 }
 
-function applyData(data, isMock) {
+function applyData(data, isMock, feed) {
 	const entities = Array.isArray(data.entity) ? data.entity : [];
 
 	const timestampRaw = data.header && data.header.timestamp ? data.header.timestamp : null;
@@ -154,6 +331,7 @@ function applyData(data, isMock) {
 	countEl.textContent = `${entities.length}`;
 	previewEl.textContent = JSON.stringify(entities.slice(0, 5), null, 2) || "No entities";
 	setStatus("ok", isMock ? "Mock" : "OK");
+	updateMap(feed, entities);
 }
 
 async function loadFeed() {
@@ -161,27 +339,33 @@ async function loadFeed() {
 	setStatus("loading", "Loading");
 	setError("");
 	previewEl.textContent = "Fetching feed...";
+	setMapMessage("Loading feed data...");
+	setMapHint(isVehicleFeed(feed) ? "Vehicle positions only" : "Select a vehicle positions feed");
 
 	if (mockToggle && mockToggle.checked) {
 		const data = buildMockData(feed);
-		applyData(data, true);
+		applyData(data, true, feed);
 		return;
 	}
 
 	try {
-		const response = await fetch(`/api/gtfs?feed=${encodeURIComponent(feed)}&limit=10`);
+		const limit = isVehicleFeed(feed) ? 200 : 10;
+		const response = await fetch(
+			`/api/gtfs?feed=${encodeURIComponent(feed)}&limit=${limit}`
+		);
 		if (!response.ok) {
 			throw new Error(`Request failed (${response.status})`);
 		}
 
 		const data = await response.json();
-		applyData(data, false);
+		applyData(data, false, feed);
 	} catch (error) {
 		setStatus("error", "Error");
 		setError(error.message || "Something went wrong.");
 		previewEl.textContent = "No data";
 		updatedEl.textContent = "-";
 		countEl.textContent = "-";
+		setMapMessage("Unable to load feed data.");
 	}
 }
 
