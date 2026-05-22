@@ -75,11 +75,23 @@ def write_systemd(service_user, app_dir, node_path):
 
 
 def write_nginx(domain, port):
+    ssl_cert = f"/etc/letsencrypt/live/{domain}/fullchain.pem"
+    ssl_key = f"/etc/letsencrypt/live/{domain}/privkey.pem"
+
     nginx_text = textwrap.dedent(
         f"""
         server {{
             listen 80;
             server_name {domain};
+            return 301 https://$host$request_uri;
+        }}
+
+        server {{
+            listen 443 ssl;
+            server_name {domain};
+
+            ssl_certificate {ssl_cert};
+            ssl_certificate_key {ssl_key};
 
             location / {{
                 proxy_pass http://127.0.0.1:{port};
@@ -106,6 +118,23 @@ def write_duckdns(domain, token):
     write_file(pathlib.Path("/etc/cron.d/duckdns"), cron_text)
 
 
+def write_duckdns_creds(token):
+    write_file(
+        pathlib.Path("/etc/letsencrypt/duckdns.ini"),
+        f"dns_duckdns_token = {token}\n",
+        mode=0o600,
+    )
+
+
+def resolve_domain(domain):
+    result = subprocess.run(["host", domain], capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"ERROR: Domain {domain} does not resolve via DNS.")
+        print("Make sure you've registered this domain at https://duckdns.org")
+        print("and that it has not expired.")
+        sys.exit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Setup Raspberry Pi for PTV GTFS-RT web app")
     parser.add_argument("--domain", default="ptv-tracker.duckdns.org")
@@ -123,7 +152,8 @@ def main():
     ensure_root()
 
     run(["apt-get", "update"])
-    run(["apt-get", "install", "-y", "nginx", "git", "curl", "ca-certificates", "python3-certbot-nginx"])
+    run(["apt-get", "install", "-y", "nginx", "git", "curl", "ca-certificates",
+         "python3-certbot-nginx", "python3-pip"])
 
     if not args.skip_node:
         install_node()
@@ -149,31 +179,40 @@ def main():
     node_path = shutil.which("node") or "/usr/bin/node"
     write_systemd(args.service_user, app_dir, node_path)
 
-    write_nginx(args.domain, args.port)
-    run(["nginx", "-t"])
-    run(["systemctl", "reload", "nginx"])
+    run(["systemctl", "daemon-reload"])
+    run(["systemctl", "enable", "--now", "ptv-tracker"])
 
     if not args.skip_duckdns:
         if not args.duck_token:
             print("DuckDNS token missing. Set DUCKDNS_TOKEN or pass --duck-token.")
         else:
             write_duckdns(args.domain, args.duck_token)
-
-    run(["systemctl", "daemon-reload"])
-    run(["systemctl", "enable", "--now", "ptv-tracker"])
+            write_duckdns_creds(args.duck_token)
 
     if not args.skip_certbot:
+        if not args.duck_token:
+            print("ERROR: DuckDNS token required for certbot DNS-01 challenge.")
+            print("Set DUCKDNS_TOKEN or pass --duck-token.")
+            sys.exit(1)
+
+        resolve_domain(args.domain)
+
+        run(["pip3", "install", "certbot-dns-duckdns"])
+
+        write_duckdns_creds(args.duck_token)
+
         run([
-            "certbot",
-            "--nginx",
-            "-d",
-            args.domain,
-            "--agree-tos",
-            "--email",
-            args.email,
-            "--redirect",
+            "certbot", "certonly",
+            "--authenticator", "dns-duckdns",
+            "--dns-duckdns-credentials", "/etc/letsencrypt/duckdns.ini",
+            "-d", args.domain,
+            "--agree-tos", "--email", args.email,
             "--non-interactive",
         ])
+
+    write_nginx(args.domain, args.port)
+    run(["nginx", "-t"])
+    run(["systemctl", "reload", "nginx"])
 
     print("Setup complete.")
 
