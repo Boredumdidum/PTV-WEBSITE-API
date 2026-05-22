@@ -9,6 +9,10 @@ const previewEl = document.getElementById("preview");
 const mapEl = document.getElementById("map");
 const mapHintEl = document.getElementById("map-hint");
 const mapEmptyEl = document.getElementById("map-empty");
+const navButtons = document.querySelectorAll(".nav-btn");
+const panels = document.querySelectorAll(".panel");
+const themeToggle = document.getElementById("theme-toggle");
+const toastContainer = document.getElementById("toast-container");
 
 const DEFAULT_MAP_CENTER = [-37.8136, 144.9631];
 const DEFAULT_MAP_ZOOM = 11;
@@ -48,13 +52,10 @@ function isVehicleFeed(feed) {
 	return VEHICLE_FEEDS.has(feed);
 }
 
-function escapeHtml(value) {
-	return String(value)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/\"/g, "&quot;")
-		.replace(/'/g, "&#39;");
+function escapeHTML(str) {
+	const div = document.createElement("div");
+	div.textContent = str;
+	return div.innerHTML;
 }
 
 function formatTimestamp(value) {
@@ -78,6 +79,90 @@ function formatEnum(value) {
 		return null;
 	}
 	return String(value).replace(/_/g, " ").toLowerCase();
+}
+
+function showToast(message, iconName = "check-circle") {
+	if (!toastContainer) {
+		return;
+	}
+
+	const toast = document.createElement("div");
+	toast.className = "toast";
+
+	const icon = document.createElement("i");
+	icon.className = "icon";
+	icon.setAttribute("data-lucide", iconName);
+
+	const text = document.createElement("span");
+	text.textContent = message;
+
+	toast.append(icon, text);
+	toastContainer.append(toast);
+
+	if (window.lucide && typeof lucide.createIcons === "function") {
+		lucide.createIcons({ nodes: [toast] });
+	}
+
+	window.setTimeout(() => {
+		toast.classList.add("toast-out");
+	}, 2600);
+
+	toast.addEventListener("animationend", (event) => {
+		if (event.animationName === "toast-out") {
+			toast.remove();
+		}
+	});
+}
+
+function updateThemeToggle(theme) {
+	if (!themeToggle) {
+		return;
+	}
+
+	const isDark = theme === "dark";
+	const icon = isDark ? "sun" : "moon";
+	const label = isDark ? "Light mode" : "Dark mode";
+
+	themeToggle.innerHTML = `<i data-lucide="${icon}" class="icon"></i><span>${label}</span>`;
+
+	if (window.lucide && typeof lucide.createIcons === "function") {
+		lucide.createIcons({ nodes: [themeToggle] });
+	}
+}
+
+function setTheme(theme) {
+	const isDark = theme === "dark";
+	document.body.classList.toggle("dark", isDark);
+	localStorage.setItem("theme", isDark ? "dark" : "light");
+	updateThemeToggle(isDark ? "dark" : "light");
+	showToast(isDark ? "Dark mode enabled" : "Light mode enabled", isDark ? "moon" : "sun");
+}
+
+function initTheme() {
+	const stored = localStorage.getItem("theme");
+	const theme = stored === "dark" ? "dark" : "light";
+	document.body.classList.toggle("dark", theme === "dark");
+	updateThemeToggle(theme);
+}
+
+function initNavigation() {
+	navButtons.forEach((button) => {
+		button.addEventListener("click", () => {
+			navButtons.forEach((btn) => btn.classList.remove("active"));
+			panels.forEach((panel) => panel.classList.remove("active"));
+			button.classList.add("active");
+
+			const targetId = button.dataset.panel;
+			const targetPanel = targetId ? document.getElementById(targetId) : null;
+			if (targetPanel) {
+				targetPanel.classList.add("active");
+			}
+
+			if (targetPanel && targetPanel.id === "panel-map" && mapInstance) {
+				setTimeout(() => mapInstance.invalidateSize(), 0);
+			}
+		});
+	});
 }
 
 function initMap() {
@@ -165,17 +250,17 @@ function updateMap(feed, entities) {
 		const congestion = formatEnum(item.vehicle.congestionLevel);
 
 		const popupLines = [
-			`<strong>${escapeHtml(routeId)}</strong>`,
-			`Updated: ${escapeHtml(updated)}`,
+			`<strong>${escapeHTML(routeId)}</strong>`,
+			`Updated: ${escapeHTML(updated)}`,
 		];
 		if (speed) {
-			popupLines.push(`Speed: ${escapeHtml(speed)}`);
+			popupLines.push(`Speed: ${escapeHTML(speed)}`);
 		}
 		if (occupancy) {
-			popupLines.push(`Occupancy: ${escapeHtml(occupancy)}`);
+			popupLines.push(`Occupancy: ${escapeHTML(occupancy)}`);
 		}
 		if (congestion) {
-			popupLines.push(`Congestion: ${escapeHtml(congestion)}`);
+			popupLines.push(`Congestion: ${escapeHTML(congestion)}`);
 		}
 
 		const marker = L.circleMarker([item.latitude, item.longitude], {
@@ -367,6 +452,20 @@ async function loadFeed() {
 		countEl.textContent = "-";
 		setMapMessage("Unable to load feed data.");
 	}
+}
+
+if (window.lucide && typeof lucide.createIcons === "function") {
+	lucide.createIcons();
+}
+
+initTheme();
+initNavigation();
+
+if (themeToggle) {
+	themeToggle.addEventListener("click", () => {
+		const nextTheme = document.body.classList.contains("dark") ? "light" : "dark";
+		setTheme(nextTheme);
+	});
 }
 
 loadButton.addEventListener("click", loadFeed);
