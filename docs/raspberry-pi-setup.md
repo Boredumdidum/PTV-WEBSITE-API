@@ -5,9 +5,9 @@ Deploy the PTV GTFS-RT proxy on a Raspberry Pi with DuckDNS and HTTPS.
 ## Two deployment paths
 
 | Approach | Port forwarding? | Browser warning? | When to use |
-|---|---|---|---|
-| **Self-signed** (default) | No | Yes (expected) | Quick setup, local/private use |
-| **Let's Encrypt** | Yes (port 80) | No | Public-facing, want trusted cert |
+|---|---|---|---|---|
+| **Self-signed** (default) | No (port 443 only) | Yes (expected) | Quick setup, local/private use |
+| **Let's Encrypt** | No (port 443 only, DNS-01 challenge) | No | Public-facing, want trusted cert |
 
 ---
 
@@ -44,13 +44,15 @@ Visit `https://<pi-ip>`. The browser will show a security warning — this is ex
 
 ---
 
-## Remove the browser warning (Let's Encrypt, needs port 80)
+## Remove the browser warning (Let's Encrypt, DNS-01 challenge)
 
 Once the Pi is working with the self-signed cert, you can replace it with a trusted Let's Encrypt certificate.
 
-### Prerequisites
+This setup uses the **DNS-01 ACME challenge** — Let's Encrypt verifies domain ownership by checking a DNS TXT record, so no port 80 forwarding is needed.
 
-Forward **TCP port 80** on your router to the Pi (`192.168.1.35`). Without this, Let's Encrypt cannot verify domain ownership.
+### Prerequisites
+- DuckDNS token (the same one used for dynamic DNS)
+- Pi must be reachable on port 443
 
 ### Run the provisioning script
 
@@ -62,13 +64,11 @@ sudo python3 /opt/ptv-tracker/scripts/provision_ssl.py \
 
 This script:
 1. Checks that `ptv-tracker.duckdns.org` resolves to your public IP
-2. Verifies nginx is responding locally on port 80
-3. Removes any old self-signed certificate data
-4. Temporarily switches nginx to HTTP-only mode
-5. Runs `certbot --nginx` to obtain and install a Let's Encrypt certificate
-6. Restores HTTPS with the new trusted certificate
+2. Requests a Let's Encrypt certificate using the DNS-01 challenge (adds a TXT record via the DuckDNS API)
+3. Installs the certificate and configures nginx
+4. Sets up automatic renewal via a certbot hook
 
-After it completes, the browser warning will be gone. Certbot also sets up automatic renewal.
+After it completes, the browser warning will be gone.
 
 ---
 
@@ -109,7 +109,7 @@ After it completes, the browser warning will be gone. Certbot also sets up autom
 7. Generates a self-signed TLS certificate via `generate_certs.py --install`
 8. Verifies `node` binary and `server.js` exist before writing configs
 9. Writes a systemd service for the Node.js app
-10. Configures nginx as an HTTPS reverse proxy with HTTP→HTTPS redirect
+10. Configures nginx as an HTTPS reverse proxy (port 443 only, no HTTP redirect)
 11. Sets up DuckDNS cron job for dynamic DNS (if token provided)
 
 ---
@@ -148,11 +148,13 @@ sudo chown -R ptvtracker:ptvtracker /opt/ptv-tracker
 python3 scripts/generate_certs.py --install
 ```
 
-**Option B — Let's Encrypt (needs port 80 forwarded):**
+**Option B — Let's Encrypt (DNS-01 challenge, no port forwarding needed):**
 ```bash
-sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d ptv-tracker.duckdns.org --redirect
+sudo apt-get install -y certbot
+sudo certbot certonly --manual --preferred-challenges dns \
+  -d ptv-tracker.duckdns.org --agree-tos --email you@example.com
 ```
+You'll be prompted to add a TXT record to your DuckDNS domain. Use the DuckDNS API to set it, then proceed.
 
 ### 5) Systemd service
 
@@ -188,17 +190,19 @@ Create `/etc/nginx/sites-available/ptv-tracker`:
 
 ```nginx
 server {
-    listen 80;
-    server_name ptv-tracker.duckdns.org;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl;
+    listen 443 ssl http2;
     server_name ptv-tracker.duckdns.org;
 
     ssl_certificate /etc/letsencrypt/live/ptv-tracker.duckdns.org/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/ptv-tracker.duckdns.org/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+    ssl_prefer_server_ciphers on;
+
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options DENY;
+    add_header Referrer-Policy strict-origin-when-cross-origin;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
@@ -230,7 +234,7 @@ curl -k "https://www.duckdns.org/update?domains=ptv-tracker&token=YOUR_TOKEN&ip=
 ```
 
 ```bash
-sudo chmod 700 /etc/duckdns/duck.sh
+sudo chmod 600 /etc/duckdns/duck.sh
 ```
 
 Create `/etc/cron.d/duckdns`:
@@ -329,4 +333,5 @@ Open `https://ptv-tracker.duckdns.org` (or your Pi's IP) and load a feed.
 - The app listens on port 3000 internally; nginx terminates TLS on 443.
 - GTFS-RT responses are cached for 30 seconds by the proxy.
 - To regenerate a self-signed cert at any time: `python3 scripts/generate_certs.py --install`
-- To replace with Let's Encrypt later: `python3 scripts/provision_ssl.py --domain ... --email ...`
+- To replace with Let's Encrypt later (DNS-01, no port 80 needed): `python3 scripts/provision_ssl.py --domain ... --email ...`
+- Uptime monitoring dashboard: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)
