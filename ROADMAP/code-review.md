@@ -1,7 +1,6 @@
 # PTV GTFS-R Proxy — Code Review
 
 ## General / Project Health
-- Add a `README.md` at the project root — currently none exists, making it hard for new developers to onboard
 - Lock Node.js engine version in `package.json` (`"engines": { "node": ">=18.x" }`) to avoid runtime incompatibilities
 - Add `.nvmrc` or `.node-version` file to standardise Node version across environments
 - Move `package-lock.json` into `.gitattributes` with `linguist-generated` to reduce noise in PR diffs

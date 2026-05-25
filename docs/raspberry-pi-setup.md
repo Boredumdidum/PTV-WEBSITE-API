@@ -5,7 +5,7 @@ Deploy the PTV GTFS-RT proxy on a Raspberry Pi with DuckDNS and HTTPS.
 ## Two deployment paths
 
 | Approach | Port forwarding? | Browser warning? | When to use |
-|---|---|---|---|---|
+|---|---|---|---|
 | **Self-signed** (default) | No (port 443 only) | Yes (expected) | Quick setup, local/private use |
 | **Let's Encrypt** | No (port 443 only, DNS-01 challenge) | No | Public-facing, want trusted cert |
 

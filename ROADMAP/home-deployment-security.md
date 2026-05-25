@@ -11,7 +11,7 @@ This runs on a Raspberry Pi on a home network, exposed to the internet via a hom
 | API key leaked via `.env` backup or SD card | Low | High | SD card failure could expose `.env` if RMA'd without wipe |
 | DuckDNS token stolen from Pi | Low | Medium | Lets attacker point your domain to their IP |
 | Compromised device on LAN attacks Pi | Low | High | No IoT devices on network, but consider other LAN devices (laptops, phones) |
-| SD card corruption takes site offline | Medium | Medium | Frequent writes + power loss risk |
+| SD card corruption takes site offline | Medium | Medium | Frequent writes + power loss risk. Mitigated below. |
 | Let's Encrypt auto-renewal fails silently | Medium | Low | Cert expires, site shows SSL warning until manual fix |
 
 ---
@@ -78,9 +78,36 @@ SSH is not required for this setup — you can manage the Pi directly with a key
   # Add: 0 3 * * 0 /sbin/reboot
   ```
 
-### Filesystem
-- Enable `tmpfs` for `/tmp`, `/var/tmp`, and `/var/log` to reduce SD card writes
-- Consider read-only root filesystem if the Pi is stable (uses `overlayroot`)
+### Filesystem & SD Card Endurance
+
+The Pi boots from SD card. Frequent writes (logs, system journals, npm cache) can wear out consumer-grade cards in months. Mitigations:
+
+- **Use a high-endurance SD card** — Samsung Pro Endurance, SanDisk Max Endurance, or Industrial-rated cards are rated for continuous write workloads vs standard cards which fail after ~500-2000 write cycles
+- **Move logs to RAM** — mount `/var/log` as `tmpfs` so logs live in memory and are discarded on reboot:
+  ```bash
+  echo "tmpfs /var/log tmpfs defaults,noatime,size=100M 0 0" | sudo tee -a /etc/fstab
+  ```
+  If you need persistent logs, pair this with `rsyslog` forwarding to a remote server
+- **Mount `/tmp` and `/var/tmp` as tmpfs** — these directories see frequent writes from system processes:
+  ```bash
+  echo "tmpfs /tmp tmpfs defaults,noatime,size=128M 0 0" | sudo tee -a /etc/fstab
+  echo "tmpfs /var/tmp tmpfs defaults,noatime,size=64M 0 0" | sudo tee -a /etc/fstab
+  ```
+- **Disable swap on the SD card** — swap thrashing kills SD cards quickly:
+  ```bash
+  sudo dphys-swapfile swapoff
+  sudo dphys-swapfile uninstall
+  sudo systemctl disable dphys-swapfile
+  ```
+- **Reduce systemd journal writes** — limit journal size and enable log rotation:
+  ```bash
+  sudo journalctl --vacuum-size=50M
+  sudo nano /etc/systemd/journald.conf
+  # Set: SystemMaxUse=50M
+  ```
+- **Use a quality power supply** — the official Raspberry Pi power supply (5.1V/2.5A+) prevents brownouts that cause filesystem corruption during writes
+- **Consider USB SSD boot** — for maximum reliability, boot from a USB SSD instead of SD card. The Pi 4/5 supports USB boot natively. SSDs have 10-100x the write endurance of SD cards
+- **Read-only root filesystem** — for a truly static setup, use `overlayroot` to make the root FS read-only, with all writes sent to a tmpfs overlay that's discarded on reboot
 
 ### Firewall
 - Use `iptables` or `ufw` to restrict inbound traffic to only what's needed:
@@ -223,4 +250,4 @@ sudo nano /etc/logrotate.d/ptv-tracker
 - [x] Uptime monitoring set up: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)
 - [ ] Log rotation configured for app and nginx logs
 - [x] Physical access: Pi in a locked location
-- [x] SD card disposal plan documented
+- [ ] SD card mitigations applied (tmpfs for logs/tmp, swap disabled, quality PSU, high-endurance card)

@@ -11,7 +11,6 @@
 - [ ] Extract CSS custom properties into `tokens.css`
 - [ ] Add a CSS reset / normalise styles across browsers
 - [ ] Add client-side performance instrumentation
-- [ ] Create project root `README.md`
 - [ ] Create `src/components/`, `src/utils/`, `src/config/` directory structure
 - [ ] Add basic DOM smoke tests (Playwright or happy-dom)
 - [ ] Create `.env.example` with all documented variables
@@ -21,7 +20,6 @@
 ### Phase 1 — Foundations
 - Extract CSS custom properties into `tokens.css`
 - Add CSS reset / normalise styles across browsers
-- Create project root `README.md`
 
 ### Phase 2 — Security (UI side)
 - Add `prefers-reduced-motion` and `prefers-color-scheme` media query support

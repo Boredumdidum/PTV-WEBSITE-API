@@ -47,7 +47,7 @@
 - Add request logging middleware (`pino-http`)
 - Add `/health` endpoint with cache status and upstream reachability
 - Classify upstream errors (network vs auth vs 5xx) and return distinct HTTP status codes
-- Document UptimeRobot dashboard URL in setup docs: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)
+- [x] Document UptimeRobot dashboard URL in setup docs: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)
 
 ### Phase 4 — Containerisation
 - Implement graceful shutdown (`SIGTERM`/`SIGINT` handlers)

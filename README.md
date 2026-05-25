@@ -69,4 +69,12 @@ See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment
 
 ## License
 
-Apache 2.0
+Apache 2.0 — see [LICENSE](LICENSE).
+
+## Roadmap
+
+See the [ROADMAP](ROADMAP) folder for:
+- [Code review & suggestions](ROADMAP/code-review.md)
+- [Front-end sprint plan](ROADMAP/frontend-sprint.md)
+- [Back-end sprint plan](ROADMAP/backend-sprint.md)
+- [Home deployment security guide](ROADMAP/home-deployment-security.md)
