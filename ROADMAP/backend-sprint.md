@@ -12,7 +12,7 @@
 - [x] Add `helmet` for security HTTP headers
 - [x] Validate `limit` query param as a positive integer; sanitise all inputs
 - [x] Add HTTP request size limits to prevent OOM (1kb JSON body, 10MB upstream response)
-- [ ] Add graceful shutdown on `SIGTERM`/`SIGINT`
+- [x] Add graceful shutdown on `SIGTERM`/`SIGINT`
 - [ ] Create `Dockerfile` and `docker-compose.yml` for containerised deployment
 - [ ] Create `.dockerignore`
 - [ ] Add GitHub Actions workflow stub (lint on PR, build check, auto-deploy to Pi)
@@ -49,7 +49,7 @@
 - [x] Document UptimeRobot dashboard URL in setup docs: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)
 
 ### Phase 4 — Containerisation
-- Implement graceful shutdown (`SIGTERM`/`SIGINT` handlers)
+- [x] Implement graceful shutdown (`SIGTERM`/`SIGINT` handlers)
 - Create `Dockerfile` (multi-stage, Node 20 Alpine)
 - Create `docker-compose.yml` with service definition and env file
 - Create `.dockerignore`

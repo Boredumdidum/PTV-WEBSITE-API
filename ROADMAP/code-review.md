@@ -14,7 +14,7 @@
 - [x] Make the cache TTL configurable via environment variable instead of hardcoded 30000ms
 - [x] Add a `/health` endpoint for uptime monitoring and load-balancer health checks
 - [x] Add environment variable validation at startup (fail fast if `PTV_API_KEY` is missing)
-- Graceful shutdown handler (`SIGTERM`/`SIGINT`) to close the server cleanly
+- [x] Graceful shutdown handler (`SIGTERM`/`SIGINT`) to close the server cleanly
 
 ## Frontend (`script.js`)
 - Extract UI components into separate files (e.g. `components/map.js`, `components/dashboard.js`, `utils/format.js`) — the single 546-line file is becoming hard to maintain

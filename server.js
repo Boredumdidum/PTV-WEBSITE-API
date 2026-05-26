@@ -47,6 +47,21 @@ app.get("/api/gtfs", gtfsLimiter, gtfsHandler);
 
 app.use(express.static(path.join(__dirname)));
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info({ port: PORT }, "Server started");
 });
+
+function shutdown(signal) {
+  logger.info({ signal }, "Shutting down gracefully");
+  server.close(() => {
+    logger.info("Server closed");
+    process.exit(0);
+  });
+  setTimeout(() => {
+    logger.error("Forced shutdown after timeout");
+    process.exit(1);
+  }, 10000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
