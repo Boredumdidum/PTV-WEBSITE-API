@@ -19,17 +19,20 @@ const httpRequestsTotal = new client.Counter({
 const gtfsUpstreamDuration = new client.Histogram({
   name: "gtfs_upstream_fetch_duration_seconds",
   help: "Duration of upstream PTV API calls in seconds",
+  labelNames: ["feed"],
   buckets: [0.1, 0.5, 1, 2, 5, 10, 15],
 });
 
 const gtfsCacheHits = new client.Counter({
   name: "gtfs_cache_hits_total",
   help: "Total number of cache hits for GTFS feeds",
+  labelNames: ["feed"],
 });
 
 const gtfsCacheMisses = new client.Counter({
   name: "gtfs_cache_misses_total",
   help: "Total number of cache misses for GTFS feeds",
+  labelNames: ["feed"],
 });
 
 function metricsMiddleware(req, res, next) {
