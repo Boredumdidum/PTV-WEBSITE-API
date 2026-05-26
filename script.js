@@ -702,20 +702,23 @@ function updateMap(feed, entities, routeQuery) {
 
 		const vehicleType = busMode ? "Bus" : "Train";
 		const title = routeId ? formatRouteName(routeId) : vehicleType;
-		const popupLines = [
-			`<strong>${title}</strong>`,
-			`${vehicleType} · ${directionLabel}`,
-			`Updated ${escapeHTML(updated)}`,
-		];
+		const popupHtml = "<strong>" + title + "</strong><br />"
+			+ vehicleType + " - " + directionLabel + "<br />"
+			+ "Updated " + escapeHTML(updated);
+		const extraLines = [];
+
 		if (speed) {
-			popupLines.push(`Speed: ${escapeHTML(speed)}`);
+			extraLines.push("Speed: " + escapeHTML(speed));
 		}
 		if (occupancy) {
-			popupLines.push(`Occupancy: ${escapeHTML(occupancy)}`);
+			extraLines.push("Occupancy: " + escapeHTML(occupancy));
 		}
 		if (congestion) {
-			popupLines.push(`Congestion: ${escapeHTML(congestion)}`);
+			extraLines.push("Congestion: " + escapeHTML(congestion));
 		}
+		const popupContent = extraLines.length
+			? popupHtml + "<br />" + extraLines.join("<br />")
+			: popupHtml;
 
 		const marker = L.circleMarker([item.latitude, item.longitude], {
 			radius: 7,
@@ -729,7 +732,7 @@ function updateMap(feed, entities, routeQuery) {
 				routeSearchInput.value = routeId;
 			}
 		});
-		marker.bindPopup(popupLines.join("<br />"));
+		marker.bindPopup(popupContent);
 		marker.addTo(markerLayer);
 		bounds.push([item.latitude, item.longitude]);
 	});
