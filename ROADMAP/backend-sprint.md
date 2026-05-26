@@ -10,7 +10,7 @@
 - [x] Make cache TTL configurable via environment variable
 - [x] Add rate-limiting middleware (`express-rate-limit`)
 - [x] Add `helmet` for security HTTP headers
-- [ ] Validate `limit` query param as a positive integer; sanitise all inputs
+- [x] Validate `limit` query param as a positive integer; sanitise all inputs
 - [ ] Add HTTP request size limits to prevent OOM
 - [ ] Add graceful shutdown on `SIGTERM`/`SIGINT`
 - [ ] Create `Dockerfile` and `docker-compose.yml` for containerised deployment
@@ -35,7 +35,7 @@
 ### Phase 2 — Security Hardening
 - [x] Add `helmet` middleware with secure defaults
 - [x] Add `express-rate-limit` to `/api/gtfs` endpoint
-- [ ] Validate and sanitise `limit` and `feed` query parameters
+- [x] Validate and sanitise `limit` and `feed` query parameters
 - [ ] Add HTTP body/payload size limits
 - [ ] Audit `.env` file handling and document `chmod 600`
 - [x] Remove port 80 server block from nginx config template in `setup_pi.py`

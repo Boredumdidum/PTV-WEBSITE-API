@@ -61,7 +61,16 @@ module.exports = function (req, res) {
       cache.set(feedKey, data);
       req.log.info({ feed: feedKey, entities: data.entity ? data.entity.length : 0 }, "Fetched from upstream");
 
-      const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 0, 0), 200);
+      const rawLimit = req.query.limit;
+      let limit = 0;
+      if (rawLimit !== undefined && rawLimit !== null && rawLimit !== "") {
+        const parsed = Number(rawLimit);
+        if (!Number.isInteger(parsed) || parsed < 1) {
+          res.status(400).json({ error: "limit must be a positive integer." });
+          return;
+        }
+        limit = Math.min(parsed, 200);
+      }
       const payload =
         limit > 0 && Array.isArray(data.entity)
           ? { ...data, entity: data.entity.slice(0, limit) }
