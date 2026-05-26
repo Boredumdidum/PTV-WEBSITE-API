@@ -1,5 +1,6 @@
 const path = require("path");
 const express = require("express");
+const helmet = require("helmet");
 const pino = require("pino");
 const pinoHttp = require("pino-http");
 const cache = require("./middleware/cache");
@@ -19,6 +20,7 @@ const logger = pino({
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(helmet());
 app.use(pinoHttp({ logger }));
 
 app.get("/health", (req, res) => {

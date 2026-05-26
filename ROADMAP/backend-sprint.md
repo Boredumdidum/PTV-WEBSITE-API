@@ -8,6 +8,22 @@
 - [x] Classify upstream errors and return distinct HTTP status codes
 - [x] Validate required env vars at startup (fail fast)
 - [x] Make cache TTL configurable via environment variable
+- [ ] Add rate-limiting middleware (`express-rate-limit`)
+- [ ] Add `helmet` for security HTTP headers
+- [ ] Validate `limit` query param as a positive integer; sanitise all inputs
+- [ ] Add HTTP request size limits to prevent OOM
+- [ ] Add graceful shutdown on `SIGTERM`/`SIGINT`
+- [ ] Create `Dockerfile` and `docker-compose.yml` for containerised deployment
+- [ ] Create `.dockerignore`
+- [ ] Add GitHub Actions workflow stub (lint on PR, build check, auto-deploy to Pi)
+- [ ] Update Raspberry Pi setup docs with Docker deployment path
+- [ ] Add unit tests for cache logic, feed validation, and error classification
+- [ ] Add JSDoc comments to all exported backend functions
+- [ ] Document all environment variables in `README.md`
+- [ ] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge (no port 80 dependency)
+- [ ] Remove port 80 server block from nginx config template in `setup_pi.py`
+- [ ] Write DuckDNS API hook script for certbot DNS-01 automation
+- [ ] Remove port 80 references from `provision_ssl.py`
 
 ## Weekly Phases
 
