@@ -30,6 +30,9 @@ const ROUTE_LINE_COLORS = {
 const ROUTE_SERVICE_URL = "https://router.project-osrm.org/route/v1/driving/";
 const MAX_ROUTE_POINTS = 40;
 const ROUTE_CACHE = new Map();
+const LINE_INDEX_URL = "/data/lines/index.json";
+const LINE_DATA_BASE = "/data/lines/";
+const LINE_CHUNK_CACHE = new Map();
 
 let mapInstance = null;
 let markerLayer = null;
@@ -38,6 +41,8 @@ let lastPayload = null;
 let lastFeed = null;
 let lastIsMock = false;
 let routeRequestId = 0;
+let lineIndex = null;
+let lineIndexPromise = null;
 
 function setStatus(state, text) {
 	statusEl.dataset.state = state;
@@ -152,6 +157,147 @@ function sortPositionsForLine(items) {
 		.sort((a, b) =>
 			sortByLongitude ? a.longitude - b.longitude : a.latitude - b.latitude
 		);
+}
+
+function normalizeRouteValue(value) {
+	if (value === null || value === undefined) {
+		return "";
+	}
+	return String(value).trim().toLowerCase();
+}
+
+function normalizeBusRoute(value) {
+	const normalized = normalizeRouteValue(value);
+	if (!normalized) {
+		return "";
+	}
+	const parts = normalized.split(/[^a-z0-9]+/).filter(Boolean);
+	return parts.length ? parts[parts.length - 1] : normalized;
+}
+
+function bboxIntersects(bbox, bounds) {
+	if (!bbox || !bounds) {
+		return false;
+	}
+	const west = bounds.getWest();
+	const east = bounds.getEast();
+	const south = bounds.getSouth();
+	const north = bounds.getNorth();
+	return bbox[0] <= east && bbox[2] >= west && bbox[1] <= north && bbox[3] >= south;
+}
+
+async function getLineIndex() {
+	if (lineIndex) {
+		return lineIndex;
+	}
+	if (!lineIndexPromise) {
+		lineIndexPromise = fetch(LINE_INDEX_URL)
+			.then((response) => (response.ok ? response.json() : null))
+			.then((data) => {
+				lineIndex = data;
+				return data;
+			})
+			.catch(() => {
+				lineIndexPromise = null;
+				return null;
+			});
+	}
+	return lineIndexPromise;
+}
+
+async function loadLineChunk(fileName) {
+	if (!fileName) {
+		return null;
+	}
+	if (LINE_CHUNK_CACHE.has(fileName)) {
+		return LINE_CHUNK_CACHE.get(fileName);
+	}
+	const response = await fetch(`${LINE_DATA_BASE}${fileName}`);
+	if (!response.ok) {
+		return null;
+	}
+	const data = await response.json();
+	LINE_CHUNK_CACHE.set(fileName, data);
+	return data;
+}
+
+function isBusLineFeature(feature) {
+	const props = feature && feature.properties ? feature.properties : null;
+	if (!props || !props.MODE) {
+		return false;
+	}
+	const mode = String(props.MODE).toUpperCase();
+	return mode.includes("BUS");
+}
+
+function featureMatchesRoute(feature, routeId) {
+	if (!feature || !routeId) {
+		return false;
+	}
+	if (!isBusLineFeature(feature)) {
+		return false;
+	}
+	const props = feature.properties || {};
+	const normalizedRoute = normalizeBusRoute(routeId);
+	if (!normalizedRoute) {
+		return false;
+	}
+	const shortName = props.SHORT_NAME ? normalizeBusRoute(props.SHORT_NAME) : "";
+	if (shortName && shortName === normalizedRoute) {
+		return true;
+	}
+	const longName = props.LONG_NAME ? normalizeRouteValue(props.LONG_NAME) : "";
+	return longName ? longName.includes(normalizedRoute) : false;
+}
+
+async function drawBusRouteFromLines(routeId, requestId) {
+	if (!routeLayer || !mapInstance) {
+		return false;
+	}
+	const index = await getLineIndex();
+	if (!index || !Array.isArray(index.chunks)) {
+		return false;
+	}
+	const bounds = mapInstance.getBounds();
+	const candidates = index.chunks.filter((chunk) =>
+		bboxIntersects(chunk.bbox, bounds)
+	);
+	if (!candidates.length) {
+		return false;
+	}
+	const chunkData = await Promise.all(
+		candidates.map((chunk) => loadLineChunk(chunk.file))
+	);
+	if (requestId !== routeRequestId) {
+		return false;
+	}
+	const features = [];
+	chunkData.forEach((data) => {
+		if (!data || !Array.isArray(data.features)) {
+			return;
+		}
+		data.features.forEach((feature) => {
+			if (featureMatchesRoute(feature, routeId)) {
+				features.push(feature);
+			}
+		});
+	});
+	if (!features.length) {
+		return false;
+	}
+	L.geoJSON(
+		{ type: "FeatureCollection", features },
+		{
+			style: {
+				color: ROUTE_LINE_COLORS[0],
+				weight: 4,
+				opacity: 0.9,
+				lineJoin: "round",
+				lineCap: "round",
+			},
+		}
+	).addTo(routeLayer);
+	return true;
 }
 
 function sampleRoutePoints(points, maxPoints) {
@@ -435,7 +581,7 @@ function updateMap(feed, entities, routeQuery) {
 	setMapHint(
 		showVehicles
 			? busMode && normalizedRouteQuery
-				? "Route lines: orange / blue"
+				? "Route line loading..."
 				: "Vehicle positions only"
 			: "Select a vehicle positions feed"
 	);
@@ -483,7 +629,7 @@ function updateMap(feed, entities, routeQuery) {
 		? resolveSelectedRouteId(entities, normalizedRouteQuery)
 		: "";
 	if (busMode && normalizedRouteQuery && selectedRouteId && routeLayer) {
-		setMapHint(`Route ${selectedRouteId}: orange / blue`);
+		setMapHint(`Route ${selectedRouteId}: loading line data`);
 
 		const directionBuckets = {
 			0: [],
@@ -501,19 +647,35 @@ function updateMap(feed, entities, routeQuery) {
 			directionBuckets[key].push(item);
 		});
 
-		[0, 1].forEach((directionKey) => {
-			const items = directionBuckets[directionKey];
-			if (!items || items.length < 2) {
-				return;
+		const drawFromPositions = () => {
+			[0, 1].forEach((directionKey) => {
+				const items = directionBuckets[directionKey];
+				if (!items || items.length < 2) {
+					return;
+				}
+				const sorted = sortPositionsForLine(items);
+				const latLngs = sorted.map((item) => [item.latitude, item.longitude]);
+				void drawRouteLine(
+					latLngs,
+					ROUTE_LINE_COLORS[directionKey],
+					currentRouteRequestId
+				);
+			});
+		};
+
+		void drawBusRouteFromLines(selectedRouteId, currentRouteRequestId).then(
+			(drawn) => {
+				if (currentRouteRequestId !== routeRequestId) {
+					return;
+				}
+				if (drawn) {
+					setMapHint(`Route ${selectedRouteId}: line from GTFS shapes`);
+				} else {
+					setMapHint(`Route ${selectedRouteId}: estimated path`);
+					drawFromPositions();
+				}
 			}
-			const sorted = sortPositionsForLine(items);
-			const latLngs = sorted.map((item) => [item.latitude, item.longitude]);
-			void drawRouteLine(
-				latLngs,
-				ROUTE_LINE_COLORS[directionKey],
-				currentRouteRequestId
-			);
-		});
+		);
 	}
 
 	positions.forEach((item) => {
