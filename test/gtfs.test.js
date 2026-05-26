@@ -165,7 +165,7 @@ describe("routes/gtfs — cached response", () => {
     const res = mockRes();
     handler(mockReq("metro-trip-updates"), res);
     assert.strictEqual(upstreamCall.mock.calls.length, 0);
-    assert.strictEqual(res._status, undefined);
+    assert.strictEqual(res._status, null);
     assert.deepStrictEqual(res._json, { entity: [{ id: "1" }] });
   });
 
