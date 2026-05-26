@@ -1,13 +1,21 @@
 const path = require("path");
 const https = require("https");
 const express = require("express");
+const pino = require("pino");
+const pinoHttp = require("pino-http");
 const { transit_realtime } = require("gtfs-realtime-bindings");
 
 require("dotenv").config();
 
+const logger = pino({
+  level: process.env.LOG_LEVEL || "info",
+});
+
 const app = express();
 const PORT = process.env.PORT || 3000;
-const CACHE_TTL_MS = 30000;
+const CACHE_TTL_MS = parseInt(process.env.CACHE_TTL_MS, 10) || 30000;
+
+app.use(pinoHttp({ logger }));
 
 const FEEDS = {
   "metro-trip-updates":
@@ -30,7 +38,9 @@ function fetchBuffer(url, headers) {
       const { statusCode } = response;
       if (!statusCode || statusCode < 200 || statusCode >= 300) {
         response.resume();
-        reject(new Error(`Upstream request failed with status ${statusCode}`));
+        const error = new Error(`Upstream request failed with status ${statusCode}`);
+        error.statusCode = statusCode;
+        reject(error);
         return;
       }
 
@@ -39,9 +49,29 @@ function fetchBuffer(url, headers) {
       response.on("end", () => resolve(Buffer.concat(chunks)));
     });
 
-    request.on("error", reject);
+    request.on("error", (error) => {
+      error.code = error.code || "ENETUNREACH";
+      reject(error);
+    });
   });
 }
+
+app.get("/health", (req, res) => {
+  const cacheStatus = {};
+  for (const [key, entry] of cache) {
+    cacheStatus[key] = {
+      age: Math.round((Date.now() - entry.time) / 1000) + "s",
+      entities: entry.data.entity ? entry.data.entity.length : 0,
+    };
+  }
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    cache: cacheStatus,
+    apiKeySet: !!process.env.PTV_API_KEY,
+  });
+});
 
 app.get("/api/gtfs", async (req, res) => {
   const feedKey = req.query.feed;
@@ -59,6 +89,7 @@ app.get("/api/gtfs", async (req, res) => {
   const cacheEntry = cache.get(feedKey);
   const now = Date.now();
   if (cacheEntry && now - cacheEntry.time < CACHE_TTL_MS) {
+    req.log.info({ feed: feedKey, cached: true }, "Serving from cache");
     res.set("Cache-Control", "public, max-age=30");
     res.json(cacheEntry.data);
     return;
@@ -74,6 +105,7 @@ app.get("/api/gtfs", async (req, res) => {
     });
 
     cache.set(feedKey, { time: now, data });
+    req.log.info({ feed: feedKey, entities: data.entity ? data.entity.length : 0 }, "Fetched from upstream");
 
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 0, 0), 200);
     const payload =
@@ -84,6 +116,20 @@ app.get("/api/gtfs", async (req, res) => {
     res.set("Cache-Control", "public, max-age=30");
     res.json(payload);
   } catch (error) {
+    req.log.error({ err: error, feed: feedKey }, "Upstream fetch failed");
+
+    if (error.statusCode === 401 || error.statusCode === 403) {
+      res.status(502).json({ error: "Upstream authentication failed." });
+      return;
+    }
+    if (error.statusCode && error.statusCode >= 500) {
+      res.status(502).json({ error: "Upstream server error." });
+      return;
+    }
+    if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND" || error.code === "ECONNRESET") {
+      res.status(502).json({ error: "Upstream network error." });
+      return;
+    }
     res.status(502).json({ error: "Upstream request failed." });
   }
 });
@@ -91,5 +137,5 @@ app.get("/api/gtfs", async (req, res) => {
 app.use(express.static(path.join(__dirname)));
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  logger.info({ port: PORT }, "Server started");
 });
