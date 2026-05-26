@@ -8,8 +8,6 @@ scripts
 data
 fonts
 *.md
-*.otf
-*.ttf
 *.json
 !package.json
 !package-lock.json

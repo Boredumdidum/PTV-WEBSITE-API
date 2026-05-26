@@ -12,7 +12,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY config ./config
 COPY middleware ./middleware
 COPY routes ./routes
-COPY server.js package.json ./
+COPY fonts ./fonts
+COPY server.js package.json index.html script.js style.css ./
 
 EXPOSE 3000
 USER ptvtracker
