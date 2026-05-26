@@ -40,11 +40,28 @@ module.exports = function (req, res) {
     return;
   }
 
+  const rawLimit = req.query.limit;
+  let limit = 0;
+  if (rawLimit !== undefined && rawLimit !== null && rawLimit !== "") {
+    const parsed = Number(rawLimit);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      res.status(400).json({ error: "limit must be a positive integer." });
+      return;
+    }
+    limit = Math.min(parsed, 200);
+  }
+
+  function slice(data) {
+    return limit > 0 && Array.isArray(data.entity)
+      ? { ...data, entity: data.entity.slice(0, limit) }
+      : data;
+  }
+
   const cached = cache.get(feedKey);
   if (cached) {
     req.log.info({ feed: feedKey, cached: true }, "Serving from cache");
     res.set("Cache-Control", "public, max-age=30");
-    res.json(cached);
+    res.json(slice(cached));
     return;
   }
 
@@ -61,23 +78,8 @@ module.exports = function (req, res) {
       cache.set(feedKey, data);
       req.log.info({ feed: feedKey, entities: data.entity ? data.entity.length : 0 }, "Fetched from upstream");
 
-      const rawLimit = req.query.limit;
-      let limit = 0;
-      if (rawLimit !== undefined && rawLimit !== null && rawLimit !== "") {
-        const parsed = Number(rawLimit);
-        if (!Number.isInteger(parsed) || parsed < 1) {
-          res.status(400).json({ error: "limit must be a positive integer." });
-          return;
-        }
-        limit = Math.min(parsed, 200);
-      }
-      const payload =
-        limit > 0 && Array.isArray(data.entity)
-          ? { ...data, entity: data.entity.slice(0, limit) }
-          : data;
-
       res.set("Cache-Control", "public, max-age=30");
-      res.json(payload);
+      res.json(slice(data));
     } catch (error) {
       req.log.error({ err: error, feed: feedKey }, "Upstream fetch failed");
 
