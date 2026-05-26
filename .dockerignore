@@ -1,0 +1,12 @@
+.env
+.git
+.gitignore
+node_modules
+ROADMAP
+docs
+scripts
+data
+*.md
+*.json
+!package.json
+!package-lock.json

@@ -1,95 +1,79 @@
 const path = require("path");
-const https = require("https");
 const express = require("express");
-const { transit_realtime } = require("gtfs-realtime-bindings");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const pino = require("pino");
+const pinoHttp = require("pino-http");
+const cache = require("./middleware/cache");
+const gtfsHandler = require("./routes/gtfs");
 
 require("dotenv").config();
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const CACHE_TTL_MS = 30000;
-
-const FEEDS = {
-  "metro-trip-updates":
-    "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro/trip-updates",
-  "metro-service-alerts":
-    "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro/service-alerts",
-  "metro-vehicle-positions":
-    "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro/vehicle-positions",
-  "bus-trip-updates":
-    "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/bus/trip-updates",
-  "bus-vehicle-positions":
-    "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/bus/vehicle-positions",
-};
-
-const cache = new Map();
-
-function fetchBuffer(url, headers) {
-  return new Promise((resolve, reject) => {
-    const request = https.get(url, { headers }, (response) => {
-      const { statusCode } = response;
-      if (!statusCode || statusCode < 200 || statusCode >= 300) {
-        response.resume();
-        reject(new Error(`Upstream request failed with status ${statusCode}`));
-        return;
-      }
-
-      const chunks = [];
-      response.on("data", (chunk) => chunks.push(chunk));
-      response.on("end", () => resolve(Buffer.concat(chunks)));
-    });
-
-    request.on("error", reject);
-  });
+if (!process.env.PTV_API_KEY) {
+  console.error("FATAL: PTV_API_KEY environment variable is not set.");
+  process.exit(1);
 }
 
-app.get("/api/gtfs", async (req, res) => {
-  const feedKey = req.query.feed;
-  if (!feedKey || !FEEDS[feedKey]) {
-    res.status(400).json({ error: "Invalid or missing feed parameter." });
-    return;
-  }
-
-  const apiKey = process.env.PTV_API_KEY;
-  if (!apiKey) {
-    res.status(500).json({ error: "Server missing PTV_API_KEY." });
-    return;
-  }
-
-  const cacheEntry = cache.get(feedKey);
-  const now = Date.now();
-  if (cacheEntry && now - cacheEntry.time < CACHE_TTL_MS) {
-    res.set("Cache-Control", "public, max-age=30");
-    res.json(cacheEntry.data);
-    return;
-  }
-
-  try {
-    const buffer = await fetchBuffer(FEEDS[feedKey], { KeyID: apiKey });
-    const feed = transit_realtime.FeedMessage.decode(buffer);
-    const data = transit_realtime.FeedMessage.toObject(feed, {
-      longs: String,
-      enums: String,
-      bytes: String,
-    });
-
-    cache.set(feedKey, { time: now, data });
-
-    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 0, 0), 200);
-    const payload =
-      limit > 0 && Array.isArray(data.entity)
-        ? { ...data, entity: data.entity.slice(0, limit) }
-        : data;
-
-    res.set("Cache-Control", "public, max-age=30");
-    res.json(payload);
-  } catch (error) {
-    res.status(502).json({ error: "Upstream request failed." });
-  }
+const logger = pino({
+  level: process.env.LOG_LEVEL || "info",
 });
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "same-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://unpkg.com"],
+      styleSrc: ["'self'", "https://fonts.googleapis.com", "https://unpkg.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "https://*.tile.openstreetmap.org", "data:"],
+      connectSrc: ["'self'"],
+    },
+  },
+}));
+app.use(express.json({ limit: "1kb" }));
+app.use(pinoHttp({ logger }));
+
+const gtfsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please slow down." },
+});
+
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    cache: cache.getStatus(),
+    apiKeySet: !!process.env.PTV_API_KEY,
+  });
+});
+
+app.get("/api/gtfs", gtfsLimiter, gtfsHandler);
 
 app.use(express.static(path.join(__dirname)));
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+  logger.info({ port: PORT }, "Server started");
 });
+
+function shutdown(signal) {
+  logger.info({ signal }, "Shutting down gracefully");
+  server.close(() => {
+    logger.info("Server closed");
+    process.exit(0);
+  });
+  setTimeout(() => {
+    logger.error("Forced shutdown after timeout");
+    process.exit(1);
+  }, 10000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

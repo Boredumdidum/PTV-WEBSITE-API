@@ -93,17 +93,20 @@ def write_nginx(domain, port):
     nginx_text = textwrap.dedent(
         f"""
         server {{
-            listen 80;
-            server_name {domain};
-            return 301 https://$host$request_uri;
-        }}
-
-        server {{
             listen 443 ssl;
+            http2 on;
             server_name {domain};
 
             ssl_certificate {ssl_cert};
             ssl_certificate_key {ssl_key};
+            ssl_protocols TLSv1.2 TLSv1.3;
+            ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+            ssl_prefer_server_ciphers on;
+            ssl_session_cache shared:SSL:10m;
+            ssl_session_timeout 10m;
+
+            # Security headers and rate limiting handled by the Express app
+            # (helmet + express-rate-limit middleware)
 
             location / {{
                 proxy_pass http://127.0.0.1:{port};
@@ -113,6 +116,8 @@ def write_nginx(domain, port):
                 proxy_set_header X-Forwarded-Proto $scheme;
             }}
         }}
+
+        # No port 80 — using DNS-01 challenge, no HTTP endpoint needed
         """
     ).strip() + "\n"
 
@@ -140,10 +145,14 @@ def main():
     parser.add_argument("--cert-days", type=int, default=3650,
                         help="Self-signed certificate validity in days (default: 3650)")
     parser.add_argument("--skip-ssl", action="store_true",
-                        help="Skip self-signed certificate generation (HTTP only)")
+                        help="Skip self-signed certificate generation (insecure, HTTP only)")
     parser.add_argument("--skip-node", action="store_true")
     parser.add_argument("--skip-npm", action="store_true")
     parser.add_argument("--skip-duckdns", action="store_true")
+    parser.add_argument("--skip-ufw", action="store_true",
+                        help="Skip UFW firewall configuration")
+    parser.add_argument("--allow-ports", default="",
+                        help="Comma-separated list of additional ports to open in UFW (e.g. 25,587)")
     args = parser.parse_args()
 
     ensure_root()
@@ -153,10 +162,11 @@ def main():
     print(f"  App dir:   {args.app_dir or '(auto)'}")
     print(f"  Domain:    {args.domain}")
     print(f"  DuckDNS:   {'yes' if args.duck_token else 'no'}")
-    print(f"  SSL:       {'self-signed' if not args.skip_ssl else 'no (HTTP)'}")
+    print(f"  SSL:       {'self-signed' if not args.skip_ssl else 'no (plain HTTP)'}")
+    print(f"  UFW:       {'configured (22,25,443,587 always open)' if not args.skip_ufw else 'skipped'}")
     print()
 
-    print("[1/7] Installing system packages...")
+    print("[1/8] Installing system packages...")
     run(["apt-get", "update"])
     run(["apt-get", "install", "-y", "nginx", "git", "curl", "ca-certificates",
          "python3-cryptography"])
@@ -164,12 +174,12 @@ def main():
     print()
 
     if not args.skip_node:
-        print("[2/7] Installing Node.js...")
+        print("[2/8] Installing Node.js...")
         install_node()
         node_ver = subprocess.run(["node", "--version"], capture_output=True, text=True).stdout.strip()
         print(f"  ✓ Node.js {node_ver}")
     else:
-        print("[2/7] Skipping Node.js installation")
+        print("[2/8] Skipping Node.js installation")
     print()
 
     if args.app_dir:
@@ -178,7 +188,7 @@ def main():
         app_dir = os.path.abspath(pathlib.Path(__file__).resolve().parent.parent)
     pathlib.Path(app_dir).mkdir(parents=True, exist_ok=True)
 
-    print("[3/7] Setting up app directory and service user...")
+    print("[3/8] Setting up app directory and service user...")
     ensure_user(args.service_user, app_dir)
     ensure_service_access(app_dir)
     print(f"  ✓ User '{args.service_user}' ready")
@@ -186,14 +196,21 @@ def main():
     print()
 
     if not args.skip_npm:
-        print("[4/7] Installing Node.js dependencies (npm install)...")
-        run(["bash", "-c", f"cd {app_dir} && npm install"])
-        print("  ✓ Dependencies installed")
+        node_modules = pathlib.Path(app_dir) / "node_modules"
+        if node_modules.exists():
+            print("[4/8] node_modules already exists, skipping npm install")
+        else:
+            print("[4/8] Installing Node.js dependencies (npm install)...")
+            run(["bash", "-c", f"cd {app_dir} && npm install"])
+            print("  ✓ Dependencies installed")
     else:
-        print("[4/7] Skipping npm install")
+        print("[4/8] Skipping npm install")
+        if not (pathlib.Path(app_dir) / "node_modules").exists():
+            print("  WARNING: node_modules not found — service will fail to start.")
+            print("  Run: cd {app_dir} && npm install")
     print()
 
-    print("[5/7] Creating configuration files...")
+    print("[5/8] Creating configuration files...")
     env_path = pathlib.Path(app_dir) / ".env"
     if not env_path.exists():
         env_path.write_text("PTV_API_KEY=\n", encoding="utf-8")
@@ -206,7 +223,7 @@ def main():
     print()
 
     if not args.skip_ssl:
-        print("[6/7] Generating self-signed TLS certificate...")
+        print("[6/8] Generating self-signed TLS certificate...")
         certs_script = pathlib.Path(__file__).resolve().parent / "generate_certs.py"
         run([
             sys.executable, str(certs_script),
@@ -216,10 +233,10 @@ def main():
         ])
         print("  ✓ TLS certificate generated")
     else:
-        print("[6/7] Skipping TLS certificate — HTTP only")
+        print("[6/8] Skipping TLS certificate — HTTP only")
     print()
 
-    print("[7/7] Configuring services...")
+    print("[7/8] Configuring services...")
     node_path = shutil.which("node") or "/usr/bin/node"
 
     if not pathlib.Path(node_path).is_file():
@@ -230,6 +247,12 @@ def main():
     if not server_js.is_file():
         print(f"ERROR: {server_js} not found.")
         print(f"Make sure the project is at {app_dir} or use --app-dir.")
+        sys.exit(1)
+
+    if not (pathlib.Path(app_dir) / "node_modules").exists():
+        print(f"ERROR: node_modules not found at {app_dir}/node_modules.")
+        print(f"Run: cd {app_dir} && npm install")
+        print("Then re-run this script, or: sudo systemctl restart ptv-tracker")
         sys.exit(1)
 
     write_systemd(args.service_user, app_dir, node_path)
@@ -256,6 +279,25 @@ def main():
             print("  ✓ DuckDNS cron set up")
     print()
 
+    if not args.skip_ufw:
+        print("[8/8] Configuring UFW firewall...")
+        run(["ufw", "default", "deny", "incoming"])
+        run(["ufw", "default", "allow", "outgoing"])
+        for port in ["443/tcp", "22/tcp", "25/tcp", "587/tcp"]:
+            run(["ufw", "allow", port, "--comment", port.split("/")[0]])
+        if args.allow_ports:
+            for port in args.allow_ports.split(","):
+                port = port.strip()
+                if port and port not in ["443", "22", "25", "587"]:
+                    run(["ufw", "allow", port, "--comment", "extra"])
+        run(["ufw", "--force", "enable"])
+        print("  ✓ UFW firewall enabled (ports 22, 25, 443, 587 always open)")
+        if args.allow_ports:
+            print(f"  (Extra ports: {args.allow_ports})")
+    else:
+        print("[8/8] Skipping UFW firewall configuration")
+    print()
+
     print("=" * 50)
     print("  Setup complete!")
     print()
@@ -272,8 +314,8 @@ def main():
         print("  For production, re-run with --app-dir /opt/ptv-tracker")
     print()
     if args.skip_ssl:
-        print("  Access: http://<pi-ip>")
+        print("  Access: http://<pi-ip> (no encryption — not recommended)")
     else:
         print("  Access: https://<pi-ip>")
-        print("  (Your browser will show a security warning — this is expected)")
+        print("  (Browser will show a security warning — this is expected for a self-signed cert)")
     print("=" * 50)

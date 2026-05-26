@@ -308,6 +308,8 @@ function initMap() {
 	L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 		maxZoom: 19,
 		attribution: "&copy; OpenStreetMap contributors",
+		crossOrigin: true,
+		referrerPolicy: "origin",
 	}).addTo(mapInstance);
 
 	routeLayer = L.layerGroup().addTo(mapInstance);
