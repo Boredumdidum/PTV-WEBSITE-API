@@ -2,8 +2,8 @@ function restrictMetrics(req, res, next) {
   const allowed = process.env.METRICS_ALLOW_IPS;
   if (allowed === "*") return next();
 
-  const ip = req.ip || req.socket.remoteAddress;
-  const normalized = ip === "::ffff:127.0.0.1" ? "127.0.0.1" : ip;
+  const ip = req.ip || req.socket.remoteAddress || "";
+  const normalized = ip.startsWith("::ffff:") ? ip.slice(7) : ip;
 
   if (allowed) {
     const list = allowed.split(",").map((s) => s.trim());
