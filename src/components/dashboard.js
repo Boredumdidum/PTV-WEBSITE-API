@@ -116,21 +116,43 @@ export function initNavigation() {
 	const navButtons = document.querySelectorAll(".nav-btn");
 	const panels = document.querySelectorAll(".panel");
 
-	navButtons.forEach((button) => {
-		button.addEventListener("click", () => {
-			navButtons.forEach((btn) => btn.classList.remove("active"));
-			panels.forEach((panel) => panel.classList.remove("active"));
-			button.classList.add("active");
+	function activateButton(button) {
+		navButtons.forEach((btn) => {
+			btn.classList.remove("active");
+			btn.setAttribute("aria-selected", "false");
+			btn.setAttribute("tabindex", "-1");
+		});
+		panels.forEach((panel) => panel.classList.remove("active"));
+		button.classList.add("active");
+		button.setAttribute("aria-selected", "true");
+		button.setAttribute("tabindex", "0");
 
-			const targetId = button.dataset.panel;
-			const targetPanel = targetId ? document.getElementById(targetId) : null;
-			if (targetPanel) {
-				targetPanel.classList.add("active");
-			}
+		const targetId = button.dataset.panel;
+		const targetPanel = targetId ? document.getElementById(targetId) : null;
+		if (targetPanel) {
+			targetPanel.classList.add("active");
+		}
 
-			const mapEl = document.getElementById("map");
-			if (targetPanel && mapEl && targetPanel.contains(mapEl) && mapInstance) {
-				setTimeout(() => mapInstance.invalidateSize(), 0);
+		const mapEl = document.getElementById("map");
+		if (targetPanel && mapEl && targetPanel.contains(mapEl) && mapInstance) {
+			setTimeout(() => mapInstance.invalidateSize(), 0);
+		}
+	}
+
+	navButtons.forEach((button, index) => {
+		button.addEventListener("click", () => activateButton(button));
+
+		button.addEventListener("keydown", (event) => {
+			if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+				event.preventDefault();
+				const next = navButtons[(index + 1) % navButtons.length];
+				next.focus();
+				activateButton(next);
+			} else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+				event.preventDefault();
+				const prev = navButtons[(index - 1 + navButtons.length) % navButtons.length];
+				prev.focus();
+				activateButton(prev);
 			}
 		});
 	});

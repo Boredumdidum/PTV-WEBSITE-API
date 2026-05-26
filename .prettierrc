@@ -1,0 +1,28 @@
+{
+  "singleQuote": false,
+  "trailingComma": "all",
+  "printWidth": 120,
+  "overrides": [
+    {
+      "files": ["src/**/*.js", "*.html", "*.css"],
+      "options": {
+        "useTabs": true,
+        "tabWidth": 1
+      }
+    },
+    {
+      "files": ["server.js", "routes/**/*.js", "middleware/**/*.js", "config/**/*.js", "scripts/**/*.js"],
+      "options": {
+        "useTabs": false,
+        "tabWidth": 2
+      }
+    },
+    {
+      "files": ["test/**/*.js", "tests/**/*.js"],
+      "options": {
+        "useTabs": false,
+        "tabWidth": 2
+      }
+    }
+  ]
+}

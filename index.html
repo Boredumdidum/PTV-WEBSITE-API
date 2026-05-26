@@ -29,12 +29,12 @@
 					<i data-lucide="menu" class="icon"></i>
 				</button>
 				<div class="logo" aria-label="PTV">PTV</div>
-				<nav class="nav" aria-label="Primary">
-					<button class="nav-btn active" type="button" data-panel="panel-dashboard">
+				<nav class="nav" aria-label="Primary" role="tablist" aria-orientation="vertical">
+					<button class="nav-btn active" type="button" data-panel="panel-dashboard" role="tab" aria-selected="true" tabindex="0">
 						<i data-lucide="layout-dashboard" class="icon"></i>
 						<span>Dashboard</span>
 					</button>
-					<button class="nav-btn" type="button" data-panel="panel-preview">
+					<button class="nav-btn" type="button" data-panel="panel-preview" role="tab" aria-selected="false" tabindex="-1">
 						<i data-lucide="file-text" class="icon"></i>
 						<span>Preview</span>
 					</button>
