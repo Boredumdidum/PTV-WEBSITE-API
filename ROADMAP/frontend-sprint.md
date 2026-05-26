@@ -42,7 +42,7 @@
 
 ### Phase 5 — UX Polish
 
-- Debounce route search input (300ms delay)
+- Debounce route search input (250ms delay)
 - Add loading skeleton / shimmer animation for stat cards
 - Implement retry button with exponential backoff on fetch failure
 

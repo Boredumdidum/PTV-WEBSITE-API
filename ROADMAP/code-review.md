@@ -47,6 +47,8 @@
 - [x] Add code coverage flag (`--experimental-test-coverage`)
 - [x] Configure ESLint + Prettier, run lint:fix and format
 - [x] Move inline theme script to external file (fix CSP violation)
+- [x] Add integration tests with supertest (full middleware chain via Express, not isolated handler)
+- [x] Refactor server.js to export app for supertest (startup behind `require.main === module` guard)
 
 ## Frontend (additional)
 
@@ -56,6 +58,7 @@
 - [x] prefers-color-scheme support via CSS + early JS
 - [x] Keyboard nav with arrow keys for sidebar tabs
 - [x] ARIA roles (tablist, tab, aria-selected, tabindex management)
+- [x] Debounce route search input (250ms)
 
 ## Security
 

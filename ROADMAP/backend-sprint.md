@@ -28,6 +28,8 @@
 - [x] Add cache size limit (evict oldest when >100 entries)
 - [x] Add code coverage flag to npm test
 - [x] Configure ESLint + Prettier with lint:fix and format scripts
+- [x] Add integration tests with supertest (12 tests, full middleware chain)
+- [x] Refactor server.js to export app for supertest
 - [x] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge (no port 80 dependency)
 - [x] Remove port 80 server block from nginx config template in `setup_pi.py`
 - [x] Write DuckDNS API hook script for certbot DNS-01 automation (`scripts/duckdns-hook.sh`)

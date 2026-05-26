@@ -299,6 +299,7 @@ sudo nano /etc/logrotate.d/ptv-tracker
 - [x] ESLint + Prettier configured and run (0 errors, 0 warnings)
 - [x] Frontend modularised into ES modules under `src/`
 - [x] Playwright smoke tests added (10 tests)
+- [x] Integration tests added (12 tests, supertest, full middleware chain)
 - [ ] Log rotation configured for app (journald) and nginx logs
 - [x] Physical access: Pi in a locked location
 - [ ] SD card mitigations applied (tmpfs for logs/tmp, swap disabled, quality PSU, high-endurance card)
