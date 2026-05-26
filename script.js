@@ -563,31 +563,34 @@ function initMap() {
 function formatRouteName(routeId) {
 	const cleaned = String(routeId);
 	const parts = cleaned.split(":");
-	const last = parts[parts.length - 1];
+	const nonEmpty = parts.filter(Boolean);
+	const last = nonEmpty.length ? nonEmpty[nonEmpty.length - 1] : cleaned;
 	return escapeHTML(last);
 }
 
-const TRAIN_ROUTE_NAMES = {
-	"1": "Alamein",
-	"2": "Lilydale",
-	"3": "Belgrave",
-	"4": "Glen Waverley",
-	"5": "Sandringham",
-	"6": "Pakenham",
-	"7": "Frankston",
-	"8": "Werribee / Williamstown",
-	"9": "Craigieburn",
-	"10": "Upfield",
-	"11": "Mernda",
-	"12": "Hurstbridge",
-	"13": "Sunbury",
+const TRAIN_ROUTE_SHORT_CODES = {
+	"ALM": "Alamein",
+	"BEL": "Belgrave",
+	"CRA": "Craigieburn",
+	"FKN": "Frankston",
+	"GWS": "Glen Waverley",
+	"HUR": "Hurstbridge",
+	"LIL": "Lilydale",
+	"MDD": "Mernda",
+	"PKM": "Pakenham",
+	"SAN": "Sandringham",
+	"SUN": "Sunbury",
+	"UFD": "Upfield",
+	"WER": "Werribee",
+	"WLW": "Williamstown",
 };
 
 function displayRouteName(routeId, busMode) {
 	if (busMode) {
 		return formatRouteName(routeId);
 	}
-	return TRAIN_ROUTE_NAMES[String(routeId)] || formatRouteName(routeId);
+	const code = String(routeId).split(":").filter(Boolean).pop().split("-").pop();
+	return TRAIN_ROUTE_SHORT_CODES[code] || code;
 }
 
 function updateMap(feed, entities, routeQuery) {
