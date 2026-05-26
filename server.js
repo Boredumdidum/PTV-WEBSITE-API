@@ -1,6 +1,7 @@
 const path = require("path");
 const express = require("express");
 const helmet = require("helmet");
+const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const pino = require("pino");
 const pinoHttp = require("pino-http");
@@ -25,6 +26,8 @@ const PORT = process.env.PORT || 3000;
 app.set("trust proxy", 1);
 
 app.use(metricsMiddleware);
+
+app.use(compression());
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "same-origin" },
