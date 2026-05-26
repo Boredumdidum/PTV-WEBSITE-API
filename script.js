@@ -477,6 +477,7 @@ function buildMockData(feed) {
 			timestamp: String(now),
 		},
 	};
+	const isBus = typeof feed === "string" && feed.startsWith("bus-");
 
 	if (feed === "metro-service-alerts") {
 		return {
@@ -487,12 +488,12 @@ function buildMockData(feed) {
 					alert: {
 						effect: "SIGNIFICANT_DELAYS",
 						headerText: {
-							translation: [{ text: "Signal fault near Central" }],
+							translation: [{ text: "Frankston line delays near Caulfield" }],
 						},
 						descriptionText: {
 							translation: [{ text: "Expect 10-15 minute delays." }],
 						},
-						informedEntity: [{ routeId: "METRO" }],
+						informedEntity: [{ routeId: "Frankston" }],
 					},
 				},
 				{
@@ -500,12 +501,14 @@ function buildMockData(feed) {
 					alert: {
 						effect: "STOP_MOVED",
 						headerText: {
-							translation: [{ text: "Temporary platform change" }],
+							translation: [{ text: "Werribee line platform change" }],
 						},
 						descriptionText: {
-							translation: [{ text: "Platform 2 is closed for maintenance." }],
+							translation: [
+								{ text: "Platform 2 is closed at Footscray. Trains use platform 4." },
+							],
 						},
-						informedEntity: [{ stopId: "CENTRAL" }],
+						informedEntity: [{ routeId: "Werribee", stopId: "FOOTSCRAY" }],
 					},
 				},
 			],
@@ -513,85 +516,294 @@ function buildMockData(feed) {
 	}
 
 	if (feed === "metro-vehicle-positions" || feed === "bus-vehicle-positions") {
-		return {
-			...base,
-			entity: [
-				{
-					id: "vehicle-1",
-					vehicle: {
-						trip: {
-							routeId: feed === "bus-vehicle-positions" ? "BUS-246" : "METRO-03",
-						},
-						position: {
-							latitude: -37.8136,
-							longitude: 144.9631,
-							bearing: 120,
-							speed: 12.2,
-						},
+		const vehicles = isBus
+			? [
+					{
+						routeId: "246",
+						latitude: -37.8572,
+						longitude: 144.9885,
+						bearing: 85,
+						speed: 11.1,
 						congestionLevel: "CONGESTION_LEVEL_LOW",
 						occupancyStatus: "MANY_SEATS_AVAILABLE",
-						timestamp: String(now),
+						directionId: 0,
+						updatedOffset: 20,
 					},
-				},
-				{
-					id: "vehicle-2",
-					vehicle: {
-						trip: {
-							routeId: feed === "bus-vehicle-positions" ? "BUS-512" : "METRO-15",
-						},
-						position: {
-							latitude: -37.8005,
-							longitude: 144.9789,
-							bearing: 42,
-							speed: 8.6,
-						},
+					{
+						routeId: "246",
+						latitude: -37.8446,
+						longitude: 144.9922,
+						bearing: 95,
+						speed: 10.4,
+						congestionLevel: "CONGESTION_LEVEL_LOW",
+						occupancyStatus: "MANY_SEATS_AVAILABLE",
+						directionId: 0,
+						updatedOffset: 40,
+					},
+					{
+						routeId: "246",
+						latitude: -37.8391,
+						longitude: 144.9735,
+						bearing: 260,
+						speed: 9.3,
 						congestionLevel: "CONGESTION_LEVEL_MEDIUM",
 						occupancyStatus: "FEW_SEATS_AVAILABLE",
-						timestamp: String(now),
+						directionId: 1,
+						updatedOffset: 30,
 					},
-				},
-			],
+					{
+						routeId: "246",
+						latitude: -37.8284,
+						longitude: 144.9652,
+						bearing: 250,
+						speed: 8.8,
+						congestionLevel: "CONGESTION_LEVEL_MEDIUM",
+						occupancyStatus: "FEW_SEATS_AVAILABLE",
+						directionId: 1,
+						updatedOffset: 50,
+					},
+					{
+						routeId: "250",
+						latitude: -37.7896,
+						longitude: 145.0467,
+						bearing: 70,
+						speed: 12.6,
+						congestionLevel: "CONGESTION_LEVEL_LOW",
+						occupancyStatus: "MANY_SEATS_AVAILABLE",
+						updatedOffset: 25,
+					},
+					{
+						routeId: "401",
+						latitude: -37.7992,
+						longitude: 144.9491,
+						bearing: 180,
+						speed: 6.2,
+						congestionLevel: "CONGESTION_LEVEL_HIGH",
+						occupancyStatus: "STANDING_ROOM_ONLY",
+						updatedOffset: 15,
+					},
+					{
+						routeId: "302",
+						latitude: -37.8234,
+						longitude: 145.0183,
+						bearing: 240,
+						speed: 9.7,
+						congestionLevel: "CONGESTION_LEVEL_LOW",
+						occupancyStatus: "MANY_SEATS_AVAILABLE",
+						updatedOffset: 35,
+					},
+					{
+						routeId: "903",
+						latitude: -37.9198,
+						longitude: 145.0824,
+						bearing: 120,
+						speed: 13.8,
+						congestionLevel: "CONGESTION_LEVEL_MEDIUM",
+						occupancyStatus: "FEW_SEATS_AVAILABLE",
+						updatedOffset: 45,
+					},
+				]
+			: [
+					{
+						routeId: "Werribee",
+						latitude: -37.8575,
+						longitude: 144.9042,
+						bearing: 70,
+						speed: 20.3,
+						congestionLevel: "CONGESTION_LEVEL_MEDIUM",
+						occupancyStatus: "FEW_SEATS_AVAILABLE",
+						updatedOffset: 20,
+					},
+					{
+						routeId: "Werribee",
+						latitude: -37.8353,
+						longitude: 144.9554,
+						bearing: 250,
+						speed: 18.6,
+						congestionLevel: "CONGESTION_LEVEL_HIGH",
+						occupancyStatus: "STANDING_ROOM_ONLY",
+						updatedOffset: 35,
+					},
+					{
+						routeId: "Frankston",
+						latitude: -37.9061,
+						longitude: 145.0278,
+						bearing: 150,
+						speed: 19.4,
+						congestionLevel: "CONGESTION_LEVEL_MEDIUM",
+						occupancyStatus: "FEW_SEATS_AVAILABLE",
+						updatedOffset: 30,
+					},
+					{
+						routeId: "Craigieburn",
+						latitude: -37.7441,
+						longitude: 144.9442,
+						bearing: 15,
+						speed: 21.8,
+						congestionLevel: "CONGESTION_LEVEL_LOW",
+						occupancyStatus: "MANY_SEATS_AVAILABLE",
+						updatedOffset: 28,
+					},
+					{
+						routeId: "Mernda",
+						latitude: -37.6899,
+						longitude: 145.0175,
+						bearing: 20,
+						speed: 17.2,
+						congestionLevel: "CONGESTION_LEVEL_LOW",
+						occupancyStatus: "MANY_SEATS_AVAILABLE",
+						updatedOffset: 42,
+					},
+					{
+						routeId: "Sunbury",
+						latitude: -37.7242,
+						longitude: 144.7951,
+						bearing: 265,
+						speed: 22.5,
+						congestionLevel: "CONGESTION_LEVEL_MEDIUM",
+						occupancyStatus: "FEW_SEATS_AVAILABLE",
+						updatedOffset: 24,
+					},
+					{
+						routeId: "Pakenham",
+						latitude: -37.8212,
+						longitude: 145.2331,
+						bearing: 105,
+						speed: 23.7,
+						congestionLevel: "CONGESTION_LEVEL_HIGH",
+						occupancyStatus: "STANDING_ROOM_ONLY",
+						updatedOffset: 55,
+					},
+					{
+						routeId: "Lilydale",
+						latitude: -37.8154,
+						longitude: 145.3524,
+						bearing: 95,
+						speed: 20.1,
+						congestionLevel: "CONGESTION_LEVEL_LOW",
+						occupancyStatus: "MANY_SEATS_AVAILABLE",
+						updatedOffset: 38,
+					},
+				];
+
+		return {
+			...base,
+			entity: vehicles.map((vehicle, index) => {
+				const trip = { routeId: vehicle.routeId };
+				if (vehicle.directionId === 0 || vehicle.directionId === 1) {
+					trip.directionId = vehicle.directionId;
+				}
+				const updatedOffset = Number.isFinite(vehicle.updatedOffset)
+					? vehicle.updatedOffset
+					: 0;
+				return {
+					id: `${isBus ? "bus" : "metro"}-vehicle-${index + 1}`,
+					vehicle: {
+						trip,
+						position: {
+							latitude: vehicle.latitude,
+							longitude: vehicle.longitude,
+							bearing: vehicle.bearing,
+							speed: vehicle.speed,
+						},
+						congestionLevel: vehicle.congestionLevel,
+						occupancyStatus: vehicle.occupancyStatus,
+						timestamp: String(now - updatedOffset),
+					},
+				};
+			}),
 		};
 	}
 
-	return {
-		...base,
-		entity: [
-			{
-				id: "trip-1",
-				tripUpdate: {
-					trip: {
-						tripId: "TRIP-1001",
-						routeId: feed === "bus-trip-updates" ? "BUS-86" : "METRO-03",
-					},
-					stopTimeUpdate: [
-						{
-							stopId: "STOP-120",
-							arrival: { time: String(now + 300) },
-							departure: { time: String(now + 360) },
-						},
-					],
+	const trips = isBus
+		? [
+				{
+					tripId: "246-07",
+					routeId: "246",
+					stopId: "ELSTERNWICK",
+					arrivalOffset: 420,
+					departureOffset: 480,
 					delay: 120,
 				},
-			},
-			{
-				id: "trip-2",
-				tripUpdate: {
-					trip: {
-						tripId: "TRIP-1022",
-						routeId: feed === "bus-trip-updates" ? "BUS-246" : "METRO-15",
-					},
-					stopTimeUpdate: [
-						{
-							stopId: "STOP-305",
-							arrival: { time: String(now + 540) },
-							departure: { time: String(now + 600) },
-						},
-					],
+				{
+					tripId: "250-13",
+					routeId: "250",
+					stopId: "LA_TROBE",
+					arrivalOffset: 300,
+					departureOffset: 360,
+					delay: -60,
+				},
+				{
+					tripId: "401-02",
+					routeId: "401",
+					stopId: "PARKVILLE",
+					arrivalOffset: 180,
+					departureOffset: 240,
+					delay: 90,
+				},
+				{
+					tripId: "903-18",
+					routeId: "903",
+					stopId: "MENTONE",
+					arrivalOffset: 600,
+					departureOffset: 660,
+					delay: 0,
+				},
+			]
+		: [
+				{
+					tripId: "WRB-21",
+					routeId: "Werribee",
+					stopId: "FOOTSCRAY",
+					arrivalOffset: 240,
+					departureOffset: 300,
+					delay: 180,
+				},
+				{
+					tripId: "FRN-05",
+					routeId: "Frankston",
+					stopId: "CAULFIELD",
+					arrivalOffset: 420,
+					departureOffset: 480,
+					delay: 60,
+				},
+				{
+					tripId: "CRB-11",
+					routeId: "Craigieburn",
+					stopId: "NORTH_MELB",
+					arrivalOffset: 360,
+					departureOffset: 420,
 					delay: -30,
 				},
+				{
+					tripId: "MRN-09",
+					routeId: "Mernda",
+					stopId: "CLIFTON_HILL",
+					arrivalOffset: 540,
+					departureOffset: 600,
+					delay: 0,
+				},
+			];
+
+	return {
+		...base,
+		entity: trips.map((trip, index) => ({
+			id: `${isBus ? "bus" : "metro"}-trip-${index + 1}`,
+			tripUpdate: {
+				trip: {
+					tripId: trip.tripId,
+					routeId: trip.routeId,
+				},
+				stopTimeUpdate: [
+					{
+						stopId: trip.stopId,
+						arrival: { time: String(now + trip.arrivalOffset) },
+						departure: { time: String(now + trip.departureOffset) },
+					},
+				],
+				delay: trip.delay,
 			},
-		],
+		})),
 	};
 }
 
