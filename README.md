@@ -84,6 +84,7 @@ See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment
 │   └── gtfs.js        # GTFS-RT feed proxy — fetch, decode, cache, error classify
 ├── data/              # OpenAPI specs for upstream PTV endpoints
 ├── scripts/           # Python deployment scripts (Pi setup, certs, certbot hook)
+├── test/              # Unit tests (node:test)
 ├── fonts/             # Custom display fonts
 ├── ROADMAP/           # Code review, sprint plans, security doc
 └── docs/              # Deployment guide and UI style guide

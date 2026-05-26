@@ -17,7 +17,7 @@
 - [x] Create `.dockerignore`
 - [ ] Add GitHub Actions workflow stub (lint on PR, build check, auto-deploy to Pi)
 - [x] Update Raspberry Pi setup docs with Docker deployment path
-- [ ] Add unit tests for cache logic, feed validation, and error classification
+- [x] Add unit tests for cache logic, feed validation, and error classification
 - [x] Add JSDoc comments to all exported backend functions
 - [x] Document all environment variables in `README.md`
 - [x] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge (no port 80 dependency)
@@ -62,7 +62,7 @@
 - [x] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge
 - [x] Write DuckDNS API hook script for certbot DNS-01 automation (`scripts/duckdns-hook.sh`)
 - [x] Update `provision_ssl.py` to use DNS-01 instead of HTTP-01
-- [ ] Add unit tests for cache logic, feed validation, and error classification (using `node:test` or `vitest`)
+- [x] Add unit tests for cache logic, feed validation, and error classification (using `node:test` or `vitest`)
 
 ### Phase 7 — Final Documentation
 - [x] Add JSDoc comments to all exported backend functions
