@@ -1,4 +1,4 @@
-import { setTheme, initTheme, showToast, updateRouteSearchUI } from "./src/utils/dom.js";
+import { setTheme, initTheme, updateRouteSearchUI } from "./src/utils/dom.js";
 import { initNavigation, loadFeed, applyData, lastPayload, lastFeed, lastIsMock } from "./src/components/dashboard.js";
 
 document.addEventListener("DOMContentLoaded", () => {

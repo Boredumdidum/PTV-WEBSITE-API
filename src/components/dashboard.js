@@ -1,3 +1,4 @@
+import { setStatus, setError, setMapMessage } from "../utils/dom.js";
 import { updateMap, mapInstance } from "./map.js";
 
 let lastPayload = null;
