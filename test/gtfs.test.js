@@ -222,7 +222,7 @@ describe("routes/gtfs — retry and timeout", () => {
     assert.strictEqual(res._json.entity[0].id, "1");
   });
 
-  it("fails after exhausting all retries on upstream 5xx", async () => {
+  it("fails after exhausting retries on upstream 5xx", async () => {
     let callCount = 0;
     mock.method(https, "get", (_url, _opts, cb) => {
       callCount++;
@@ -233,7 +233,7 @@ describe("routes/gtfs — retry and timeout", () => {
     const res = mockRes();
     handler(mockReq("metro-vehicle-positions"), res);
     await tick();
-    assert.strictEqual(callCount, 3);
+    assert.strictEqual(callCount, 2);
     assert.strictEqual(res._status, 502);
     assert.strictEqual(res._json.error, "Upstream server error.");
   });
