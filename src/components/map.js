@@ -10,13 +10,7 @@ import {
 	LINE_INDEX_URL,
 	LINE_DATA_BASE,
 } from "../constants.js";
-import {
-	escapeHTML,
-	formatTimestamp,
-	formatSpeed,
-	formatEnum,
-	displayRouteName,
-} from "../utils/format.js";
+import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName } from "../utils/format.js";
 import { setMapMessage, setMapHint } from "../utils/dom.js";
 
 let mapInstance = null;
@@ -103,11 +97,7 @@ function sortPositionsForLine(items) {
 	const lngRange = maxLng - minLng;
 	const sortByLongitude = lngRange >= latRange;
 
-	return items
-		.slice()
-		.sort((a, b) =>
-			sortByLongitude ? a.longitude - b.longitude : a.latitude - b.latitude
-		);
+	return items.slice().sort((a, b) => (sortByLongitude ? a.longitude - b.longitude : a.latitude - b.latitude));
 }
 
 function normalizeRouteValue(value) {
@@ -210,15 +200,11 @@ async function drawBusRouteFromLines(routeId, requestId) {
 		return false;
 	}
 	const bounds = mapInstance.getBounds();
-	const candidates = index.chunks.filter((chunk) =>
-		bboxIntersects(chunk.bbox, bounds)
-	);
+	const candidates = index.chunks.filter((chunk) => bboxIntersects(chunk.bbox, bounds));
 	if (!candidates.length) {
 		return false;
 	}
-	const chunkData = await Promise.all(
-		candidates.map((chunk) => loadLineChunk(chunk.file))
-	);
+	const chunkData = await Promise.all(candidates.map((chunk) => loadLineChunk(chunk.file)));
 	if (requestId !== routeRequestId) {
 		return false;
 	}
@@ -246,7 +232,7 @@ async function drawBusRouteFromLines(routeId, requestId) {
 				lineJoin: "round",
 				lineCap: "round",
 			},
-		}
+		},
 	).addTo(routeLayer);
 	return true;
 }
@@ -267,9 +253,7 @@ function sampleRoutePoints(points, maxPoints) {
 }
 
 function buildRouteCacheKey(points) {
-	return points
-		.map((point) => `${point[0].toFixed(5)},${point[1].toFixed(5)}`)
-		.join("|");
+	return points.map((point) => `${point[0].toFixed(5)},${point[1].toFixed(5)}`).join("|");
 }
 
 async function drawRouteLine(points, color, requestId) {
@@ -294,9 +278,7 @@ async function drawRouteLine(points, color, requestId) {
 		return;
 	}
 
-	const coordString = sampled
-		.map((point) => `${point[1]},${point[0]}`)
-		.join(";");
+	const coordString = sampled.map((point) => `${point[1]},${point[0]}`).join(";");
 	const url = `${ROUTE_SERVICE_URL}${coordString}?overview=full&geometries=geojson`;
 
 	try {
@@ -307,9 +289,7 @@ async function drawRouteLine(points, color, requestId) {
 
 		const data = await response.json();
 		const coords =
-			data && data.routes && data.routes[0] && data.routes[0].geometry
-				? data.routes[0].geometry.coordinates
-				: null;
+			data && data.routes && data.routes[0] && data.routes[0].geometry ? data.routes[0].geometry.coordinates : null;
 		if (!Array.isArray(coords) || coords.length < 2) {
 			throw new Error("Routing missing geometry");
 		}
@@ -354,10 +334,7 @@ function resolveSelectedRouteId(entities, query) {
 			if (!fallback) {
 				fallback = route;
 			}
-			if (
-				normalizedRoute === normalizedQuery ||
-				normalizedRoute.endsWith(`-${normalizedQuery}`)
-			) {
+			if (normalizedRoute === normalizedQuery || normalizedRoute.endsWith(`-${normalizedQuery}`)) {
 				return route;
 			}
 		}
@@ -417,11 +394,7 @@ export function updateMap(feed, entities, routeQuery) {
 
 	const busMode = isBusFeed(feed);
 	const normalizedRouteQuery = routeQuery ? routeQuery.trim() : "";
-	setMapHint(
-		busMode && normalizedRouteQuery
-			? "Route line loading..."
-			: ""
-	);
+	setMapHint(busMode && normalizedRouteQuery ? "Route line loading..." : "");
 
 	markerLayer.clearLayers();
 
@@ -444,9 +417,7 @@ export function updateMap(feed, entities, routeQuery) {
 	const hasFilter = normalizedRouteQuery.length > 0;
 	if (positions.length === 0) {
 		setMapMessage(
-			hasFilter
-				? "No vehicle positions match that route."
-				: "No vehicle positions available in this response."
+			hasFilter ? "No vehicle positions match that route." : "No vehicle positions available in this response.",
 		);
 		mapInstance.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
 		return;
@@ -456,9 +427,7 @@ export function updateMap(feed, entities, routeQuery) {
 	const markerColor = FEED_COLORS[feed] || "#0f5b61";
 	const bounds = [];
 
-	const selectedRouteId = busMode
-		? resolveSelectedRouteId(entities, normalizedRouteQuery)
-		: "";
+	const selectedRouteId = busMode ? resolveSelectedRouteId(entities, normalizedRouteQuery) : "";
 	if (busMode && normalizedRouteQuery && selectedRouteId && routeLayer) {
 		setMapHint(`Route ${selectedRouteId}: loading line data`);
 
@@ -468,8 +437,7 @@ export function updateMap(feed, entities, routeQuery) {
 		};
 
 		positions.forEach((item) => {
-			const routeId =
-				(item.vehicle.trip && item.vehicle.trip.routeId) || "";
+			const routeId = (item.vehicle.trip && item.vehicle.trip.routeId) || "";
 			if (String(routeId).toLowerCase() !== String(selectedRouteId).toLowerCase()) {
 				return;
 			}
@@ -486,27 +454,21 @@ export function updateMap(feed, entities, routeQuery) {
 				}
 				const sorted = sortPositionsForLine(items);
 				const latLngs = sorted.map((item) => [item.latitude, item.longitude]);
-				void drawRouteLine(
-					latLngs,
-					ROUTE_LINE_COLORS[directionKey],
-					currentRouteRequestId
-				);
+				void drawRouteLine(latLngs, ROUTE_LINE_COLORS[directionKey], currentRouteRequestId);
 			});
 		};
 
-		void drawBusRouteFromLines(selectedRouteId, currentRouteRequestId).then(
-			(drawn) => {
-				if (currentRouteRequestId !== routeRequestId) {
-					return;
-				}
-				if (drawn) {
-					setMapHint(`Route ${selectedRouteId}: line from GTFS shapes`);
-				} else {
-					setMapHint(`Route ${selectedRouteId}: estimated path`);
-					drawFromPositions();
-				}
+		void drawBusRouteFromLines(selectedRouteId, currentRouteRequestId).then((drawn) => {
+			if (currentRouteRequestId !== routeRequestId) {
+				return;
 			}
-		);
+			if (drawn) {
+				setMapHint(`Route ${selectedRouteId}: line from GTFS shapes`);
+			} else {
+				setMapHint(`Route ${selectedRouteId}: estimated path`);
+				drawFromPositions();
+			}
+		});
 	}
 
 	positions.forEach((item) => {
@@ -518,14 +480,25 @@ export function updateMap(feed, entities, routeQuery) {
 		const congestion = formatEnum(item.vehicle.congestionLevel);
 		const direction = getDirectionKey(item);
 		const directionLabel = busMode
-			? direction === 1 ? "City bound" : "Outbound"
-			: direction === 1 ? "City bound" : "Flinders St bound";
+			? direction === 1
+				? "City bound"
+				: "Outbound"
+			: direction === 1
+				? "City bound"
+				: "Flinders St bound";
 
 		const vehicleType = busMode ? "Bus" : "Train";
 		const title = routeId ? displayRouteName(routeId, busMode) : vehicleType;
-		const popupHtml = "<strong>" + title + "</strong><br />"
-			+ vehicleType + " - " + directionLabel + "<br />"
-			+ "Updated " + escapeHTML(updated);
+		const popupHtml =
+			"<strong>" +
+			title +
+			"</strong><br />" +
+			vehicleType +
+			" - " +
+			directionLabel +
+			"<br />" +
+			"Updated " +
+			escapeHTML(updated);
 		const extraLines = [];
 
 		if (speed) {
@@ -537,9 +510,7 @@ export function updateMap(feed, entities, routeQuery) {
 		if (congestion) {
 			extraLines.push("Congestion: " + escapeHTML(congestion));
 		}
-		const popupContent = extraLines.length
-			? popupHtml + "<br />" + extraLines.join("<br />")
-			: popupHtml;
+		const popupContent = extraLines.length ? popupHtml + "<br />" + extraLines.join("<br />") : popupHtml;
 
 		const marker = L.circleMarker([item.latitude, item.longitude], {
 			radius: 7,

@@ -13,8 +13,13 @@ function mockReq(feed, limit) {
 
 function mockRes() {
   const r = { _status: null, _json: null };
-  r.status = function (c) { this._status = c; return this; };
-  r.json = function (o) { this._json = o; };
+  r.status = function (c) {
+    this._status = c;
+    return this;
+  };
+  r.json = function (o) {
+    this._json = o;
+  };
   r.set = function () {};
   return r;
 }
@@ -33,7 +38,11 @@ function mockHttpsStatus(statusCode) {
 function mockHttpsNetworkError(code) {
   mock.method(https, "get", (_url, _opts, _cb) => {
     const err = Object.assign(new Error("network error"), { code });
-    return { on(e, h) { setImmediate(() => h(err)); } };
+    return {
+      on(e, h) {
+        setImmediate(() => h(err));
+      },
+    };
   });
 }
 

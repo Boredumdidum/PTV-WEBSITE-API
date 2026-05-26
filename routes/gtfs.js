@@ -88,9 +88,7 @@ module.exports = function (req, res) {
   }
 
   function slice(data) {
-    return limit > 0 && Array.isArray(data.entity)
-      ? { ...data, entity: data.entity.slice(0, limit) }
-      : data;
+    return limit > 0 && Array.isArray(data.entity) ? { ...data, entity: data.entity.slice(0, limit) } : data;
   }
 
   const cached = cache.get(feedKey);

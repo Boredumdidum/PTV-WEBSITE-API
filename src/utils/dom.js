@@ -102,7 +102,9 @@ export function initTheme() {
 		html.classList.toggle("dark", prefersDark);
 		html.classList.toggle("light", !prefersDark);
 	}
-	updateThemeToggle(stored === "dark" || (!stored && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light");
+	updateThemeToggle(
+		stored === "dark" || (!stored && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light",
+	);
 }
 
 export function updateRouteSearchUI(feed) {
@@ -114,8 +116,6 @@ export function updateRouteSearchUI(feed) {
 
 	const busMode = typeof feed === "string" && feed.startsWith("bus-");
 	label.textContent = busMode ? "Bus route number" : "Train line name";
-	input.placeholder = busMode
-		? "e.g. 765 or 733"
-		: "e.g. Werribee or Frankston";
+	input.placeholder = busMode ? "e.g. 765 or 733" : "e.g. Werribee or Frankston";
 	input.inputMode = busMode ? "numeric" : "text";
 }

@@ -88,9 +88,7 @@ export async function loadFeed() {
 	}
 
 	try {
-		const response = await fetch(
-			`/api/gtfs?feed=${encodeURIComponent(feed)}&limit=200`
-		);
+		const response = await fetch(`/api/gtfs?feed=${encodeURIComponent(feed)}&limit=200`);
 		if (!response.ok) {
 			const body = await response.json().catch(() => ({}));
 			throw new Error(body.error || `Request failed (${response.status})`);
@@ -346,9 +344,7 @@ function buildMockData(feed) {
 				if (vehicle.directionId === 0 || vehicle.directionId === 1) {
 					trip.directionId = vehicle.directionId;
 				}
-				const updatedOffset = Number.isFinite(vehicle.updatedOffset)
-					? vehicle.updatedOffset
-					: 0;
+				const updatedOffset = Number.isFinite(vehicle.updatedOffset) ? vehicle.updatedOffset : 0;
 				return {
 					id: `${isBus ? "bus" : "metro"}-vehicle-${index + 1}`,
 					vehicle: {

@@ -2,10 +2,7 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert");
 const { FEEDS, isValidFeedKey, getFeedUrl } = require("../config/feeds");
 
-const VALID_KEYS = [
-  "metro-vehicle-positions",
-  "bus-vehicle-positions",
-];
+const VALID_KEYS = ["metro-vehicle-positions", "bus-vehicle-positions"];
 
 describe("config/feeds", () => {
   it("has all 2 feed keys", () => {

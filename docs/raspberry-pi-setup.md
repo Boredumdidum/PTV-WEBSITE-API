@@ -4,11 +4,11 @@ Deploy the PTV GTFS-RT proxy on a Raspberry Pi with DuckDNS and HTTPS.
 
 ## Two deployment paths
 
-| Approach | Port forwarding? | Browser warning? | When to use |
-|---|---|---|---|---|
-| **Self-signed** (default) | No (port 443 only) | Yes (expected) | Quick setup, local/private use |
-| **Let's Encrypt** | No (port 443 only, DNS-01 challenge) | No | Public-facing, want trusted cert |
-| **Docker** (recommended) | No (port 443 only) | Depends on cert | Production, avoids Node/npm on host |
+| Approach                  | Port forwarding?                     | Browser warning? | When to use                         |
+| ------------------------- | ------------------------------------ | ---------------- | ----------------------------------- |
+| **Self-signed** (default) | No (port 443 only)                   | Yes (expected)   | Quick setup, local/private use      |
+| **Let's Encrypt**         | No (port 443 only, DNS-01 challenge) | No               | Public-facing, want trusted cert    |
+| **Docker** (recommended)  | No (port 443 only)                   | Depends on cert  | Production, avoids Node/npm on host |
 
 ---
 
@@ -99,6 +99,7 @@ Once the Pi is working with the self-signed cert, you can replace it with a trus
 This setup uses the **DNS-01 ACME challenge** — Let's Encrypt verifies domain ownership by checking a DNS TXT record, so no port 80 forwarding is needed. The `provision_ssl.py` script uses a [certbot manual hook](https://eff-certbot.readthedocs.io/en/stable/using.html#manual) (`scripts/duckdns-hook.sh`) to add/remove the TXT record via the DuckDNS API.
 
 ### Prerequisites
+
 - DuckDNS token set up at `/etc/duckdns/duck.sh` (from running `setup_pi.py --duck-token` or manually)
 - Pi must be reachable on port 443
 
@@ -111,6 +112,7 @@ sudo python3 /opt/ptv-tracker/scripts/provision_ssl.py \
 ```
 
 This script:
+
 1. Checks that `ptv-tracker.duckdns.org` resolves to your public IP
 2. Verifies the DuckDNS token exists
 3. Writes the `duckdns-hook.sh` certbot hook (if not already present)
@@ -127,27 +129,27 @@ After it completes, the browser warning will be gone.
 
 ### `setup_pi.py` flags
 
-| Flag | Purpose |
-|---|---|
-| `--app-dir PATH` | **Required** — deployment path (e.g. `/opt/ptv-tracker`) |
-| `--domain DOMAIN` | Domain for cert and nginx (default: `ptv-tracker.duckdns.org`) |
-| `--duck-token TOKEN` | DuckDNS token for dynamic DNS updates |
-| `--skip-ssl` | Skip certificate generation (HTTP only) |
-| `--skip-duckdns` | Skip DuckDNS cron setup |
-| `--skip-ufw` | Skip UFW firewall configuration |
-| `--allow-ports` | Comma-separated extra ports for UFW (22,25,443,587 always open) |
-| `--skip-node` | Skip Node.js installation |
-| `--skip-npm` | Skip `npm install` |
-| `--cert-days N` | Self-signed cert validity (default: 3650) |
+| Flag                 | Purpose                                                         |
+| -------------------- | --------------------------------------------------------------- |
+| `--app-dir PATH`     | **Required** — deployment path (e.g. `/opt/ptv-tracker`)        |
+| `--domain DOMAIN`    | Domain for cert and nginx (default: `ptv-tracker.duckdns.org`)  |
+| `--duck-token TOKEN` | DuckDNS token for dynamic DNS updates                           |
+| `--skip-ssl`         | Skip certificate generation (HTTP only)                         |
+| `--skip-duckdns`     | Skip DuckDNS cron setup                                         |
+| `--skip-ufw`         | Skip UFW firewall configuration                                 |
+| `--allow-ports`      | Comma-separated extra ports for UFW (22,25,443,587 always open) |
+| `--skip-node`        | Skip Node.js installation                                       |
+| `--skip-npm`         | Skip `npm install`                                              |
+| `--cert-days N`      | Self-signed cert validity (default: 3650)                       |
 
 ### `provision_ssl.py` flags
 
-| Flag | Purpose |
-|---|---|
+| Flag              | Purpose                                        |
+| ----------------- | ---------------------------------------------- |
 | `--domain DOMAIN` | **Required** — domain to get a certificate for |
-| `--email EMAIL` | **Required** — for Let's Encrypt notifications |
-| `--port PORT` | Local backend port (default: 3000) |
-| `--skip-check` | Skip prerequisite checks |
+| `--email EMAIL`   | **Required** — for Let's Encrypt notifications |
+| `--port PORT`     | Local backend port (default: 3000)             |
+| `--skip-check`    | Skip prerequisite checks                       |
 
 > Uses DNS-01 challenge via DuckDNS hook — no port 80 needed.
 
@@ -200,16 +202,19 @@ sudo chown -R ptvtracker:ptvtracker /opt/ptv-tracker
 ### 4) TLS certificate (choose one)
 
 **Option A — Self-signed (no port forwarding):**
+
 ```bash
 python3 scripts/generate_certs.py --install
 ```
 
 **Option B — Let's Encrypt (DNS-01 challenge, no port forwarding needed):**
+
 ```bash
 sudo apt-get install -y certbot
 sudo certbot certonly --manual --preferred-challenges dns \
   -d ptv-tracker.duckdns.org --agree-tos --email you@example.com
 ```
+
 You'll be prompted to add a TXT record to your DuckDNS domain. Use the DuckDNS API to set it, then proceed.
 
 ### 5) Systemd service
@@ -323,6 +328,7 @@ Failed to spawn 'start' task: No such file or directory
 **Cause:** The systemd unit points to a path that doesn't exist, or files are owned by root.
 
 **Fix:**
+
 ```bash
 cat /etc/systemd/system/ptv-tracker.service   # check paths
 ls -la /opt/ptv-tracker/server.js              # does server.js exist?
@@ -340,6 +346,7 @@ journalctl shows: MODULE_NOT_FOUND
 **Cause:** `npm install` hasn't been run, or `node_modules` is owned by root.
 
 **Fix:**
+
 ```bash
 cd /opt/ptv-tracker && npm install
 sudo chown -R ptvtracker:ptvtracker /opt/ptv-tracker
@@ -355,6 +362,7 @@ nginx: [emerg] cannot load certificate key
 **Cause:** Self-signed cert hasn't been generated, or deleted before certbot ran.
 
 **Fix:**
+
 ```bash
 python3 /opt/ptv-tracker/scripts/generate_certs.py --install
 sudo nginx -t
@@ -368,6 +376,7 @@ An unexpected error occurred: directory exists at /etc/letsencrypt/live/ptv-trac
 ```
 
 **Fix:** Use the `provision_ssl.py` script which handles this cleanup automatically:
+
 ```bash
 sudo python3 /opt/ptv-tracker/scripts/provision_ssl.py \
   --domain ptv-tracker.duckdns.org \

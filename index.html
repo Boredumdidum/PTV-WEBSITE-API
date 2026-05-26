@@ -12,10 +12,7 @@
 			href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Inter:opsz,wght@14..32,300..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
 			rel="stylesheet"
 		/>
-		<link
-			rel="stylesheet"
-			href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-		/>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 		<link rel="stylesheet" href="style.css" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
@@ -30,7 +27,14 @@
 				</button>
 				<div class="logo" aria-label="PTV">PTV</div>
 				<nav class="nav" aria-label="Primary" role="tablist" aria-orientation="vertical">
-					<button class="nav-btn active" type="button" data-panel="panel-dashboard" role="tab" aria-selected="true" tabindex="0">
+					<button
+						class="nav-btn active"
+						type="button"
+						data-panel="panel-dashboard"
+						role="tab"
+						aria-selected="true"
+						tabindex="0"
+					>
 						<i data-lucide="layout-dashboard" class="icon"></i>
 						<span>Dashboard</span>
 					</button>
@@ -50,12 +54,7 @@
 			<main class="main">
 				<div class="main-map">
 					<span id="map-hint" class="note">Vehicle positions only</span>
-					<div
-						id="map"
-						class="map"
-						role="img"
-						aria-label="Vehicle positions map"
-					></div>
+					<div id="map" class="map" role="img" aria-label="Vehicle positions map"></div>
 					<div id="map-empty" class="map-empty" role="status" aria-live="polite"></div>
 				</div>
 				<div class="main-content">
@@ -86,13 +85,7 @@
 								</div>
 								<div class="field">
 									<label for="route-search">Route search</label>
-									<input
-										id="route-search"
-										type="text"
-										inputmode="numeric"
-										placeholder="e.g. 765 or 733"
-										autocomplete="off"
-									/>
+									<input id="route-search" type="text" inputmode="numeric" placeholder="e.g. 765 or 733" autocomplete="off" />
 								</div>
 								<label class="checkbox-row">
 									<input id="mock" class="checkbox" type="checkbox" />

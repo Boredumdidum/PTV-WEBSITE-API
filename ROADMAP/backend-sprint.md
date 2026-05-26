@@ -1,6 +1,7 @@
 # Back-End / Security Developer — Sprint Plan
 
 ## Task List
+
 - [x] Extract `server.js` into modular structure (routes, config, middleware)
 - [x] Add structured logging (e.g. `pino`)
 - [x] Add request logging middleware (`morgan` or `pino-http`)
@@ -28,11 +29,13 @@
 ## Weekly Phases
 
 ### Phase 1 — Foundations
+
 - [x] Extract `server.js` into `routes/gtfs.js` + `config/feeds.js` + `middleware/cache.js`
 - [x] Add environment variable validation at startup (fail fast on missing `PTV_API_KEY`)
 - [x] Make cache TTL configurable via `CACHE_TTL_MS` env var
 
 ### Phase 2 — Security Hardening
+
 - [x] Add `helmet` middleware with secure defaults
 - [x] Add `express-rate-limit` to `/api/gtfs` endpoint
 - [x] Validate and sanitise `limit` and `feed` query parameters
@@ -42,6 +45,7 @@
 - [x] Remove port 80 references from `provision_ssl.py` (rewritten for DNS-01)
 
 ### Phase 3 — Observability
+
 - [x] Add structured logging (`pino`) with request ID correlation
 - [x] Add request logging middleware (`pino-http`)
 - [x] Add `/health` endpoint with cache status and upstream reachability
@@ -49,22 +53,26 @@
 - [x] Document UptimeRobot dashboard URL in setup docs: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)
 
 ### Phase 4 — Containerisation
+
 - [x] Implement graceful shutdown (`SIGTERM`/`SIGINT` handlers)
 - [x] Create `Dockerfile` (multi-stage, Node 20 Alpine)
 - [x] Create `docker-compose.yml` with service definition and env file
 - [x] Create `.dockerignore`
 
 ### Phase 5 — Deployment Pipeline
+
 - [x] Update Raspberry Pi setup docs (`docs/raspberry-pi-setup.md`) with Docker deployment path
 - Add GitHub Actions workflow stub (lint on PR, build check, auto-deploy to Pi)
 
 ### Phase 6 — DNS Automation & Unit Tests
+
 - [x] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge
 - [x] Write DuckDNS API hook script for certbot DNS-01 automation (`scripts/duckdns-hook.sh`)
 - [x] Update `provision_ssl.py` to use DNS-01 instead of HTTP-01
 - [x] Add unit tests for cache logic, feed validation, and error classification (using `node:test` or `vitest`)
 
 ### Phase 7 — Final Documentation
+
 - [x] Add JSDoc comments to all exported backend functions
 - [x] Document all environment variables in `README.md`
 - [ ] Final integration test — deploy to staging, verify all 2 feeds load correctly, Docker container starts cleanly

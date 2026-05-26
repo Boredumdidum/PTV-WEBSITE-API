@@ -29,19 +29,21 @@ app.use(metricsMiddleware);
 
 app.use(compression());
 
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "same-origin" },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://unpkg.com"],
-      styleSrc: ["'self'", "https://fonts.googleapis.com", "https://unpkg.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "https://*.tile.openstreetmap.org", "data:"],
-      connectSrc: ["'self'"],
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "same-origin" },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://unpkg.com"],
+        styleSrc: ["'self'", "https://fonts.googleapis.com", "https://unpkg.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "https://*.tile.openstreetmap.org", "data:"],
+        connectSrc: ["'self'"],
+      },
     },
-  },
-}));
+  }),
+);
 app.use(express.json({ limit: "1kb" }));
 app.use(pinoHttp({ logger }));
 
@@ -70,15 +72,21 @@ app.get("/metrics", async (req, res) => {
 
 app.get("/api/gtfs", gtfsLimiter, gtfsHandler);
 
-app.use(express.static(path.join(__dirname), { maxAge: "1d", immutable: true, setHeaders(res, filePath) {
-  if (filePath.endsWith(".html")) {
-    res.set("Cache-Control", "no-cache");
-  }
-} }));
+app.use(
+  express.static(path.join(__dirname), {
+    maxAge: "1d",
+    immutable: true,
+    setHeaders(res, filePath) {
+      if (filePath.endsWith(".html")) {
+        res.set("Cache-Control", "no-cache");
+      }
+    },
+  }),
+);
 
 app.use((err, req, res, next) => {
-	req.log.error({ err }, "Unhandled error");
-	res.status(500).json({ error: "Internal server error." });
+  req.log.error({ err }, "Unhandled error");
+  res.status(500).json({ error: "Internal server error." });
 });
 
 const server = app.listen(PORT, () => {

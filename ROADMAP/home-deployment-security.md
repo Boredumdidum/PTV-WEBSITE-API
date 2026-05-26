@@ -4,34 +4,38 @@
 
 This runs on a Raspberry Pi on a home network, exposed to the internet via a home router and DuckDNS. The risk profile differs from cloud deployments — no DDoS protection, no cloud WAF, no managed firewall, and other family devices share the same LAN.
 
-| Threat | Likelihood | Impact | Notes |
-|---|---|---|---|
-| Port scan / probe bots hitting port 443 | Very High | Low | Constant background noise on home IPs; nginx handles it fine |
-| Brute-force SSH on the Pi | Medium | High | Default Pi has `pi` user with password; must disable password auth |
-| API key leaked via `.env` backup or SD card | Low | High | SD card failure could expose `.env` if RMA'd without wipe |
-| DuckDNS token stolen from Pi | Low | Medium | Lets attacker point your domain to their IP |
-| Compromised device on LAN attacks Pi | Low | High | No IoT devices on network, but consider other LAN devices (laptops, phones) |
-| SD card corruption takes site offline | Medium | Medium | Frequent writes + power loss risk. Mitigated below. |
-| Let's Encrypt auto-renewal fails silently | Medium | Low | Cert expires, site shows SSL warning until manual fix |
+| Threat                                      | Likelihood | Impact | Notes                                                                       |
+| ------------------------------------------- | ---------- | ------ | --------------------------------------------------------------------------- |
+| Port scan / probe bots hitting port 443     | Very High  | Low    | Constant background noise on home IPs; nginx handles it fine                |
+| Brute-force SSH on the Pi                   | Medium     | High   | Default Pi has `pi` user with password; must disable password auth          |
+| API key leaked via `.env` backup or SD card | Low        | High   | SD card failure could expose `.env` if RMA'd without wipe                   |
+| DuckDNS token stolen from Pi                | Low        | Medium | Lets attacker point your domain to their IP                                 |
+| Compromised device on LAN attacks Pi        | Low        | High   | No IoT devices on network, but consider other LAN devices (laptops, phones) |
+| SD card corruption takes site offline       | Medium     | Medium | Frequent writes + power loss risk. Mitigated below.                         |
+| Let's Encrypt auto-renewal fails silently   | Medium     | Low    | Cert expires, site shows SSL warning until manual fix                       |
 
 ---
 
 ## Home Router
 
 ### Port Forwarding
+
 - Forward **only port 443** (HTTPS) to the Pi — never port 80, never 3000
 - Assign a static IP to the Pi on the router (no DHCP in use on this network)
 - Disable WAN admin access on the router — management should be LAN-only
 - Check if your router supports **UPnP** — already disabled on this network
 
 ### Port 80 Is Not Used (DNS-01 Challenge)
+
 This setup uses the **DNS-01 ACME challenge** for Let's Encrypt — no port 80 required. Instead of proving domain ownership by serving a file on port 80, certbot adds a TXT record to your DuckDNS domain via the DuckDNS API. This means:
+
 - No port 80 forwarded on the router — ever
 - No HTTP redirect server block in nginx
 - Certificate renewal is fully automated via a DuckDNS hook script, not an HTTP listener
 - One fewer attack surface on the Pi
 
 ### Router Recommendations
+
 - Keep router firmware updated
 - Change default admin credentials if you haven't already
 - Disable WPS, disable ping from WAN, disable remote management
@@ -42,12 +46,14 @@ This setup uses the **DNS-01 ACME challenge** for Let's Encrypt — no port 80 r
 ## DuckDNS
 
 ### Current Risks
+
 - Token stored in plaintext at `/etc/duckdns/duck.sh`
 - Script runs every 5 minutes as root via cron
 - DuckDNS has no auth beyond the token — anyone with the token can hijack your domain
 - The certbot DNS-01 hook (`scripts/duckdns-hook.sh`) reads the token from `duck.sh` to automate Let's Encrypt verification
 
 ### Mitigations
+
 - Restrict `duck.sh` permissions:
   ```bash
   sudo chmod 600 /etc/duckdns/duck.sh
@@ -61,7 +67,9 @@ This setup uses the **DNS-01 ACME challenge** for Let's Encrypt — no port 80 r
 ## Raspberry Pi Hardening
 
 ### SSH (optional)
+
 SSH is not required for this setup — you can manage the Pi directly with a keyboard and monitor. If you do want remote access:
+
 - Disable password authentication and use SSH keys only
 - Install **fail2ban** to block brute-force attempts:
   ```bash
@@ -69,6 +77,7 @@ SSH is not required for this setup — you can manage the Pi directly with a key
   ```
 
 ### System Updates
+
 - Set up automatic security updates:
   ```bash
   sudo apt-get install -y unattended-upgrades
@@ -112,6 +121,7 @@ The Pi boots from SD card. Frequent writes (logs, system journals, npm cache) ca
 - **Read-only root filesystem** — for a truly static setup, use `overlayroot` to make the root FS read-only, with all writes sent to a tmpfs overlay that's discarded on reboot
 
 ### Firewall
+
 - Use `iptables` or `ufw` to restrict inbound traffic to only what's needed:
   ```bash
   sudo ufw default deny incoming
@@ -186,6 +196,7 @@ client_max_body_size 1k;
 ```
 
 ### Additional nginx Tips
+
 - Run `sudo nginx -t` after every config change
 - Reload (not restart) to avoid downtime: `sudo systemctl reload nginx`
 - Monitor access logs periodically: `tail -f /var/log/nginx/access.log` — look for unusual patterns
@@ -210,12 +221,15 @@ client_max_body_size 1k;
 ## Monitoring & Alerts
 
 ### Uptime Monitoring
+
 - **UptimeRobot**: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241) — monitors `https://ptv-tracker.duckdns.org` every 5 minutes, emails on downtime
 - **Health endpoint**: The app exposes `GET /health` returning cache status, uptime, and upstream reachability — can be used by any monitoring tool
 - **Metrics endpoint**: The app exposes `GET /metrics` in Prometheus text format — request duration histograms, cache hit/miss counters, upstream latency
 
 ### Structured Logging
+
 The app uses **pino** for JSON-structured logging with per-request correlation IDs. Logs are emitted to stdout and captured by systemd journal:
+
 ```bash
 # Tail recent errors
 journalctl -u ptv-tracker --since "24 hours ago" | grep -i error
@@ -225,6 +239,7 @@ journalctl -u ptv-tracker -f
 ```
 
 ### Log Rotation
+
 Logs grow unbounded on the Pi's SD card — configure rotation:
 
 ```bash
@@ -244,6 +259,7 @@ sudo nano /etc/logrotate.d/ptv-tracker
 ```
 
 ### What to Watch For
+
 - `journalctl -u ptv-tracker --since "24 hours ago" | grep "error"` — backend errors from pino structured logs
 - `tail -f /var/log/nginx/access.log | grep -E " 4[0-9][0-9]| 5[0-9][0-9]"` — client/server errors
 - `curl -s https://ptv-tracker.duckdns.org/health` — health endpoint with cache status

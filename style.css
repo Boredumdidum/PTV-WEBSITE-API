@@ -14,8 +14,7 @@
 	--shadow: #1a1a1a;
 	--font-display: "Barlow Condensed", "Barlow", "DM Sans", sans-serif;
 	--font-body: "Inter", system-ui, -apple-system, sans-serif;
-	--font-data: "JetBrains Mono", "SFMono-Regular", "Menlo", "Consolas",
-		"Liberation Mono", monospace;
+	--font-data: "JetBrains Mono", "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", monospace;
 }
 
 html.dark {
@@ -44,7 +43,9 @@ body {
 	font-size: 14px;
 	background: var(--bg);
 	color: var(--text);
-	transition: background 0.2s, color 0.2s;
+	transition:
+		background 0.2s,
+		color 0.2s;
 }
 
 .layout {
@@ -64,7 +65,9 @@ body {
 	cursor: pointer;
 	line-height: 1;
 	color: var(--sidebar-text);
-	transition: transform 0.1s, box-shadow 0.1s;
+	transition:
+		transform 0.1s,
+		box-shadow 0.1s;
 }
 
 .sidebar-toggle:active {
@@ -127,7 +130,9 @@ body {
 	font-weight: 600;
 	text-align: left;
 	cursor: pointer;
-	transition: background 0.15s, border-color 0.15s;
+	transition:
+		background 0.15s,
+		border-color 0.15s;
 }
 
 .nav-btn:focus-visible {
@@ -469,7 +474,9 @@ pre {
 	background: var(--bg-card);
 	color: var(--text);
 	box-shadow: 4px 4px 0 var(--shadow);
-	transition: transform 0.1s, box-shadow 0.1s;
+	transition:
+		transform 0.1s,
+		box-shadow 0.1s;
 }
 
 .btn:active {
@@ -601,7 +608,9 @@ pre {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	*, *::before, *::after {
+	*,
+	*::before,
+	*::after {
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;

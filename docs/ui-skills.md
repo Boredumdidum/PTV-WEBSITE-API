@@ -24,19 +24,19 @@ Use CSS custom properties on `:root`. All components must reference these variab
 
 ```css
 :root {
-    --bg: #F5F0EB;
-    --bg-card: #FFFFFF;
-    --text: #1A1A1A;
-    --text-muted: #6B6B6B;
-    --border: #1A1A1A;
-    --accent: #339AF0;
-    --accent-hover: #1C7ED6;
-    --danger: #FF6B6B;
-    --danger-hover: #E03131;
-    --sidebar-bg: #1A1A1A;
-    --sidebar-text: #F5F0EB;
-    --sidebar-hover: #333333;
-    --shadow: #1A1A1A;
+  --bg: #f5f0eb;
+  --bg-card: #ffffff;
+  --text: #1a1a1a;
+  --text-muted: #6b6b6b;
+  --border: #1a1a1a;
+  --accent: #339af0;
+  --accent-hover: #1c7ed6;
+  --danger: #ff6b6b;
+  --danger-hover: #e03131;
+  --sidebar-bg: #1a1a1a;
+  --sidebar-text: #f5f0eb;
+  --sidebar-hover: #333333;
+  --shadow: #1a1a1a;
 }
 ```
 
@@ -44,31 +44,31 @@ Use CSS custom properties on `:root`. All components must reference these variab
 
 ```css
 body.dark {
-    --bg: #1A1A1A;
-    --bg-card: #2A2A2A;
-    --text: #F5F0EB;
-    --text-muted: #A0A0A0;
-    --border: #F5F0EB;
-    --sidebar-bg: #111111;
-    --sidebar-text: #F5F0EB;
-    --sidebar-hover: #333333;
-    --shadow: #000000;
+  --bg: #1a1a1a;
+  --bg-card: #2a2a2a;
+  --text: #f5f0eb;
+  --text-muted: #a0a0a0;
+  --border: #f5f0eb;
+  --sidebar-bg: #111111;
+  --sidebar-text: #f5f0eb;
+  --sidebar-hover: #333333;
+  --shadow: #000000;
 }
 ```
 
 ### Accent palette
 
-| Colour | Hex |
-|--------|-----|
-| Yellow | `#FFD43B` |
-| Blue | `#339AF0` |
-| Red | `#FF6B6B` |
-| Green | `#51CF66` / `#B2F2BB` |
-| Light Blue | `#A5D8FF` |
-| Pink | `#FFBDBD` |
-| Purple | `#CC5DE8` |
-| Orange | `#FF922B` |
-| Teal | `#20C997` |
+| Colour     | Hex                   |
+| ---------- | --------------------- |
+| Yellow     | `#FFD43B`             |
+| Blue       | `#339AF0`             |
+| Red        | `#FF6B6B`             |
+| Green      | `#51CF66` / `#B2F2BB` |
+| Light Blue | `#A5D8FF`             |
+| Pink       | `#FFBDBD`             |
+| Purple     | `#CC5DE8`             |
+| Orange     | `#FF922B`             |
+| Teal       | `#20C997`             |
 
 Use these for icon backgrounds, chart bars, progress fills, highlights, and any place a bold spot colour is needed.
 
@@ -97,16 +97,16 @@ Use these for icon backgrounds, chart bars, progress fills, highlights, and any 
 
 ### Sizes
 
-| Element | Size |
-|---------|------|
-| Page title | 36px |
-| Card title | 22px |
-| Stat value | 26px |
-| Large display value | 48px |
-| Body/buttons/inputs | 14px |
-| Small label | 12px, uppercase, letter-spacing 1px |
-| Subtitle | 15px |
-| Logo text | 54px |
+| Element             | Size                                |
+| ------------------- | ----------------------------------- |
+| Page title          | 36px                                |
+| Card title          | 22px                                |
+| Stat value          | 26px                                |
+| Large display value | 48px                                |
+| Body/buttons/inputs | 14px                                |
+| Small label         | 12px, uppercase, letter-spacing 1px |
+| Subtitle            | 15px                                |
+| Logo text           | 54px                                |
 
 ---
 
@@ -160,32 +160,34 @@ Base class `.btn` with modifier classes:
 
 ```css
 .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    border: 3px solid var(--border);
-    border-radius: 0;
-    box-shadow: 4px 4px 0 var(--shadow);
-    transition: transform 0.1s, box-shadow 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 3px solid var(--border);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 var(--shadow);
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
 }
 
 .btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0 var(--shadow);
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--shadow);
 }
 ```
 
-| Variant | Background | Text colour |
-|---------|-----------|-------------|
-| `.btn-primary` | `var(--accent)` | `#fff` |
-| `.btn-outline` | `var(--bg-card)` | `var(--text)` |
-| `.btn-danger` | `var(--danger)` | `#fff` |
-| `.btn-sm` | (inherits) | (inherits), padding `6px 12px`, font-size `12px`, shadow `3px 3px 0` |
+| Variant        | Background       | Text colour                                                          |
+| -------------- | ---------------- | -------------------------------------------------------------------- |
+| `.btn-primary` | `var(--accent)`  | `#fff`                                                               |
+| `.btn-outline` | `var(--bg-card)` | `var(--text)`                                                        |
+| `.btn-danger`  | `var(--danger)`  | `#fff`                                                               |
+| `.btn-sm`      | (inherits)       | (inherits), padding `6px 12px`, font-size `12px`, shadow `3px 3px 0` |
 
 The `:active` state creates a physical "press" effect by translating the button 2px down-right and shrinking the shadow.
 
@@ -193,12 +195,12 @@ The `:active` state creates a physical "press" effect by translating the button 
 
 ```css
 .card {
-    background: var(--bg-card);
-    border: 3px solid var(--border);
-    border-radius: 0;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 6px 6px 0 var(--shadow);
+  background: var(--bg-card);
+  border: 3px solid var(--border);
+  border-radius: 0;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 6px 6px 0 var(--shadow);
 }
 ```
 
@@ -206,10 +208,10 @@ The `:active` state creates a physical "press" effect by translating the button 
 
 ```css
 .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
 }
 ```
 
@@ -222,8 +224,8 @@ A card containing a coloured icon box (48x48, 3px border) and a label/value pair
 ```css
 border: 3px solid var(--border);
 border-radius: 0;
-padding: 10px 14px;       /* inputs */
-padding: 12px;            /* textareas */
+padding: 10px 14px; /* inputs */
+padding: 12px; /* textareas */
 background: var(--bg);
 color: var(--text);
 font-family: var(--font-body);
@@ -263,6 +265,7 @@ Each toast: `padding: 12px 18px`, `border: 3px solid var(--border)`, `box-shadow
 ### Tab / Page Navigation
 
 Sidebar nav buttons switch between content panels. Clicking a button:
+
 1. Removes `.active` from all nav buttons and all panel elements
 2. Adds `.active` to the clicked button and the corresponding panel
 
@@ -288,9 +291,9 @@ Always escape user input before inserting into `innerHTML`:
 
 ```js
 function escapeHTML(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
 }
 ```
 
@@ -312,18 +315,18 @@ At `max-width: 768px`:
 
 ## TRANSITIONS SUMMARY
 
-| Element | Property | Duration | Easing |
-|---------|----------|----------|--------|
-| `body` | `background, color` | `0.2s` | default |
-| `.btn` | `transform, box-shadow` | `0.1s` | default |
-| `.bar` | `height` | `0.4s` | `ease` |
-| `.progress-fill` | `width` | `0.5s` | `ease` |
-| `.accordion-content` | `max-height` | `0.25s` | `ease` |
-| `.accordion-chevron` | `transform` | `0.2s` | default |
-| `.nav-btn` | `background, border-color` | `0.15s` | default |
-| List items | `background` | `0.1s` | default |
-| Toast in | `opacity, transform` | `0.25s` | `ease` |
-| Toast out | `opacity, transform` | `0.2s` | `ease` |
+| Element              | Property                   | Duration | Easing  |
+| -------------------- | -------------------------- | -------- | ------- |
+| `body`               | `background, color`        | `0.2s`   | default |
+| `.btn`               | `transform, box-shadow`    | `0.1s`   | default |
+| `.bar`               | `height`                   | `0.4s`   | `ease`  |
+| `.progress-fill`     | `width`                    | `0.5s`   | `ease`  |
+| `.accordion-content` | `max-height`               | `0.25s`  | `ease`  |
+| `.accordion-chevron` | `transform`                | `0.2s`   | default |
+| `.nav-btn`           | `background, border-color` | `0.15s`  | default |
+| List items           | `background`               | `0.1s`   | default |
+| Toast in             | `opacity, transform`       | `0.25s`  | `ease`  |
+| Toast out            | `opacity, transform`       | `0.2s`   | `ease`  |
 
 ---
 

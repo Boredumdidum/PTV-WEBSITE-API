@@ -28,19 +28,20 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 
 ## Stack
 
-| Layer | |
-|---|---|
-| Backend | Node.js, Express 4.19, Helmet, Pino, express-rate-limit |
-| Frontend | Vanilla HTML, CSS, JavaScript |
-| Map | Leaflet 1.9.4 (CDN) + OpenStreetMap tiles |
-| Icons | Lucide (CDN) |
-| Data | GTFS Realtime (Protocol Buffers) |
-| TLS | nginx reverse proxy (self-signed or Let's Encrypt) |
-| Container | Docker (multi-stage Node 20 Alpine), Docker Compose |
+| Layer     |                                                         |
+| --------- | ------------------------------------------------------- |
+| Backend   | Node.js, Express 4.19, Helmet, Pino, express-rate-limit |
+| Frontend  | Vanilla HTML, CSS, JavaScript                           |
+| Map       | Leaflet 1.9.4 (CDN) + OpenStreetMap tiles               |
+| Icons     | Lucide (CDN)                                            |
+| Data      | GTFS Realtime (Protocol Buffers)                        |
+| TLS       | nginx reverse proxy (self-signed or Let's Encrypt)      |
+| Container | Docker (multi-stage Node 20 Alpine), Docker Compose     |
 
 ## Quick Start
 
 ### With Node
+
 ```bash
 npm install
 echo "PTV_API_KEY=your-key-here" > .env
@@ -49,6 +50,7 @@ npm start
 ```
 
 ### With Docker
+
 ```bash
 echo "PTV_API_KEY=your-key-here" > .env
 chmod 600 .env
@@ -64,13 +66,13 @@ npm run test:e2e         # Playwright browser smoke tests (requires npm install 
 
 ## Configuration
 
-| Variable | Default | Description |
-|---|---|---|
-| `PTV_API_KEY` | *required* | PTV Open Data API subscription key |
-| `PORT` | `3000` | Port the Express server listens on |
-| `CACHE_TTL_MS` | `30000` | Feed cache TTL in milliseconds |
-| `REQUEST_TIMEOUT_MS` | `15000` | Upstream fetch timeout in milliseconds |
-| `LOG_LEVEL` | `info` | Pino log level (`fatal`, `error`, `warn`, `info`, `debug`, `trace`) |
+| Variable             | Default    | Description                                                         |
+| -------------------- | ---------- | ------------------------------------------------------------------- |
+| `PTV_API_KEY`        | _required_ | PTV Open Data API subscription key                                  |
+| `PORT`               | `3000`     | Port the Express server listens on                                  |
+| `CACHE_TTL_MS`       | `30000`    | Feed cache TTL in milliseconds                                      |
+| `REQUEST_TIMEOUT_MS` | `15000`    | Upstream fetch timeout in milliseconds                              |
+| `LOG_LEVEL`          | `info`     | Pino log level (`fatal`, `error`, `warn`, `info`, `debug`, `trace`) |
 
 ## Raspberry Pi Deployment
 
@@ -112,12 +114,12 @@ See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment
 
 ## API
 
-| Endpoint | Description |
-|---|---|
-| `GET /api/gtfs?feed=<key>&limit=<n>` | Fetch and decode a GTFS-RT feed (rate-limited, 60 req/min) |
-| `GET /health` | Health check — cache status, uptime, upstream reachability |
-| `GET /metrics` | Prometheus metrics — request duration, cache hit/miss, upstream latency |
-| `GET /` | Dashboard UI (static files) |
+| Endpoint                             | Description                                                             |
+| ------------------------------------ | ----------------------------------------------------------------------- |
+| `GET /api/gtfs?feed=<key>&limit=<n>` | Fetch and decode a GTFS-RT feed (rate-limited, 60 req/min)              |
+| `GET /health`                        | Health check — cache status, uptime, upstream reachability              |
+| `GET /metrics`                       | Prometheus metrics — request duration, cache hit/miss, upstream latency |
+| `GET /`                              | Dashboard UI (static files)                                             |
 
 ### Feed Keys
 
@@ -131,6 +133,7 @@ Apache 2.0 — see [LICENSE](LICENSE).
 ## Roadmap
 
 See the [ROADMAP](ROADMAP) folder for:
+
 - [Code review & suggestions](ROADMAP/code-review.md)
 - [Front-end sprint plan](ROADMAP/frontend-sprint.md)
 - [Back-end sprint plan](ROADMAP/backend-sprint.md)
