@@ -70,7 +70,11 @@ app.get("/metrics", async (req, res) => {
 
 app.get("/api/gtfs", gtfsLimiter, gtfsHandler);
 
-app.use(express.static(path.join(__dirname), { maxAge: "1d", immutable: true }));
+app.use(express.static(path.join(__dirname), { maxAge: "1d", immutable: true, setHeaders(res, filePath) {
+  if (filePath.endsWith(".html")) {
+    res.set("Cache-Control", "no-cache");
+  }
+} }));
 
 app.use((err, req, res, next) => {
 	req.log.error({ err }, "Unhandled error");
