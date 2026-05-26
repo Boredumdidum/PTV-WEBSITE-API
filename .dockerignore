@@ -6,7 +6,6 @@ ROADMAP
 docs
 scripts
 data
-fonts
 *.md
 *.json
 !package.json
