@@ -689,11 +689,15 @@ function updateMap(feed, entities, routeQuery) {
 		const speed = formatSpeed(item.position.speed);
 		const occupancy = formatEnum(item.vehicle.occupancyStatus);
 		const congestion = formatEnum(item.vehicle.congestionLevel);
+		const direction = getDirectionKey(item);
+		const directionLabel = busMode
+			? direction === 1 ? "City bound" : "Outbound"
+			: direction === 1 ? "City bound" : "Flinders St bound";
 
 		const popupLines = [
 			`<strong>${escapeHTML(routeId)}</strong>`,
-			`Type: ${busMode ? "Bus" : "Train"}`,
-			`Updated: ${escapeHTML(updated)}`,
+			`${busMode ? "Bus" : "Train"} · ${directionLabel}`,
+			`Updated ${escapeHTML(updated)}`,
 		];
 		if (speed) {
 			popupLines.push(`Speed: ${escapeHTML(speed)}`);
