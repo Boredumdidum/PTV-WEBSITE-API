@@ -563,7 +563,31 @@ function initMap() {
 function formatRouteName(routeId) {
 	const cleaned = String(routeId);
 	const parts = cleaned.split(":");
-	return escapeHTML(parts[parts.length - 1]);
+	const last = parts[parts.length - 1];
+	return escapeHTML(last);
+}
+
+const TRAIN_ROUTE_NAMES = {
+	"1": "Alamein",
+	"2": "Lilydale",
+	"3": "Belgrave",
+	"4": "Glen Waverley",
+	"5": "Sandringham",
+	"6": "Pakenham",
+	"7": "Frankston",
+	"8": "Werribee / Williamstown",
+	"9": "Craigieburn",
+	"10": "Upfield",
+	"11": "Mernda",
+	"12": "Hurstbridge",
+	"13": "Sunbury",
+};
+
+function displayRouteName(routeId, busMode) {
+	if (busMode) {
+		return formatRouteName(routeId);
+	}
+	return TRAIN_ROUTE_NAMES[String(routeId)] || formatRouteName(routeId);
 }
 
 function updateMap(feed, entities, routeQuery) {
@@ -701,7 +725,7 @@ function updateMap(feed, entities, routeQuery) {
 			: direction === 1 ? "City bound" : "Flinders St bound";
 
 		const vehicleType = busMode ? "Bus" : "Train";
-		const title = routeId ? formatRouteName(routeId) : vehicleType;
+		const title = routeId ? displayRouteName(routeId, busMode) : vehicleType;
 		const popupHtml = "<strong>" + title + "</strong><br />"
 			+ vehicleType + " - " + directionLabel + "<br />"
 			+ "Updated " + escapeHTML(updated);
