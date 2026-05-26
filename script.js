@@ -18,6 +18,7 @@ const toastContainer = document.getElementById("toast-container");
 
 const DEFAULT_MAP_CENTER = [-37.8136, 144.9631];
 const DEFAULT_MAP_ZOOM = 11;
+const VICTORIA_BOUNDS = [[-39.5, 140.5], [-33.5, 150.5]];
 const VEHICLE_FEEDS = new Set(["metro-vehicle-positions", "bus-vehicle-positions"]);
 const FEED_COLORS = {
 	"metro-vehicle-positions": "#0f5b61",
@@ -539,10 +540,13 @@ function initMap() {
 		return;
 	}
 
-	mapInstance = L.map(mapEl, { scrollWheelZoom: true, zoomControl: false }).setView(
-		DEFAULT_MAP_CENTER,
-		DEFAULT_MAP_ZOOM
-	);
+	mapInstance = L.map(mapEl, {
+		scrollWheelZoom: true,
+		zoomControl: false,
+		maxBounds: VICTORIA_BOUNDS,
+		maxBoundsViscosity: 1,
+		minZoom: 7,
+	}).setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
 
 	L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 		maxZoom: 19,
@@ -688,6 +692,7 @@ function updateMap(feed, entities, routeQuery) {
 
 		const popupLines = [
 			`<strong>${escapeHTML(routeId)}</strong>`,
+			`Type: ${busMode ? "Bus" : "Train"}`,
 			`Updated: ${escapeHTML(updated)}`,
 		];
 		if (speed) {
