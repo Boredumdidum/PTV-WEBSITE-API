@@ -333,4 +333,10 @@ At `max-width: 768px`:
 - Lucide icons via CDN (`https://unpkg.com/lucide@latest/dist/umd/lucide.js`)
 - Google Fonts: Barlow Condensed, Inter, JetBrains Mono (`https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Inter:opsz,wght@14..32,300..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap`)
 - `localStorage` for persisting user preferences and data
-- Single `index.html`, `style.css`, `script.js` file structure
+- ES modules (`type="module"`) with entry point `script.js` importing from `src/`:
+  - `src/constants.js` — shared constants (map defaults, feed config, train route codes)
+  - `src/utils/format.js` — pure formatting functions
+  - `src/utils/dom.js` — DOM manipulation helpers
+  - `src/components/map.js` — Leaflet map logic, markers, route lines
+  - `src/components/dashboard.js` — data fetching, mock data, feed navigation
+- `localStorage` for persisting user preferences and data

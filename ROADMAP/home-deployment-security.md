@@ -117,13 +117,13 @@ The Pi boots from SD card. Frequent writes (logs, system journals, npm cache) ca
   sudo ufw default deny incoming
   sudo ufw default allow outgoing
   sudo ufw allow 22/tcp     # SSH
-  sudo ufw allow 25/tcp     # SMTP
   sudo ufw allow 443/tcp    # HTTPS (PTV tracker)
   sudo ufw allow 587/tcp    # SMTP submission
   sudo ufw enable
   ```
-- `setup_pi.py` opens these 4 ports automatically (22, 25, 443, 587) when configuring UFW
-- Use `--allow-ports 8080,993` to open additional ports beyond these four
+- Port 25 is not needed unless you run an SMTP proxy that receives mail on that port
+- `setup_pi.py` opens ports 22, 25, 443, 587 by default; use `--allow-ports` to add more
+- On this deployment, UFW is configured to allow only 22, 443, 587
 
 ---
 
@@ -200,7 +200,7 @@ client_max_body_size 1k;
   sudo chown ptvtracker:ptvtracker /opt/ptv-tracker/.env
   ```
 - The systemd `EnvironmentFile` directive reads the file as root before dropping to the `ptvtracker` user — this is correct behaviour
-- Additional supported env vars: `LOG_LEVEL` (default `info`), `CACHE_TTL_MS` (default `30000`), `PORT` (default `3000`)
+- Additional supported env vars: `LOG_LEVEL` (default `info`), `CACHE_TTL_MS` (default `30000`), `REQUEST_TIMEOUT_MS` (default `15000`), `PORT` (default `3000`)
 - If you back up the Pi SD card, ensure the `.env` file is excluded from backups that leave your home
 - Rotate the PTV API key periodically from the [PTV Developer Portal](https://developer.ptv.vic.gov.au)
 - The API key is never sent to the browser — confirmed by code review
@@ -212,6 +212,7 @@ client_max_body_size 1k;
 ### Uptime Monitoring
 - **UptimeRobot**: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241) — monitors `https://ptv-tracker.duckdns.org` every 5 minutes, emails on downtime
 - **Health endpoint**: The app exposes `GET /health` returning cache status, uptime, and upstream reachability — can be used by any monitoring tool
+- **Metrics endpoint**: The app exposes `GET /metrics` in Prometheus text format — request duration histograms, cache hit/miss counters, upstream latency
 
 ### Structured Logging
 The app uses **pino** for JSON-structured logging with per-request correlation IDs. Logs are emitted to stdout and captured by systemd journal:
@@ -264,7 +265,7 @@ sudo nano /etc/logrotate.d/ptv-tracker
 - [x] Router: forwarded port 443 only (never 80), UPnP disabled, changed admin password, disabled WAN ping
 - [x] Router: static IP assigned to Pi (no DHCP on this network)
 - [x] DuckDNS: `duck.sh` permissions 600, DNS-01 automation hook script set up (`scripts/duckdns-hook.sh`)
-- [x] UFW: deny incoming by default, allow 443 (and SSH if needed)
+- [x] UFW: deny incoming by default, allow 443, 22, 587 (user simplified from original 22,25,443,587)
 - [ ] nginx: TLS 1.2/1.3 only, no port 80 server block, only GET/HEAD allowed (handled by `setup_pi.py`)
 - [ ] nginx: `client_max_body_size 1k` (optional — app-level size limits can replace this)
 - [x] Helmet: 7 security headers set at the Express app level
@@ -272,6 +273,10 @@ sudo nano /etc/logrotate.d/ptv-tracker
 - [x] `.env`: permissions 600, owned by ptvtracker
 - [x] Unattended upgrades enabled
 - [x] Uptime monitoring set up: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)
+- [x] Prometheus metrics endpoint (`/metrics`) added
+- [x] Request timeout (15s) on upstream fetches
+- [x] Frontend modularised into ES modules under `src/`
+- [x] Playwright smoke tests added (10 tests)
 - [ ] Log rotation configured for app (journald) and nginx logs
 - [x] Physical access: Pi in a locked location
 - [ ] SD card mitigations applied (tmpfs for logs/tmp, swap disabled, quality PSU, high-endurance card)

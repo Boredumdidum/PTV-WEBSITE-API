@@ -1,18 +1,18 @@
 # Front-End Developer — Sprint Plan
 
 ## Task List
-- [ ] Refactor `script.js` into ES module files by domain (map, dashboard, preview, utils)
+- [x] Refactor `script.js` into ES module files by domain (map, dashboard, preview, utils)
 - [ ] Debounce the route search input to prevent excessive re-renders
 - [ ] Add loading skeleton/shimmer state for stat cards during data fetch
 - [ ] Implement retry button with exponential backoff on network errors
 - [ ] Add keyboard navigation and ARIA labels for accessibility
-- [ ] Move Leaflet configuration into a constants/config object
+- [x] Move Leaflet configuration into a constants/config object
 - [ ] Add `prefers-reduced-motion` and `prefers-color-scheme` media query support
 - [ ] Extract CSS custom properties into `tokens.css`
 - [ ] Add a CSS reset / normalise styles across browsers
 - [ ] Add client-side performance instrumentation
-- [ ] Create `src/components/`, `src/utils/`, `src/config/` directory structure
-- [ ] Add basic DOM smoke tests (Playwright or happy-dom)
+- [x] Create `src/components/`, `src/utils/`, `src/config/` directory structure
+- [x] Add basic DOM smoke tests (Playwright or happy-dom)
 - [ ] Create `.env.example` with all documented variables
 - [x] Design and add favicon (SVG) — map pin with position dot, configured in `<head>`
 

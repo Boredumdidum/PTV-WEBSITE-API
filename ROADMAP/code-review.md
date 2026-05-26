@@ -17,12 +17,12 @@
 - [x] Graceful shutdown handler (`SIGTERM`/`SIGINT`) to close the server cleanly
 
 ## Frontend (`script.js`)
-- Extract UI components into separate files (e.g. `components/map.js`, `components/dashboard.js`, `utils/format.js`) — the single ~1190-line file is becoming hard to maintain
+- [x] Extract UI components into separate files (e.g. `components/map.js`, `components/dashboard.js`, `utils/format.js`) — the single ~1075-line file was becoming hard to maintain
 - Replace raw DOM manipulation with a small reactive pattern or vanilla web components for better state management
 - Debounce the route search input handler to avoid excessive re-renders during fast typing
 - Handle network errors more gracefully — show a retry button with exponential backoff instead of a static error message
 - Add a loading skeleton / shimmer for stat cards while data is fetched
-- Move Leaflet tile URL and map defaults into a config object instead of hardcoding in `initMap()`
+- [x] Move Leaflet tile URL and map defaults into a config object instead of hardcoding in `initMap()`
 - Add keyboard navigation support for the sidebar (arrow keys, Enter/Space to activate)
 - Add ARIA labels to interactive elements (nav buttons, feed selector, theme toggle) for accessibility
 
@@ -46,7 +46,7 @@
 - The Python deployment scripts could be converted to Ansible playbooks for idempotent provisioning
 - Add a CI/CD pipeline stub (GitHub Actions) for linting on PR and auto-deploy on merge to main
 - Consider using PM2 or `systemd` watchdog to auto-restart the Node process if it crashes
-- Add Prometheus metrics endpoint (`/metrics`) for monitoring cache hit rates, request latency, and upstream API errors
+- [x] Add Prometheus metrics endpoint (`/metrics`) for monitoring cache hit rates, request latency, and upstream API errors
 
 ## Monitoring / Observability
 - [x] Add structured logging (`pino`) instead of `console.log` — pipe to a file or journald on the Pi
