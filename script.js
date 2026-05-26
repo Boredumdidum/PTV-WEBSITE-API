@@ -977,6 +977,17 @@ if (themeToggle) {
 	});
 }
 
+const sidebarToggle = document.getElementById("sidebar-toggle");
+if (sidebarToggle) {
+	const isClosed = localStorage.getItem("sidebar-closed") === "true";
+	if (isClosed) document.body.classList.add("sidebar-closed");
+
+	sidebarToggle.addEventListener("click", () => {
+		const closed = document.body.classList.toggle("sidebar-closed");
+		localStorage.setItem("sidebar-closed", closed);
+	});
+}
+
 if (routeSearchInput) {
 	routeSearchInput.addEventListener("input", () => {
 		if (lastPayload && lastFeed) {

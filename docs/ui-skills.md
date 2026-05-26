@@ -78,13 +78,13 @@ Use these for icon backgrounds, chart bars, progress fills, highlights, and any 
 
 ### Fonts to load
 
-1. **Display font** — a bold, playful, bubble-style display font for headings and large values. Use "Pop Happiness" (loaded locally via `@font-face`) if available, otherwise substitute with a bold rounded display font from Google Fonts (e.g. "Lilita One", "Fredoka One", "Bungee").
+1. **Display font** — a bold, playful, bubble-style display font for headings and large values. Use "Lilita One" from Google Fonts.
 2. **Body font** — "DM Sans" from Google Fonts (weights 400, 500, 700).
 
 ### Font variables
 
 ```css
---font-display: 'Pop Happiness', 'Lilita One', 'Fredoka One', 'DM Sans', sans-serif;
+--font-display: 'Lilita One', 'DM Sans', sans-serif;
 --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
 ```
 

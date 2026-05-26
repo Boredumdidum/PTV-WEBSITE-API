@@ -22,6 +22,9 @@
 	<body>
 		<div class="layout">
 			<aside class="sidebar">
+				<button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="Toggle sidebar">
+					<i data-lucide="menu" class="icon"></i>
+				</button>
 				<div class="logo" aria-label="PTV">PTV</div>
 				<nav class="nav" aria-label="Primary">
 					<button class="nav-btn active" type="button" data-panel="panel-dashboard">
@@ -42,109 +45,107 @@
 			</aside>
 
 			<main class="main">
-				<header class="page-header">
-					<div>
-						<p class="subtitle">PTV GTFS Realtime</p>
-						<h1 class="page-title">Live transit pulse</h1>
-						<p class="subtitle muted">
-							Your browser only talks to a local proxy. The API key stays on the
-							server, while the feed is decoded into readable JSON.
-						</p>
-					</div>
-					<button id="load" class="btn btn-primary" type="button">
-						<i data-lucide="refresh-cw" class="icon"></i>
-						<span>Fetch latest</span>
-					</button>
-				</header>
+				<div class="main-map">
+					<span id="map-hint" class="note">Vehicle positions only</span>
+					<div
+						id="map"
+						class="map"
+						role="img"
+						aria-label="Vehicle positions map"
+					></div>
+					<div id="map-empty" class="map-empty" role="status" aria-live="polite"></div>
+				</div>
+				<div class="main-content">
+					<header class="page-header">
+						<div>
+							<p class="subtitle">PTV GTFS Realtime</p>
+							<h1 class="page-title">Live transit pulse</h1>
+							<p class="subtitle muted">
+								Your browser only talks to a local proxy. The API key stays on the
+								server, while the feed is decoded into readable JSON.
+							</p>
+						</div>
+						<button id="load" class="btn btn-primary" type="button">
+							<i data-lucide="refresh-cw" class="icon"></i>
+							<span>Fetch latest</span>
+						</button>
+					</header>
 
-				<section id="panel-dashboard" class="panel active">
-					<div class="card">
-						<div class="card-header">
-							<h2 class="card-title">Feed controls</h2>
-							<span class="note">Choose a feed and refresh</span>
-						</div>
-						<div class="control-grid">
-							<div class="field">
-								<label for="feed">Feed</label>
-								<select id="feed">
-									<option value="metro-trip-updates">Metro train trip updates</option>
-									<option value="metro-service-alerts">Metro train service alerts</option>
-									<option value="metro-vehicle-positions">Metro train vehicle positions</option>
-									<option value="bus-trip-updates">Bus trip updates</option>
-									<option value="bus-vehicle-positions">Bus vehicle positions</option>
-								</select>
+					<section id="panel-dashboard" class="panel active">
+						<div class="card">
+							<div class="card-header">
+								<h2 class="card-title">Feed controls</h2>
+								<span class="note">Choose a feed and refresh</span>
 							</div>
-							<div class="field">
-								<label for="route-search">Route search</label>
-								<input
-									id="route-search"
-									type="text"
-									inputmode="numeric"
-									placeholder="e.g. 765 or 733"
-									autocomplete="off"
-								/>
+							<div class="control-grid">
+								<div class="field">
+									<label for="feed">Feed</label>
+									<select id="feed">
+										<option value="metro-trip-updates">Metro train trip updates</option>
+										<option value="metro-service-alerts">Metro train service alerts</option>
+										<option value="metro-vehicle-positions">Metro train vehicle positions</option>
+										<option value="bus-trip-updates">Bus trip updates</option>
+										<option value="bus-vehicle-positions">Bus vehicle positions</option>
+									</select>
+								</div>
+								<div class="field">
+									<label for="route-search">Route search</label>
+									<input
+										id="route-search"
+										type="text"
+										inputmode="numeric"
+										placeholder="e.g. 765 or 733"
+										autocomplete="off"
+									/>
+								</div>
+								<label class="checkbox-row">
+									<input id="mock" class="checkbox" type="checkbox" />
+									<span>Use mock data (offline)</span>
+								</label>
 							</div>
-							<label class="checkbox-row">
-								<input id="mock" class="checkbox" type="checkbox" />
-								<span>Use mock data (offline)</span>
-							</label>
+							<div class="status-row">
+								<span class="label">Status</span>
+								<span id="status" class="status" data-state="idle">Idle</span>
+								<span id="error" class="error" role="alert"></span>
+							</div>
 						</div>
-						<div class="status-row">
-							<span class="label">Status</span>
-							<span id="status" class="status" data-state="idle">Idle</span>
-							<span id="error" class="error" role="alert"></span>
-						</div>
-					</div>
 
-					<div class="card-grid">
-						<div class="card stat-card">
-							<div class="icon-box accent-yellow">
-								<i data-lucide="clock" class="icon icon-lg"></i>
+						<div class="card-grid">
+							<div class="card stat-card">
+								<div class="icon-box accent-yellow">
+									<i data-lucide="clock" class="icon icon-lg"></i>
+								</div>
+								<div>
+									<span class="label">Feed timestamp</span>
+									<div id="updated" class="stat-value">-</div>
+								</div>
 							</div>
-							<div>
-								<span class="label">Feed timestamp</span>
-								<div id="updated" class="stat-value">-</div>
+							<div class="card stat-card">
+								<div class="icon-box accent-blue">
+									<i data-lucide="layers" class="icon icon-lg"></i>
+								</div>
+								<div>
+									<span class="label">Entities in preview</span>
+									<div id="count" class="stat-value">-</div>
+								</div>
 							</div>
 						</div>
-						<div class="card stat-card">
-							<div class="icon-box accent-blue">
-								<i data-lucide="layers" class="icon icon-lg"></i>
-							</div>
-							<div>
-								<span class="label">Entities in preview</span>
-								<div id="count" class="stat-value">-</div>
-							</div>
-						</div>
-					</div>
+					</section>
 
-					<div class="card">
-						<div class="card-header">
-							<h2 class="card-title">Map view</h2>
-							<span id="map-hint" class="note">Vehicle positions only</span>
+					<section id="panel-preview" class="panel">
+						<div class="card">
+							<div class="card-header">
+								<h2 class="card-title">Preview payload</h2>
+								<span class="note">First 5 entities</span>
+							</div>
+							<pre id="preview">Waiting for data...</pre>
 						</div>
-						<div
-							id="map"
-							class="map"
-							role="img"
-							aria-label="Vehicle positions map"
-						></div>
-						<div id="map-empty" class="map-empty" role="status" aria-live="polite"></div>
-					</div>
-				</section>
+					</section>
 
-				<section id="panel-preview" class="panel">
-					<div class="card">
-						<div class="card-header">
-							<h2 class="card-title">Preview payload</h2>
-							<span class="note">First 5 entities</span>
-						</div>
-						<pre id="preview">Waiting for data...</pre>
-					</div>
-				</section>
-
-				<footer class="footer">
-					<span>Local proxy cache: 30 seconds. Safe for screenshots.</span>
-				</footer>
+					<footer class="footer">
+						<span>Local proxy cache: 30 seconds. Safe for screenshots.</span>
+					</footer>
+				</div>
 			</main>
 		</div>
 		<div id="toast-container" class="toast-container" aria-live="polite"></div>
