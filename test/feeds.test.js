@@ -3,16 +3,13 @@ const assert = require("node:assert");
 const { FEEDS, isValidFeedKey, getFeedUrl } = require("../config/feeds");
 
 const VALID_KEYS = [
-  "metro-trip-updates",
-  "metro-service-alerts",
   "metro-vehicle-positions",
-  "bus-trip-updates",
   "bus-vehicle-positions",
 ];
 
 describe("config/feeds", () => {
-  it("has all 5 feed keys", () => {
-    assert.strictEqual(Object.keys(FEEDS).length, 5);
+  it("has all 2 feed keys", () => {
+    assert.strictEqual(Object.keys(FEEDS).length, 2);
   });
 
   for (const key of VALID_KEYS) {

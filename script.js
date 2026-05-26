@@ -735,42 +735,6 @@ function buildMockData(feed) {
 	};
 	const isBus = typeof feed === "string" && feed.startsWith("bus-");
 
-	if (feed === "metro-service-alerts") {
-		return {
-			...base,
-			entity: [
-				{
-					id: "alert-1",
-					alert: {
-						effect: "SIGNIFICANT_DELAYS",
-						headerText: {
-							translation: [{ text: "Frankston line delays near Caulfield" }],
-						},
-						descriptionText: {
-							translation: [{ text: "Expect 10-15 minute delays." }],
-						},
-						informedEntity: [{ routeId: "Frankston" }],
-					},
-				},
-				{
-					id: "alert-2",
-					alert: {
-						effect: "STOP_MOVED",
-						headerText: {
-							translation: [{ text: "Werribee line platform change" }],
-						},
-						descriptionText: {
-							translation: [
-								{ text: "Platform 2 is closed at Footscray. Trains use platform 4." },
-							],
-						},
-						informedEntity: [{ routeId: "Werribee", stopId: "FOOTSCRAY" }],
-					},
-				},
-			],
-		};
-	}
-
 	if (feed === "metro-vehicle-positions" || feed === "bus-vehicle-positions") {
 		const vehicles = isBus
 			? [
@@ -1093,7 +1057,7 @@ async function loadFeed() {
 	setError("");
 	previewEl.textContent = "Fetching feed...";
 	setMapMessage("Loading feed data...");
-	setMapHint(isVehicleFeed(feed) ? "Vehicle positions only" : "Select a vehicle positions feed");
+	setMapHint("Vehicle positions only");
 
 	if (mockToggle && mockToggle.checked) {
 		const data = buildMockData(feed);
@@ -1102,9 +1066,8 @@ async function loadFeed() {
 	}
 
 	try {
-		const limit = isVehicleFeed(feed) ? 200 : 10;
 		const response = await fetch(
-			`/api/gtfs?feed=${encodeURIComponent(feed)}&limit=${limit}`
+			`/api/gtfs?feed=${encodeURIComponent(feed)}&limit=200`
 		);
 		if (!response.ok) {
 			const body = await response.json().catch(() => ({}));

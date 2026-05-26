@@ -74,19 +74,19 @@ describe("routes/gtfs — feed validation", () => {
 describe("routes/gtfs — limit validation", () => {
   it("returns 400 for NaN limit", () => {
     const res = mockRes();
-    handler(mockReq("metro-trip-updates", "abc"), res);
+    handler(mockReq("metro-vehicle-positions", "abc"), res);
     assert.strictEqual(res._status, 400);
   });
 
   it("returns 400 for float limit", () => {
     const res = mockRes();
-    handler(mockReq("metro-trip-updates", "1.5"), res);
+    handler(mockReq("metro-vehicle-positions", "1.5"), res);
     assert.strictEqual(res._status, 400);
   });
 
   it("returns 400 for negative limit", () => {
     const res = mockRes();
-    handler(mockReq("metro-trip-updates", "-1"), res);
+    handler(mockReq("metro-vehicle-positions", "-1"), res);
     assert.strictEqual(res._status, 400);
   });
 });
@@ -95,7 +95,7 @@ describe("routes/gtfs — error classification", () => {
   it("returns 502 auth error for upstream 401", async () => {
     mockHttpsStatus(401);
     const res = mockRes();
-    handler(mockReq("metro-trip-updates"), res);
+    handler(mockReq("metro-vehicle-positions"), res);
     await tick();
     assert.strictEqual(res._status, 502);
     assert.strictEqual(res._json.error, "Upstream authentication failed.");
@@ -104,7 +104,7 @@ describe("routes/gtfs — error classification", () => {
   it("returns 502 auth error for upstream 403", async () => {
     mockHttpsStatus(403);
     const res = mockRes();
-    handler(mockReq("metro-trip-updates"), res);
+    handler(mockReq("metro-vehicle-positions"), res);
     await tick();
     assert.strictEqual(res._status, 502);
     assert.strictEqual(res._json.error, "Upstream authentication failed.");
@@ -113,7 +113,7 @@ describe("routes/gtfs — error classification", () => {
   it("returns 502 server error for upstream 5xx", async () => {
     mockHttpsStatus(503);
     const res = mockRes();
-    handler(mockReq("metro-trip-updates"), res);
+    handler(mockReq("metro-vehicle-positions"), res);
     await tick();
     assert.strictEqual(res._status, 502);
     assert.strictEqual(res._json.error, "Upstream server error.");
@@ -122,7 +122,7 @@ describe("routes/gtfs — error classification", () => {
   it("returns 502 network error for ECONNREFUSED", async () => {
     mockHttpsNetworkError("ECONNREFUSED");
     const res = mockRes();
-    handler(mockReq("metro-trip-updates"), res);
+    handler(mockReq("metro-vehicle-positions"), res);
     await tick();
     assert.strictEqual(res._status, 502);
     assert.strictEqual(res._json.error, "Upstream network error.");
@@ -131,7 +131,7 @@ describe("routes/gtfs — error classification", () => {
   it("returns 502 network error for ENOTFOUND", async () => {
     mockHttpsNetworkError("ENOTFOUND");
     const res = mockRes();
-    handler(mockReq("metro-trip-updates"), res);
+    handler(mockReq("metro-vehicle-positions"), res);
     await tick();
     assert.strictEqual(res._status, 502);
     assert.strictEqual(res._json.error, "Upstream network error.");
@@ -140,7 +140,7 @@ describe("routes/gtfs — error classification", () => {
   it("returns 502 network error for ECONNRESET", async () => {
     mockHttpsNetworkError("ECONNRESET");
     const res = mockRes();
-    handler(mockReq("metro-trip-updates"), res);
+    handler(mockReq("metro-vehicle-positions"), res);
     await tick();
     assert.strictEqual(res._status, 502);
     assert.strictEqual(res._json.error, "Upstream network error.");
@@ -149,7 +149,7 @@ describe("routes/gtfs — error classification", () => {
   it("returns 502 generic for unknown error", async () => {
     mockHttpsNetworkError("UNKNOWN_CODE");
     const res = mockRes();
-    handler(mockReq("metro-trip-updates"), res);
+    handler(mockReq("metro-vehicle-positions"), res);
     await tick();
     assert.strictEqual(res._status, 502);
     assert.strictEqual(res._json.error, "Upstream request failed.");
@@ -163,7 +163,7 @@ describe("routes/gtfs — cached response", () => {
     const upstreamCall = mock.fn();
     mock.method(https, "get", upstreamCall);
     const res = mockRes();
-    handler(mockReq("metro-trip-updates"), res);
+    handler(mockReq("metro-vehicle-positions"), res);
     assert.strictEqual(upstreamCall.mock.calls.length, 0);
     assert.strictEqual(res._status, null);
     assert.deepStrictEqual(res._json, { entity: [{ id: "1" }] });
@@ -173,7 +173,7 @@ describe("routes/gtfs — cached response", () => {
     mock.restoreAll();
     mock.method(cache, "get", () => ({ entity: [{ id: "1" }, { id: "2" }] }));
     const res = mockRes();
-    handler(mockReq("metro-trip-updates", "1"), res);
+    handler(mockReq("metro-vehicle-positions", "1"), res);
     assert.strictEqual(res._json.entity.length, 1);
     assert.strictEqual(res._json.entity[0].id, "1");
   });
