@@ -10,6 +10,7 @@ const mapEl = document.getElementById("map");
 const mapHintEl = document.getElementById("map-hint");
 const mapEmptyEl = document.getElementById("map-empty");
 const routeSearchInput = document.getElementById("route-search");
+const routeSearchLabel = document.querySelector("label[for='route-search']");
 const navButtons = document.querySelectorAll(".nav-btn");
 const panels = document.querySelectorAll(".panel");
 const themeToggle = document.getElementById("theme-toggle");
@@ -22,9 +23,14 @@ const FEED_COLORS = {
 	"metro-vehicle-positions": "#0f5b61",
 	"bus-vehicle-positions": "#e27d60",
 };
+const ROUTE_LINE_COLORS = {
+	0: "#ff922b",
+	1: "#339af0",
+};
 
 let mapInstance = null;
 let markerLayer = null;
+let routeLayer = null;
 let lastPayload = null;
 let lastFeed = null;
 let lastIsMock = false;
@@ -56,6 +62,10 @@ function isVehicleFeed(feed) {
 	return VEHICLE_FEEDS.has(feed);
 }
 
+function isBusFeed(feed) {
+	return typeof feed === "string" && feed.startsWith("bus-");
+}
+
 function escapeHTML(str) {
 	const div = document.createElement("div");
 	div.textContent = str;
@@ -83,6 +93,87 @@ function formatEnum(value) {
 		return null;
 	}
 	return String(value).replace(/_/g, " ").toLowerCase();
+}
+
+function updateRouteSearchUI(feed) {
+	if (!routeSearchInput || !routeSearchLabel) {
+		return;
+	}
+
+	const busMode = isBusFeed(feed);
+	routeSearchLabel.textContent = busMode ? "Bus route number" : "Train line name";
+	routeSearchInput.placeholder = busMode
+		? "e.g. 765 or 733"
+		: "e.g. Werribee or Frankston";
+	routeSearchInput.inputMode = busMode ? "numeric" : "text";
+}
+
+function getDirectionKey(item) {
+	const trip = item.vehicle && item.vehicle.trip ? item.vehicle.trip : null;
+	if (trip && (trip.directionId === 0 || trip.directionId === 1)) {
+		return trip.directionId;
+	}
+
+	const bearing = Number(item.position && item.position.bearing);
+	if (Number.isFinite(bearing)) {
+		return bearing < 180 ? 0 : 1;
+	}
+
+	return 0;
+}
+
+function sortPositionsForLine(items) {
+	if (items.length <= 2) {
+		return items.slice();
+	}
+
+	let minLat = Infinity;
+	let maxLat = -Infinity;
+	let minLng = Infinity;
+	let maxLng = -Infinity;
+
+	items.forEach((item) => {
+		minLat = Math.min(minLat, item.latitude);
+		maxLat = Math.max(maxLat, item.latitude);
+		minLng = Math.min(minLng, item.longitude);
+		maxLng = Math.max(maxLng, item.longitude);
+	});
+
+	const latRange = maxLat - minLat;
+	const lngRange = maxLng - minLng;
+	const sortByLongitude = lngRange >= latRange;
+
+	return items
+		.slice()
+		.sort((a, b) =>
+			sortByLongitude ? a.longitude - b.longitude : a.latitude - b.latitude
+		);
+}
+
+function resolveSelectedRouteId(entities, query) {
+	const normalizedQuery = query ? query.trim().toLowerCase() : "";
+	if (!normalizedQuery) {
+		return "";
+	}
+
+	let fallback = "";
+	for (const entity of entities) {
+		const routes = getEntityRouteIds(entity);
+		for (const route of routes) {
+			const normalizedRoute = String(route).toLowerCase();
+			if (!fallback) {
+				fallback = route;
+			}
+			if (
+				normalizedRoute === normalizedQuery ||
+				normalizedRoute.endsWith(`-${normalizedQuery}`)
+			) {
+				return route;
+			}
+		}
+	}
+
+	return fallback;
 }
 
 function getEntityRouteIds(entity) {
@@ -192,7 +283,7 @@ function initNavigation() {
 				targetPanel.classList.add("active");
 			}
 
-			if (targetPanel && targetPanel.id === "panel-map" && mapInstance) {
+			if (targetPanel && mapEl && targetPanel.contains(mapEl) && mapInstance) {
 				setTimeout(() => mapInstance.invalidateSize(), 0);
 			}
 		});
@@ -219,6 +310,7 @@ function initMap() {
 		attribution: "&copy; OpenStreetMap contributors",
 	}).addTo(mapInstance);
 
+	routeLayer = L.layerGroup().addTo(mapInstance);
 	markerLayer = L.layerGroup().addTo(mapInstance);
 	setTimeout(() => mapInstance.invalidateSize(), 0);
 }
@@ -237,9 +329,20 @@ function updateMap(feed, entities, routeQuery) {
 	if (!mapInstance || !markerLayer) {
 		return;
 	}
+	if (routeLayer) {
+		routeLayer.clearLayers();
+	}
 
 	const showVehicles = isVehicleFeed(feed);
-	setMapHint(showVehicles ? "Vehicle positions only" : "Select a vehicle positions feed");
+	const busMode = isBusFeed(feed);
+	const normalizedRouteQuery = routeQuery ? routeQuery.trim() : "";
+	setMapHint(
+		showVehicles
+			? busMode && normalizedRouteQuery
+				? "Route lines: orange / blue"
+				: "Vehicle positions only"
+			: "Select a vehicle positions feed"
+	);
 
 	markerLayer.clearLayers();
 
@@ -265,7 +368,7 @@ function updateMap(feed, entities, routeQuery) {
 		})
 		.filter(Boolean);
 
-	const hasFilter = routeQuery && routeQuery.trim().length > 0;
+	const hasFilter = normalizedRouteQuery.length > 0;
 	if (positions.length === 0) {
 		setMapMessage(
 			hasFilter
@@ -279,6 +382,43 @@ function updateMap(feed, entities, routeQuery) {
 	setMapMessage("");
 	const markerColor = FEED_COLORS[feed] || "#0f5b61";
 	const bounds = [];
+
+	const selectedRouteId = busMode
+		? resolveSelectedRouteId(entities, normalizedRouteQuery)
+		: "";
+	if (busMode && normalizedRouteQuery && selectedRouteId && routeLayer) {
+		setMapHint(`Route ${selectedRouteId}: orange / blue`);
+
+		const directionBuckets = {
+			0: [],
+			1: [],
+		};
+
+		positions.forEach((item) => {
+			const routeId =
+				(item.vehicle.trip && item.vehicle.trip.routeId) || "";
+			if (String(routeId).toLowerCase() !== String(selectedRouteId).toLowerCase()) {
+				return;
+			}
+			const directionKey = getDirectionKey(item);
+			const key = directionKey === 1 ? 1 : 0;
+			directionBuckets[key].push(item);
+		});
+
+		[0, 1].forEach((directionKey) => {
+			const items = directionBuckets[directionKey];
+			if (!items || items.length < 2) {
+				return;
+			}
+			const sorted = sortPositionsForLine(items);
+			const latLngs = sorted.map((item) => [item.latitude, item.longitude]);
+			L.polyline(latLngs, {
+				color: ROUTE_LINE_COLORS[directionKey],
+				weight: 4,
+				opacity: 0.9,
+			}).addTo(routeLayer);
+		});
+	}
 
 	positions.forEach((item) => {
 		const routeId =
@@ -308,6 +448,15 @@ function updateMap(feed, entities, routeQuery) {
 			fillColor: markerColor,
 			fillOpacity: 0.85,
 			weight: 2,
+		});
+		marker.on("click", () => {
+			if (!busMode || !routeSearchInput) {
+				return;
+			}
+			routeSearchInput.value = routeId;
+			if (lastPayload && lastFeed) {
+				applyData(lastPayload, lastIsMock, lastFeed);
+			}
 		});
 		marker.bindPopup(popupLines.join("<br />"));
 		marker.addTo(markerLayer);
@@ -538,9 +687,13 @@ if (routeSearchInput) {
 }
 
 loadButton.addEventListener("click", loadFeed);
-feedSelect.addEventListener("change", loadFeed);
+feedSelect.addEventListener("change", () => {
+	updateRouteSearchUI(feedSelect.value);
+	loadFeed();
+});
 if (mockToggle) {
 	mockToggle.addEventListener("change", loadFeed);
 }
 
+updateRouteSearchUI(feedSelect.value);
 loadFeed();
