@@ -723,12 +723,8 @@ function updateMap(feed, entities, routeQuery) {
 			weight: 2,
 		});
 		marker.on("click", () => {
-			if (!busMode || !routeSearchInput) {
-				return;
-			}
-			routeSearchInput.value = routeId;
-			if (lastPayload && lastFeed) {
-				setTimeout(() => applyData(lastPayload, lastIsMock, lastFeed), 300);
+			if (busMode && routeSearchInput) {
+				routeSearchInput.value = routeId;
 			}
 		});
 		marker.bindPopup(popupLines.join("<br />"));
