@@ -12,8 +12,10 @@
 	--sidebar-text: #f5f0eb;
 	--sidebar-hover: #333333;
 	--shadow: #1a1a1a;
-	--font-display: "Lilita One", "DM Sans", sans-serif;
-	--font-body: "DM Sans", system-ui, -apple-system, sans-serif;
+	--font-display: "Barlow Condensed", "Barlow", "DM Sans", sans-serif;
+	--font-body: "Inter", system-ui, -apple-system, sans-serif;
+	--font-data: "JetBrains Mono", "SFMono-Regular", "Menlo", "Consolas",
+		"Liberation Mono", monospace;
 }
 
 body.dark {
@@ -255,7 +257,7 @@ body {
 }
 
 .stat-value {
-	font-family: var(--font-display);
+	font-family: var(--font-data);
 	font-size: 26px;
 }
 
@@ -386,6 +388,7 @@ textarea:focus-visible {
 	padding: 6px 12px;
 	border: 3px solid var(--border);
 	background: var(--bg-card);
+	font-family: var(--font-data);
 }
 
 .status[data-state="loading"] {
@@ -440,7 +443,7 @@ pre {
 	padding: 12px;
 	border: 3px solid var(--border);
 	background: var(--bg);
-	font-family: var(--font-body);
+	font-family: var(--font-data);
 	font-size: 13px;
 	line-height: 1.5;
 	white-space: pre-wrap;
