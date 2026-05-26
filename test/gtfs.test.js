@@ -31,7 +31,7 @@ function tick() {
 function mockHttpsStatus(statusCode) {
   mock.method(https, "get", (_url, _opts, cb) => {
     cb({ statusCode, resume() {}, on() {} });
-    return { on() {} };
+    return { on() {}, setTimeout() {} };
   });
 }
 
@@ -40,8 +40,9 @@ function mockHttpsNetworkError(code) {
     const err = Object.assign(new Error("network error"), { code });
     return {
       on(e, h) {
-        setImmediate(() => h(err));
+        h(err);
       },
+      setTimeout() {},
     };
   });
 }
@@ -93,6 +94,10 @@ describe("routes/gtfs — limit validation", () => {
 });
 
 describe("routes/gtfs — error classification", () => {
+  beforeEach(() => {
+    mock.method(globalThis, "setTimeout", (fn) => fn());
+  });
+
   it("returns 502 auth error for upstream 401", async () => {
     mockHttpsStatus(401);
     const res = mockRes();
