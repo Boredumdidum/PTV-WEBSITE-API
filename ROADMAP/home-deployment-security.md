@@ -291,6 +291,12 @@ sudo nano /etc/logrotate.d/ptv-tracker
 - [x] Uptime monitoring set up: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)
 - [x] Prometheus metrics endpoint (`/metrics`) added
 - [x] Request timeout (15s) on upstream fetches
+- [x] Retry with backoff (2 retries) on upstream errors
+- [x] Express error middleware (catch-all handler)
+- [x] Compression middleware (gzip all responses)
+- [x] Cache size limit (max 100 entries, oldest evicted)
+- [x] Code coverage flag on npm test
+- [x] ESLint + Prettier configured and run (0 errors, 0 warnings)
 - [x] Frontend modularised into ES modules under `src/`
 - [x] Playwright smoke tests added (10 tests)
 - [ ] Log rotation configured for app (journald) and nginx logs

@@ -6,12 +6,17 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 
 - **2 realtime feeds** — metro and bus vehicle positions
 - **Proxy architecture** — API key stays server-side, browser only talks to the local proxy
-- **30-second cache** — reduces upstream API calls; TTL configurable via `CACHE_TTL_MS` env var
+- **30-second cache** — reduces upstream API calls; TTL configurable, max 100 entries
+- **Retry with backoff** — up to 2 retries on upstream 5xx/network errors (1s, 2s delays)
+- **Request timeout** — upstream fetches time out after 15 seconds
+- **Compressed responses** — all JSON, CSS, JS, HTML gzip-compressed
 - **Leaflet map** — vehicle positions plotted on an OpenStreetMap base layer, locked to Victoria bounds with train route names
 - **Route search** — filter entities by route ID in real time
 - **Mock data mode** — offline testing with generated data
-- **Dark/light theme** — persisted to `localStorage`
+- **Dark/light theme** — persisted to `localStorage`, respects OS preference on first visit
 - **Collapsible sidebar** — toggle with hamburger button, state saved to `localStorage`
+- **Keyboard navigation** — arrow keys cycle sidebar tabs, ARIA roles and labels
+- **Accessibility** — `prefers-reduced-motion` disables animations, semantic HTML, `aria-live` regions
 - **Neo-brutalist UI** — bold, sharp, no rounded corners
 - **Structured logging** — JSON logs via Pino with per-request correlation IDs
 - **Rate limited** — 60 requests/minute per IP to the GTFS endpoint
@@ -19,24 +24,26 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 - **Input validation** — `limit` query param validated as positive integer, max 200
 - **Request size limits** — 1KB JSON body limit, 2MB upstream response cap
 - **Graceful shutdown** — SIGTERM/SIGINT handler with 10s drain timeout
+- **Express error middleware** — catch-all handler prevents unhandled route crashes
 - **Health endpoint** — `/health` returns cache status, uptime, upstream reachability
 - **Same-origin policy** — explicit `Cross-Origin-Resource-Policy: same-origin` via Helmet
 - **Error classification** — auth failures, upstream 5xx, and network errors return distinct HTTP status codes
-- **Request timeout** — upstream fetches time out after 15 seconds
 - **Prometheus metrics** — request duration, cache hit/miss, upstream latency at `/metrics`
 - **Browser tests** — Playwright smoke tests for UI, map, theme toggles, and feed selection
+- **Linted + formatted** — ESLint with recommended rules, Prettier with project-specific overrides
 
 ## Stack
 
-| Layer     |                                                         |
-| --------- | ------------------------------------------------------- |
-| Backend   | Node.js, Express 4.19, Helmet, Pino, express-rate-limit |
-| Frontend  | Vanilla HTML, CSS, JavaScript                           |
-| Map       | Leaflet 1.9.4 (CDN) + OpenStreetMap tiles               |
-| Icons     | Lucide (CDN)                                            |
-| Data      | GTFS Realtime (Protocol Buffers)                        |
-| TLS       | nginx reverse proxy (self-signed or Let's Encrypt)      |
-| Container | Docker (multi-stage Node 20 Alpine), Docker Compose     |
+| Layer       |                                                              |
+| ----------- | ------------------------------------------------------------ |
+| Backend     | Node.js, Express 4.19, Helmet, Pino, express-rate-limit      |
+| Frontend    | Vanilla HTML, CSS, JavaScript (ES modules)                   |
+| Map         | Leaflet 1.9.4 (CDN) + OpenStreetMap tiles                    |
+| Icons       | Lucide (CDN)                                                 |
+| Data        | GTFS Realtime (Protocol Buffers)                             |
+| TLS         | nginx reverse proxy (self-signed or Let's Encrypt)           |
+| Container   | Docker (multi-stage Node 20 Alpine), Docker Compose          |
+| Code quality| ESLint 8 + Prettier 3                                        |
 
 ## Quick Start
 
@@ -60,8 +67,10 @@ docker compose up -d --build
 ## Testing
 
 ```bash
-npm test                 # 32 unit tests (node:test, zero dependencies)
-npm run test:e2e         # Playwright browser smoke tests (requires npm install + npx playwright install)
+npm test                 # 24 unit tests with coverage (node:test --experimental-test-coverage)
+npm run test:e2e         # 10 Playwright browser smoke tests (requires npm install + npx playwright install)
+npm run lint             # ESLint check
+npm run format:check     # Prettier check
 ```
 
 ## Configuration
@@ -82,13 +91,18 @@ See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment
 
 ```
 ├── server.js          # Express backend — middleware, routes, static files
+├── theme-init.js      # Early theme init (runs before CSS loads)
 ├── Dockerfile         # Multi-stage Node 20 Alpine container
 ├── docker-compose.yml # Service definition with env file and healthcheck
 ├── .dockerignore      # Build context exclusions
-├── index.html         # Single-page app
+├── .eslintrc.json     # ESLint config (recommended rules + overrides)
+├── .prettierrc        # Prettier config (tabs frontend, 2-space backend)
+├── .env.example       # Documented environment variables template
+├── index.html         # Single-page app with ARIA roles
 ├── favicon.svg        # SVG favicon — map pin with position dot
 ├── script.js          # Entry point — imports from src/ modules
-├── src/               # Frontend modules
+├── style.css          # Neo-brutalist stylesheet
+├── src/               # Frontend ES modules
 │   ├── constants.js   # Map defaults, feed colors, train route codes
 │   ├── utils/
 │   │   ├── format.js  # Formatting: timestamps, speed, route names

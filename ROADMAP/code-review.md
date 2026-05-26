@@ -26,16 +26,36 @@
 - Handle network errors more gracefully — show a retry button with exponential backoff instead of a static error message
 - Add a loading skeleton / shimmer for stat cards while data is fetched
 - [x] Move Leaflet tile URL and map defaults into a config object instead of hardcoding in `initMap()`
-- Add keyboard navigation support for the sidebar (arrow keys, Enter/Space to activate)
-- Add ARIA labels to interactive elements (nav buttons, feed selector, theme toggle) for accessibility
+- [x] Add keyboard navigation support for the sidebar (arrow keys, Enter/Space to activate)
+- [x] Add ARIA labels to interactive elements (nav buttons, feed selector, theme toggle) for accessibility
 
 ## CSS / Design (`style.css`)
 
 - Extract CSS custom properties into a dedicated `tokens.css` file for better organisation
-- Add `prefers-reduced-motion` media query to disable toast slide animations for users with vestibular disorders
-- Add `prefers-color-scheme` support so the initial theme respects the OS setting before JS loads
+- [x] Add `prefers-reduced-motion` media query to disable toast slide animations for users with vestibular disorders
+- [x] Add `prefers-color-scheme` support so the initial theme respects the OS setting before JS loads
 - Use a CSS reset or `normalize.css` to smooth cross-browser rendering differences
 - Add print stylesheet to hide sidebar when printing dashboard data
+
+## Backend (additional)
+
+- [x] Add request timeout (15s) on upstream fetches
+- [x] Add retry with backoff (2 retries, 1s/2s delay) on upstream 5xx and network errors
+- [x] Add Express error middleware (catch-all `(err, req, res, next)`)
+- [x] Add compression middleware (gzip all responses)
+- [x] Add cache size limit (evict oldest when >100 entries)
+- [x] Add code coverage flag (`--experimental-test-coverage`)
+- [x] Configure ESLint + Prettier, run lint:fix and format
+- [x] Move inline theme script to external file (fix CSP violation)
+
+## Frontend (additional)
+
+- [x] ES modules with type="module", src/ directory structure
+- [x] Early theme init script (runs before CSS render)
+- [x] prefers-reduced-motion support via CSS
+- [x] prefers-color-scheme support via CSS + early JS
+- [x] Keyboard nav with arrow keys for sidebar tabs
+- [x] ARIA roles (tablist, tab, aria-selected, tabindex management)
 
 ## Security
 

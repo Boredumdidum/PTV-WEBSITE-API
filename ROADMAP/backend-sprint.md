@@ -21,6 +21,13 @@
 - [x] Add unit tests for cache logic, feed validation, and error classification
 - [x] Add JSDoc comments to all exported backend functions
 - [x] Document all environment variables in `README.md`
+- [x] Add request timeout (15s) on upstream fetches
+- [x] Add retry with backoff (2 retries) on upstream 5xx and network errors
+- [x] Add Express error middleware (catch-all handler)
+- [x] Add compression middleware (gzip)
+- [x] Add cache size limit (evict oldest when >100 entries)
+- [x] Add code coverage flag to npm test
+- [x] Configure ESLint + Prettier with lint:fix and format scripts
 - [x] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge (no port 80 dependency)
 - [x] Remove port 80 server block from nginx config template in `setup_pi.py`
 - [x] Write DuckDNS API hook script for certbot DNS-01 automation (`scripts/duckdns-hook.sh`)

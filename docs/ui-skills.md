@@ -40,10 +40,10 @@ Use CSS custom properties on `:root`. All components must reference these variab
 }
 ```
 
-### Dark theme (applied via `body.dark` class)
+### Dark theme (applied via `html.dark` class)
 
 ```css
-body.dark {
+html.dark {
   --bg: #1a1a1a;
   --bg-card: #2a2a2a;
   --text: #f5f0eb;
@@ -54,6 +54,14 @@ body.dark {
   --sidebar-hover: #333333;
   --shadow: #000000;
 }
+```
+
+### Light theme (applied via `html.light` class)
+
+Light is the default when no class is set, but `html.light` is also applied for specificity when `prefers-color-scheme: dark` would otherwise override it:
+
+```css
+html.light { /* inherits :root variables */ }
 ```
 
 ### Accent palette
@@ -273,11 +281,10 @@ Panels: `display: none` by default, `.active` → `display: block`.
 
 ### Dark/Light Theme Toggle
 
-- Toggle `body.dark` class on click
-- Save preference to `localStorage` (values: `"dark"` or `"light"`)
-- Load saved preference on page start
-- Update the toggle button's icon (sun ↔ moon) and label text
-- Show a toast confirming the change
+- An early synchronous `<script>` in `<head>` (from `/theme-init.js`) sets `dark` or `light` class on `document.documentElement` based on `localStorage` + `prefers-color-scheme` — before first paint
+- Toggle `html.dark` and `html.light` classes on click; save preference to `localStorage` (values: `"dark"` or `"light"`)
+- `initTheme()` in `dom.js` re-asserts the correct class on `DOMContentLoaded`
+- Update the toggle button's icon (sun ↔ moon) and label text; show a toast confirming the change
 
 ### Keyboard
 

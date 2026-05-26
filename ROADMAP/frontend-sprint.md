@@ -6,15 +6,15 @@
 - [ ] Debounce the route search input to prevent excessive re-renders
 - [ ] Add loading skeleton/shimmer state for stat cards during data fetch
 - [ ] Implement retry button with exponential backoff on network errors
-- [ ] Add keyboard navigation and ARIA labels for accessibility
+- [x] Add keyboard navigation and ARIA labels for accessibility
 - [x] Move Leaflet configuration into a constants/config object
-- [ ] Add `prefers-reduced-motion` and `prefers-color-scheme` media query support
+- [x] Add `prefers-reduced-motion` and `prefers-color-scheme` media query support
 - [ ] Extract CSS custom properties into `tokens.css`
 - [ ] Add a CSS reset / normalise styles across browsers
 - [ ] Add client-side performance instrumentation
 - [x] Create `src/components/`, `src/utils/`, `src/config/` directory structure
 - [x] Add basic DOM smoke tests (Playwright or happy-dom)
-- [ ] Create `.env.example` with all documented variables
+- [x] Create `.env.example` with all documented variables
 - [x] Design and add favicon (SVG) — map pin with position dot, configured in `<head>`
 
 ## Weekly Phases
