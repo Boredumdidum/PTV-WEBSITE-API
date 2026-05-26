@@ -70,7 +70,7 @@ app.get("/metrics", async (req, res) => {
 
 app.get("/api/gtfs", gtfsLimiter, gtfsHandler);
 
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname), { maxAge: "1d", immutable: true }));
 
 const server = app.listen(PORT, () => {
   logger.info({ port: PORT }, "Server started");
