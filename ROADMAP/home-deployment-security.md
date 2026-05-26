@@ -116,10 +116,14 @@ The Pi boots from SD card. Frequent writes (logs, system journals, npm cache) ca
   ```bash
   sudo ufw default deny incoming
   sudo ufw default allow outgoing
-  sudo ufw allow 443/tcp    # HTTPS
-  sudo ufw allow ssh        # only if you need remote access
+  sudo ufw allow 22/tcp     # SSH
+  sudo ufw allow 25/tcp     # SMTP
+  sudo ufw allow 443/tcp    # HTTPS (PTV tracker)
+  sudo ufw allow 587/tcp    # SMTP submission
   sudo ufw enable
   ```
+- `setup_pi.py` opens these 4 ports automatically (22, 25, 443, 587) when configuring UFW
+- Use `--allow-ports 8080,993` to open additional ports beyond these four
 
 ---
 
@@ -260,7 +264,7 @@ sudo nano /etc/logrotate.d/ptv-tracker
 - [x] Router: forwarded port 443 only (never 80), UPnP disabled, changed admin password, disabled WAN ping
 - [x] Router: static IP assigned to Pi (no DHCP on this network)
 - [x] DuckDNS: `duck.sh` permissions 600, DNS-01 automation hook script set up (`scripts/duckdns-hook.sh`)
-- [ ] UFW: deny incoming by default, allow 443 (and SSH if needed)
+- [x] UFW: deny incoming by default, allow 443 (and SSH if needed)
 - [ ] nginx: TLS 1.2/1.3 only, no port 80 server block, only GET/HEAD allowed (handled by `setup_pi.py`)
 - [ ] nginx: `client_max_body_size 1k` (optional — app-level size limits can replace this)
 - [x] Helmet: 7 security headers set at the Express app level

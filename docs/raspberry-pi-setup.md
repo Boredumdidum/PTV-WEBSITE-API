@@ -134,6 +134,8 @@ After it completes, the browser warning will be gone.
 | `--duck-token TOKEN` | DuckDNS token for dynamic DNS updates |
 | `--skip-ssl` | Skip certificate generation (HTTP only) |
 | `--skip-duckdns` | Skip DuckDNS cron setup |
+| `--skip-ufw` | Skip UFW firewall configuration |
+| `--allow-ports` | Comma-separated extra ports for UFW (22,25,443,587 always open) |
 | `--skip-node` | Skip Node.js installation |
 | `--skip-npm` | Skip `npm install` |
 | `--cert-days N` | Self-signed cert validity (default: 3650) |
@@ -164,6 +166,7 @@ After it completes, the browser warning will be gone.
 9. Writes a systemd service for the Node.js app
 10. Configures nginx as an HTTPS reverse proxy (port 443 only — no HTTP redirect, no port 80 listener)
 11. Sets up DuckDNS cron job for dynamic DNS (if token provided)
+12. Configures UFW firewall (deny incoming by default, allow 443, allow SSH unless `--no-ssh`)
 
 ---
 
