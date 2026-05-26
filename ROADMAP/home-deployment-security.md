@@ -45,6 +45,7 @@ This setup uses the **DNS-01 ACME challenge** for Let's Encrypt — no port 80 r
 - Token stored in plaintext at `/etc/duckdns/duck.sh`
 - Script runs every 5 minutes as root via cron
 - DuckDNS has no auth beyond the token — anyone with the token can hijack your domain
+- The certbot DNS-01 hook (`scripts/duckdns-hook.sh`) reads the token from `duck.sh` to automate Let's Encrypt verification
 
 ### Mitigations
 - Restrict `duck.sh` permissions:
@@ -53,6 +54,7 @@ This setup uses the **DNS-01 ACME challenge** for Let's Encrypt — no port 80 r
   sudo chown root:root /etc/duckdns/duck.sh
   ```
 - Monitor your domain periodically — if it stops resolving to your IP, check the token hasn't been compromised
+- The certbot hook script (`/opt/ptv-tracker/scripts/duckdns-hook.sh`) also reads the same token file, so keeping its permissions restricted protects both DuckDNS and Let's Encrypt renewal
 
 ---
 
@@ -256,9 +258,9 @@ sudo nano /etc/logrotate.d/ptv-tracker
 
 - [x] Router: forwarded port 443 only (never 80), UPnP disabled, changed admin password, disabled WAN ping
 - [x] Router: static IP assigned to Pi (no DHCP on this network)
-- [x] DuckDNS: `duck.sh` permissions 600, DNS-01 automation script set up for cert renewal
+- [x] DuckDNS: `duck.sh` permissions 600, DNS-01 automation hook script set up (`scripts/duckdns-hook.sh`)
 - [ ] UFW: deny incoming by default, allow 443 (and SSH if needed)
-- [ ] nginx: TLS 1.2/1.3 only, no port 80 server block, only GET/HEAD allowed
+- [ ] nginx: TLS 1.2/1.3 only, no port 80 server block, only GET/HEAD allowed (handled by `setup_pi.py`)
 - [ ] nginx: `client_max_body_size 1k` (optional — app-level size limits can replace this)
 - [x] Helmet: 7 security headers set at the Express app level
 - [x] express-rate-limit: 60 req/min per IP on `/api/gtfs` endpoint

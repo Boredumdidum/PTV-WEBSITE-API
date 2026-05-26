@@ -93,17 +93,19 @@ def write_nginx(domain, port):
     nginx_text = textwrap.dedent(
         f"""
         server {{
-            listen 80;
-            server_name {domain};
-            return 301 https://$host$request_uri;
-        }}
-
-        server {{
-            listen 443 ssl;
+            listen 443 ssl http2;
             server_name {domain};
 
             ssl_certificate {ssl_cert};
             ssl_certificate_key {ssl_key};
+            ssl_protocols TLSv1.2 TLSv1.3;
+            ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+            ssl_prefer_server_ciphers on;
+            ssl_session_cache shared:SSL:10m;
+            ssl_session_timeout 10m;
+
+            # Security headers and rate limiting handled by the Express app
+            # (helmet + express-rate-limit middleware)
 
             location / {{
                 proxy_pass http://127.0.0.1:{port};
@@ -113,6 +115,8 @@ def write_nginx(domain, port):
                 proxy_set_header X-Forwarded-Proto $scheme;
             }}
         }}
+
+        # No port 80 — using DNS-01 challenge, no HTTP endpoint needed
         """
     ).strip() + "\n"
 
@@ -140,7 +144,7 @@ def main():
     parser.add_argument("--cert-days", type=int, default=3650,
                         help="Self-signed certificate validity in days (default: 3650)")
     parser.add_argument("--skip-ssl", action="store_true",
-                        help="Skip self-signed certificate generation (HTTP only)")
+                        help="Skip self-signed certificate generation (insecure, HTTP only)")
     parser.add_argument("--skip-node", action="store_true")
     parser.add_argument("--skip-npm", action="store_true")
     parser.add_argument("--skip-duckdns", action="store_true")
@@ -153,7 +157,7 @@ def main():
     print(f"  App dir:   {args.app_dir or '(auto)'}")
     print(f"  Domain:    {args.domain}")
     print(f"  DuckDNS:   {'yes' if args.duck_token else 'no'}")
-    print(f"  SSL:       {'self-signed' if not args.skip_ssl else 'no (HTTP)'}")
+    print(f"  SSL:       {'self-signed' if not args.skip_ssl else 'no (plain HTTP)'}")
     print()
 
     print("[1/7] Installing system packages...")
@@ -285,8 +289,8 @@ def main():
         print("  For production, re-run with --app-dir /opt/ptv-tracker")
     print()
     if args.skip_ssl:
-        print("  Access: http://<pi-ip>")
+        print("  Access: http://<pi-ip> (no encryption — not recommended)")
     else:
         print("  Access: https://<pi-ip>")
-        print("  (Your browser will show a security warning — this is expected)")
+        print("  (Browser will show a security warning — this is expected for a self-signed cert)")
     print("=" * 50)

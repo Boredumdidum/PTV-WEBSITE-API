@@ -48,10 +48,10 @@ Visit `https://<pi-ip>`. The browser will show a security warning — this is ex
 
 Once the Pi is working with the self-signed cert, you can replace it with a trusted Let's Encrypt certificate.
 
-This setup uses the **DNS-01 ACME challenge** — Let's Encrypt verifies domain ownership by checking a DNS TXT record, so no port 80 forwarding is needed.
+This setup uses the **DNS-01 ACME challenge** — Let's Encrypt verifies domain ownership by checking a DNS TXT record, so no port 80 forwarding is needed. The `provision_ssl.py` script uses a [certbot manual hook](https://eff-certbot.readthedocs.io/en/stable/using.html#manual) (`scripts/duckdns-hook.sh`) to add/remove the TXT record via the DuckDNS API.
 
 ### Prerequisites
-- DuckDNS token (the same one used for dynamic DNS)
+- DuckDNS token set up at `/etc/duckdns/duck.sh` (from running `setup_pi.py --duck-token` or manually)
 - Pi must be reachable on port 443
 
 ### Run the provisioning script
@@ -64,9 +64,12 @@ sudo python3 /opt/ptv-tracker/scripts/provision_ssl.py \
 
 This script:
 1. Checks that `ptv-tracker.duckdns.org` resolves to your public IP
-2. Requests a Let's Encrypt certificate using the DNS-01 challenge (adds a TXT record via the DuckDNS API)
-3. Installs the certificate and configures nginx
-4. Sets up automatic renewal via a certbot hook
+2. Verifies the DuckDNS token exists
+3. Writes the `duckdns-hook.sh` certbot hook (if not already present)
+4. Cleans old certificate data
+5. Requests a Let's Encrypt certificate using the DNS-01 challenge — the hook automatically adds a `_acme-challenge` TXT record via the DuckDNS API and waits 30s for propagation
+6. Updates nginx config with the new cert paths and TLS hardening
+7. Sets up automatic renewal via certbot's `cli.ini` with the DuckDNS hook
 
 After it completes, the browser warning will be gone.
 
@@ -96,6 +99,8 @@ After it completes, the browser warning will be gone.
 | `--port PORT` | Local backend port (default: 3000) |
 | `--skip-check` | Skip prerequisite checks |
 
+> Uses DNS-01 challenge via DuckDNS hook — no port 80 needed.
+
 ---
 
 ## What the setup script does
@@ -109,7 +114,7 @@ After it completes, the browser warning will be gone.
 7. Generates a self-signed TLS certificate via `generate_certs.py --install`
 8. Verifies `node` binary and `server.js` exist before writing configs
 9. Writes a systemd service for the Node.js app
-10. Configures nginx as an HTTPS reverse proxy (port 443 only, no HTTP redirect)
+10. Configures nginx as an HTTPS reverse proxy (port 443 only — no HTTP redirect, no port 80 listener)
 11. Sets up DuckDNS cron job for dynamic DNS (if token provided)
 
 ---
@@ -199,10 +204,11 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
     ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
 
-    add_header X-Content-Type-Options nosniff;
-    add_header X-Frame-Options DENY;
-    add_header Referrer-Policy strict-origin-when-cross-origin;
+    # Security headers and rate limiting handled by the Express app
+    # (helmet + express-rate-limit middleware)
 
     location / {
         proxy_pass http://127.0.0.1:3000;
@@ -219,6 +225,8 @@ sudo ln -s /etc/nginx/sites-available/ptv-tracker /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
+
+> No port 80 server block — using DNS-01 challenge, no HTTP endpoint needed.
 
 ### 7) DuckDNS updater
 
@@ -338,5 +346,6 @@ Open `https://ptv-tracker.duckdns.org` (or your Pi's IP) and load a feed.
 - The `/health` endpoint returns cache status, uptime, and upstream reachability.
 - Log level configurable via `LOG_LEVEL` env var (default: `info`).
 - To regenerate a self-signed cert at any time: `python3 scripts/generate_certs.py --install`
-- To replace with Let's Encrypt later (DNS-01, no port 80 needed): `python3 scripts/provision_ssl.py --domain ... --email ...`
+- To replace with Let's Encrypt later (DNS-01, no port 80 needed): `sudo python3 scripts/provision_ssl.py --domain ... --email ...`
+- The `provision_ssl.py` script uses `scripts/duckdns-hook.sh` as a certbot manual hook to add/remove DNS TXT records via the DuckDNS API
 - Uptime monitoring dashboard: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)

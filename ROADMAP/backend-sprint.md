@@ -20,10 +20,10 @@
 - [ ] Add unit tests for cache logic, feed validation, and error classification
 - [ ] Add JSDoc comments to all exported backend functions
 - [ ] Document all environment variables in `README.md`
-- [ ] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge (no port 80 dependency)
-- [ ] Remove port 80 server block from nginx config template in `setup_pi.py`
-- [ ] Write DuckDNS API hook script for certbot DNS-01 automation
-- [ ] Remove port 80 references from `provision_ssl.py`
+- [x] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge (no port 80 dependency)
+- [x] Remove port 80 server block from nginx config template in `setup_pi.py`
+- [x] Write DuckDNS API hook script for certbot DNS-01 automation (`scripts/duckdns-hook.sh`)
+- [x] Remove port 80 references from `provision_ssl.py` (rewrote for DNS-01 challenge)
 
 ## Weekly Phases
 
@@ -38,8 +38,8 @@
 - [ ] Validate and sanitise `limit` and `feed` query parameters
 - [ ] Add HTTP body/payload size limits
 - [ ] Audit `.env` file handling and document `chmod 600`
-- [ ] Remove port 80 server block from nginx config template in `setup_pi.py`
-- [ ] Remove port 80 references from `provision_ssl.py`
+- [x] Remove port 80 server block from nginx config template in `setup_pi.py`
+- [x] Remove port 80 references from `provision_ssl.py` (rewritten for DNS-01)
 
 ### Phase 3 — Observability
 - [x] Add structured logging (`pino`) with request ID correlation
@@ -59,10 +59,10 @@
 - Add GitHub Actions workflow stub (lint on PR, build check, auto-deploy to Pi)
 
 ### Phase 6 — DNS Automation & Unit Tests
-- Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge
-- Write DuckDNS API hook script for certbot DNS-01 automation
-- Update `provision_ssl.py` to use DNS-01 instead of HTTP-01
-- Add unit tests for cache logic, feed validation, and error classification (using `node:test` or `vitest`)
+- [x] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge
+- [x] Write DuckDNS API hook script for certbot DNS-01 automation (`scripts/duckdns-hook.sh`)
+- [x] Update `provision_ssl.py` to use DNS-01 instead of HTTP-01
+- [ ] Add unit tests for cache logic, feed validation, and error classification (using `node:test` or `vitest`)
 
 ### Phase 7 — Final Documentation
 - Add JSDoc comments to all exported backend functions
