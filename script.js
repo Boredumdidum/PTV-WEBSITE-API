@@ -626,7 +626,7 @@ function updateMap(feed, entities, routeQuery) {
 	setMapHint(
 		busMode && normalizedRouteQuery
 			? "Route line loading..."
-			: "Vehicle positions only"
+			: ""
 	);
 
 	markerLayer.clearLayers();
@@ -1100,7 +1100,6 @@ async function loadFeed() {
 	setError("");
 	previewEl.textContent = "Fetching feed...";
 	setMapMessage("Loading feed data...");
-	setMapHint("Vehicle positions only");
 
 	if (mockToggle && mockToggle.checked) {
 		const data = buildMockData(feed);
