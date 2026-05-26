@@ -393,7 +393,7 @@ function initMap() {
 		return;
 	}
 
-	mapInstance = L.map(mapEl, { scrollWheelZoom: false }).setView(
+	mapInstance = L.map(mapEl, { scrollWheelZoom: true, zoomControl: false }).setView(
 		DEFAULT_MAP_CENTER,
 		DEFAULT_MAP_ZOOM
 	);
