@@ -38,6 +38,7 @@ function fetchBuffer(url, headers) {
   });
 }
 
+/** Express handler for GET /api/gtfs?feed=<key>&limit=<n>. */
 module.exports = function (req, res) {
   const feedKey = req.query.feed;
   if (!feedKey || !isValidFeedKey(feedKey)) {

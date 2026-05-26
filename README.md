@@ -50,6 +50,15 @@ docker compose up -d --build
 
 Open `http://localhost:3000` in your browser.
 
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `PTV_API_KEY` | *required* | PTV Open Data API subscription key |
+| `PORT` | `3000` | Port the Express server listens on |
+| `CACHE_TTL_MS` | `30000` | Feed cache TTL in milliseconds |
+| `LOG_LEVEL` | `info` | Pino log level (`fatal`, `error`, `warn`, `info`, `debug`, `trace`) |
+
 ## Raspberry Pi Deployment
 
 See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment instructions on a Pi with DuckDNS, nginx, and TLS. Docker is the recommended deployment method on Pi.
