@@ -1,6 +1,14 @@
 import { setTheme, initTheme, updateRouteSearchUI } from "./src/utils/dom.js";
 import { initNavigation, loadFeed, applyData, lastPayload, lastFeed, lastIsMock } from "./src/components/dashboard.js";
 
+function debounce(fn, ms) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   if (window.lucide && typeof lucide.createIcons === "function") {
     lucide.createIcons();
@@ -30,11 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const routeSearchInput = document.getElementById("route-search");
   if (routeSearchInput) {
-    routeSearchInput.addEventListener("input", () => {
+    const applySearch = debounce(() => {
       if (lastPayload && lastFeed) {
         applyData(lastPayload, lastIsMock, lastFeed);
       }
-    });
+    }, 250);
+
+    routeSearchInput.addEventListener("input", applySearch);
 
     routeSearchInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {

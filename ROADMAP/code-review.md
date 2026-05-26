@@ -22,7 +22,7 @@
 
 - [x] Extract UI components into separate files (e.g. `components/map.js`, `components/dashboard.js`, `utils/format.js`) — the single ~1075-line file was becoming hard to maintain
 - Replace raw DOM manipulation with a small reactive pattern or vanilla web components for better state management
-- Debounce the route search input handler to avoid excessive re-renders during fast typing
+- [x] Debounce the route search input handler to avoid excessive re-renders during fast typing
 - Handle network errors more gracefully — show a retry button with exponential backoff instead of a static error message
 - Add a loading skeleton / shimmer for stat cards while data is fetched
 - [x] Move Leaflet tile URL and map defaults into a config object instead of hardcoding in `initMap()`

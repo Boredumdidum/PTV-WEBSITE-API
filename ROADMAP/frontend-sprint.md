@@ -3,7 +3,7 @@
 ## Task List
 
 - [x] Refactor `script.js` into ES module files by domain (map, dashboard, preview, utils)
-- [ ] Debounce the route search input to prevent excessive re-renders
+- [x] Debounce the route search input to prevent excessive re-renders
 - [ ] Add loading skeleton/shimmer state for stat cards during data fetch
 - [ ] Implement retry button with exponential backoff on network errors
 - [x] Add keyboard navigation and ARIA labels for accessibility

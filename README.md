@@ -11,7 +11,7 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 - **Request timeout** — upstream fetches time out after 15 seconds
 - **Compressed responses** — all JSON, CSS, JS, HTML gzip-compressed
 - **Leaflet map** — vehicle positions plotted on an OpenStreetMap base layer, locked to Victoria bounds with train route names
-- **Route search** — filter entities by route ID in real time
+- **Route search** — filter entities by route ID in real time with debounced input (250ms)
 - **Mock data mode** — offline testing with generated data
 - **Dark/light theme** — persisted to `localStorage`, respects OS preference on first visit
 - **Collapsible sidebar** — toggle with hamburger button, state saved to `localStorage`
@@ -67,7 +67,7 @@ docker compose up -d --build
 ## Testing
 
 ```bash
-npm test                 # 24 unit tests with coverage (node:test --experimental-test-coverage)
+npm test                 # 26 unit + integration tests with coverage (node:test --experimental-test-coverage)
 npm run test:e2e         # 10 Playwright browser smoke tests (requires npm install + npx playwright install)
 npm run lint             # ESLint check
 npm run format:check     # Prettier check

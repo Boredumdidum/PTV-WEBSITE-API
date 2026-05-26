@@ -11,17 +11,11 @@ const { client, metricsMiddleware } = require("./middleware/metrics");
 
 require("dotenv").config();
 
-if (!process.env.PTV_API_KEY) {
-  console.error("FATAL: PTV_API_KEY environment variable is not set.");
-  process.exit(1);
-}
-
 const logger = pino({
   level: process.env.LOG_LEVEL || "info",
 });
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.set("trust proxy", 1);
 
@@ -89,21 +83,31 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal server error." });
 });
 
-const server = app.listen(PORT, () => {
-  logger.info({ port: PORT }, "Server started");
-});
+module.exports = app;
 
-function shutdown(signal) {
-  logger.info({ signal }, "Shutting down gracefully");
-  server.close(() => {
-    logger.info("Server closed");
-    process.exit(0);
-  });
-  setTimeout(() => {
-    logger.error("Forced shutdown after timeout");
+if (require.main === module) {
+  if (!process.env.PTV_API_KEY) {
+    console.error("FATAL: PTV_API_KEY environment variable is not set.");
     process.exit(1);
-  }, 10000).unref();
-}
+  }
 
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+  const PORT = process.env.PORT || 3000;
+  const server = app.listen(PORT, () => {
+    logger.info({ port: PORT }, "Server started");
+  });
+
+  function shutdown(signal) {
+    logger.info({ signal }, "Shutting down gracefully");
+    server.close(() => {
+      logger.info("Server closed");
+      process.exit(0);
+    });
+    setTimeout(() => {
+      logger.error("Forced shutdown after timeout");
+      process.exit(1);
+    }, 10000).unref();
+  }
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+}
