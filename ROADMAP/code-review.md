@@ -34,7 +34,7 @@
 - Add print stylesheet to hide sidebar when printing dashboard data
 
 ## Security
-- Add CORS configuration (even if same-origin, explicit is better than implicit) — currently relies on default Express behaviour
+- [x] Add CORS configuration (even if same-origin, explicit is better than implicit) — currently relies on default Express behaviour
 - [x] Set security HTTP headers via `helmet` middleware (X-Content-Type-Options, X-Frame-Options, CSP, etc.)
 - [x] Sanitise and validate the `limit` query parameter as a positive integer (currently only capped at 200, but passing `NaN` or negative values could cause unexpected behaviour)
 - [x] Add input size limits to prevent extremely large responses from consuming all server memory

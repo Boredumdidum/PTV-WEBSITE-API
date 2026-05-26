@@ -377,7 +377,7 @@ sudo python3 /opt/ptv-tracker/scripts/provision_ssl.py \
 
 ```bash
 systemctl status ptv-tracker
-curl -k -I https://localhost
+curl -k --resolve ptv-tracker.duckdns.org:443:127.0.0.1 -I https://ptv-tracker.duckdns.org
 ```
 
 Open `https://ptv-tracker.duckdns.org` (or your Pi's IP) and load a feed.

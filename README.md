@@ -19,6 +19,7 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 - **Request size limits** — 1KB JSON body limit, 2MB upstream response cap
 - **Graceful shutdown** — SIGTERM/SIGINT handler with 10s drain timeout
 - **Health endpoint** — `/health` returns cache status, uptime, upstream reachability
+- **Same-origin policy** — explicit `Cross-Origin-Resource-Policy: same-origin` via Helmet
 - **Error classification** — auth failures, upstream 5xx, and network errors return distinct HTTP status codes
 
 ## Stack
@@ -91,8 +92,9 @@ See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment
 ## API
 
 | Endpoint | Description |
-|---|---|
+|---|---|---|
 | `GET /api/gtfs?feed=<key>&limit=<n>` | Fetch and decode a GTFS-RT feed |
+| `GET /health` | Health check — cache status, uptime, upstream reachability |
 | `GET /` | Dashboard UI (static files) |
 
 ### Feed Keys

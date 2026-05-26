@@ -131,7 +131,8 @@ The current nginx config handles basic reverse proxying. Strengthen it for inter
 
 ```nginx
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name ptv-tracker.duckdns.org;
 
     # Restrict TLS to modern standards
