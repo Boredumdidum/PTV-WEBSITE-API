@@ -14,7 +14,7 @@
 - [ ] Create `src/components/`, `src/utils/`, `src/config/` directory structure
 - [ ] Add basic DOM smoke tests (Playwright or happy-dom)
 - [ ] Create `.env.example` with all documented variables
-- [ ] Design and add favicon (SVG + ICO) with neo-brutalist tram icon, configure links in `<head>`
+- [x] Design and add favicon (SVG) — map pin with position dot, configured in `<head>`
 
 ## Weekly Phases
 
@@ -48,4 +48,4 @@
 ### Phase 7 — Final Integration & Docs
 - Add basic DOM smoke tests (Playwright or happy-dom)
 - Create `.env.example` with all documented variables
-- Final integration test — deploy to staging, verify all 5 feeds load correctly, map renders, theme toggles, mock data works offline
+- Final integration test — deploy to staging, verify both feeds load correctly, map renders, theme toggles, mock data works offline

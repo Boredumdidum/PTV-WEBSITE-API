@@ -67,4 +67,4 @@
 ### Phase 7 — Final Documentation
 - [x] Add JSDoc comments to all exported backend functions
 - [x] Document all environment variables in `README.md`
-- [ ] Final integration test — deploy to staging, verify all 5 feeds load correctly, Docker container starts cleanly
+- [ ] Final integration test — deploy to staging, verify all 2 feeds load correctly, Docker container starts cleanly

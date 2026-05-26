@@ -4,13 +4,14 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 
 ## Features
 
-- **5 realtime feeds** — metro trip updates, service alerts, vehicle positions; bus trip updates and vehicle positions
+- **2 realtime feeds** — metro and bus vehicle positions
 - **Proxy architecture** — API key stays server-side, browser only talks to the local proxy
 - **30-second cache** — reduces upstream API calls; TTL configurable via `CACHE_TTL_MS` env var
-- **Leaflet map** — vehicle positions plotted on an OpenStreetMap base layer
+- **Leaflet map** — vehicle positions plotted on an OpenStreetMap base layer, locked to Victoria bounds with train route names
 - **Route search** — filter entities by route ID in real time
 - **Mock data mode** — offline testing with generated data
 - **Dark/light theme** — persisted to `localStorage`
+- **Collapsible sidebar** — toggle with hamburger button, state saved to `localStorage`
 - **Neo-brutalist UI** — bold, sharp, no rounded corners
 - **Structured logging** — JSON logs via Pino with per-request correlation IDs
 - **Rate limited** — 60 requests/minute per IP to the GTFS endpoint
@@ -74,8 +75,9 @@ See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment
 ├── docker-compose.yml # Service definition with env file and healthcheck
 ├── .dockerignore      # Build context exclusions
 ├── index.html         # Single-page app
-├── script.js          # Frontend logic (546 lines)
-├── style.css          # Neo-brutalist stylesheet (515 lines)
+├── favicon.svg        # SVG favicon — map pin with position dot
+├── script.js          # Frontend logic (~1190 lines)
+├── style.css          # Neo-brutalist stylesheet
 ├── config/            # Feed configuration and validation
 │   └── feeds.js
 ├── middleware/         # Express middleware
@@ -100,10 +102,7 @@ See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment
 
 ### Feed Keys
 
-- `metro-trip-updates`
-- `metro-service-alerts`
 - `metro-vehicle-positions`
-- `bus-trip-updates`
 - `bus-vehicle-positions`
 
 ## License

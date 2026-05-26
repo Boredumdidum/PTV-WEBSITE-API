@@ -17,7 +17,7 @@
 - [x] Graceful shutdown handler (`SIGTERM`/`SIGINT`) to close the server cleanly
 
 ## Frontend (`script.js`)
-- Extract UI components into separate files (e.g. `components/map.js`, `components/dashboard.js`, `utils/format.js`) — the single 546-line file is becoming hard to maintain
+- Extract UI components into separate files (e.g. `components/map.js`, `components/dashboard.js`, `utils/format.js`) — the single ~1190-line file is becoming hard to maintain
 - Replace raw DOM manipulation with a small reactive pattern or vanilla web components for better state management
 - Debounce the route search input handler to avoid excessive re-renders during fast typing
 - Handle network errors more gracefully — show a retry button with exponential backoff instead of a static error message

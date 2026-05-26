@@ -78,14 +78,16 @@ Use these for icon backgrounds, chart bars, progress fills, highlights, and any 
 
 ### Fonts to load
 
-1. **Display font** — a bold, playful, bubble-style display font for headings and large values. Use "Lilita One" from Google Fonts.
-2. **Body font** — "DM Sans" from Google Fonts (weights 400, 500, 700).
+1. **Display font** — a bold, condensed sans-serif for headings and large values. Use "Barlow Condensed" from Google Fonts.
+2. **Body font** — "Inter" from Google Fonts (optical sizing, weights 300–800).
+3. **Data font** — "JetBrains Mono" from Google Fonts (weights 400, 500, 600, 700).
 
 ### Font variables
 
 ```css
---font-display: 'Lilita One', 'DM Sans', sans-serif;
---font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+--font-display: "Barlow Condensed", "Barlow", "DM Sans", sans-serif;
+--font-body: "Inter", system-ui, -apple-system, sans-serif;
+--font-data: "JetBrains Mono", "Consolas", monospace;
 ```
 
 ### Where to apply
@@ -124,6 +126,7 @@ The page uses a **fixed sidebar + scrollable main content** layout.
 
 - Sidebar: `width: 220px`, `position: fixed`, `top: 0`, `left: 0`, `bottom: 0`, background `var(--sidebar-bg)`, right border `3px solid var(--border)`
 - Main content: `margin-left: 220px`, `max-width: 960px`, `padding: 32px 40px`
+- Sidebar toggle: hamburger button (`#sidebar-toggle`) positioned `absolute; left: 100%` inside the sidebar. When collapsed (`body.sidebar-closed`), sidebar translates `-100%` off-screen via CSS transition; main margin adjusts. State persisted in `localStorage`.
 
 ### Sidebar contents (top to bottom)
 
@@ -328,6 +331,6 @@ At `max-width: 768px`:
 
 - Vanilla HTML, CSS, JavaScript only — no frameworks, no build tools
 - Lucide icons via CDN (`https://unpkg.com/lucide@latest/dist/umd/lucide.js`)
-- Google Fonts: DM Sans (`https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap`)
+- Google Fonts: Barlow Condensed, Inter, JetBrains Mono (`https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Inter:opsz,wght@14..32,300..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap`)
 - `localStorage` for persisting user preferences and data
 - Single `index.html`, `style.css`, `script.js` file structure
