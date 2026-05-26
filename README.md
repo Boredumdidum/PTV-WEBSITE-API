@@ -14,7 +14,10 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 - **Neo-brutalist UI** — bold, sharp, no rounded corners
 - **Structured logging** — JSON logs via Pino with per-request correlation IDs
 - **Rate limited** — 60 requests/minute per IP to the GTFS endpoint
-- **Security headers** — Helmet middleware sets 7 security-related HTTP headers
+- **Security headers** — Helmet middleware with custom CSP allowing CDN scripts, maps, and fonts
+- **Input validation** — `limit` query param validated as positive integer, max 200
+- **Request size limits** — 1KB JSON body limit, 2MB upstream response cap
+- **Graceful shutdown** — SIGTERM/SIGINT handler with 10s drain timeout
 - **Health endpoint** — `/health` returns cache status, uptime, upstream reachability
 - **Error classification** — auth failures, upstream 5xx, and network errors return distinct HTTP status codes
 
@@ -28,25 +31,36 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 | Icons | Lucide (CDN) |
 | Data | GTFS Realtime (Protocol Buffers) |
 | TLS | nginx reverse proxy (self-signed or Let's Encrypt) |
+| Container | Docker (multi-stage Node 20 Alpine), Docker Compose |
 
 ## Quick Start
 
+### With Node
 ```bash
 npm install
 echo "PTV_API_KEY=your-key-here" > .env
 npm start
 ```
 
+### With Docker
+```bash
+echo "PTV_API_KEY=your-key-here" > .env
+docker compose up -d --build
+```
+
 Open `http://localhost:3000` in your browser.
 
 ## Raspberry Pi Deployment
 
-See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment instructions on a Pi with DuckDNS, nginx, and TLS.
+See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment instructions on a Pi with DuckDNS, nginx, and TLS. Docker is the recommended deployment method on Pi.
 
 ## Project Structure
 
 ```
 ├── server.js          # Express backend — middleware, routes, static files
+├── Dockerfile         # Multi-stage Node 20 Alpine container
+├── docker-compose.yml # Service definition with env file and healthcheck
+├── .dockerignore      # Build context exclusions
 ├── index.html         # Single-page app
 ├── script.js          # Frontend logic (546 lines)
 ├── style.css          # Neo-brutalist stylesheet (515 lines)
@@ -57,7 +71,7 @@ See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment
 ├── routes/            # Route handlers
 │   └── gtfs.js        # GTFS-RT feed proxy — fetch, decode, cache, error classify
 ├── data/              # OpenAPI specs for upstream PTV endpoints
-├── scripts/           # Python deployment scripts (Pi setup, certs)
+├── scripts/           # Python deployment scripts (Pi setup, certs, certbot hook)
 ├── fonts/             # Custom display fonts
 ├── ROADMAP/           # Code review, sprint plans, security doc
 └── docs/              # Deployment guide and UI style guide

@@ -5,9 +5,57 @@ Deploy the PTV GTFS-RT proxy on a Raspberry Pi with DuckDNS and HTTPS.
 ## Two deployment paths
 
 | Approach | Port forwarding? | Browser warning? | When to use |
-|---|---|---|---|
+|---|---|---|---|---|
 | **Self-signed** (default) | No (port 443 only) | Yes (expected) | Quick setup, local/private use |
 | **Let's Encrypt** | No (port 443 only, DNS-01 challenge) | No | Public-facing, want trusted cert |
+| **Docker** (recommended) | No (port 443 only) | Depends on cert | Production, avoids Node/npm on host |
+
+---
+
+## Docker deployment (recommended)
+
+The project includes a `Dockerfile` (multi-stage Node 20 Alpine) and `docker-compose.yml`. This is the recommended deployment method — no Node.js or npm needed on the host, and the app runs as an unprivileged user inside the container.
+
+### 1) Install Docker
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+```
+
+### 2) Build and start
+
+```bash
+cd /opt/ptv-tracker
+echo "PTV_API_KEY=your-key-here" > .env
+sudo docker compose up -d --build
+```
+
+### 3) Verify
+
+```bash
+sudo docker compose ps
+sudo docker compose logs --tail=20
+curl -s http://localhost:3000/health | python3 -m json.tool
+```
+
+The container runs on port 3000. nginx on the host (configured by `setup_pi.py` or manually) proxies `https://ptv-tracker.duckdns.org` → `http://127.0.0.1:3000`.
+
+### Useful Docker commands
+
+```bash
+sudo docker compose logs -f       # follow logs
+sudo docker compose restart       # restart container
+sudo docker compose down          # stop container
+sudo docker compose up -d         # start container
+sudo docker compose build         # rebuild image
+```
 
 ---
 

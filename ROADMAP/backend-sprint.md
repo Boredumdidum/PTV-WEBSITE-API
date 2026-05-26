@@ -16,7 +16,7 @@
 - [x] Create `Dockerfile` and `docker-compose.yml` for containerised deployment
 - [x] Create `.dockerignore`
 - [ ] Add GitHub Actions workflow stub (lint on PR, build check, auto-deploy to Pi)
-- [ ] Update Raspberry Pi setup docs with Docker deployment path
+- [x] Update Raspberry Pi setup docs with Docker deployment path
 - [ ] Add unit tests for cache logic, feed validation, and error classification
 - [ ] Add JSDoc comments to all exported backend functions
 - [ ] Document all environment variables in `README.md`
@@ -55,7 +55,7 @@
 - [x] Create `.dockerignore`
 
 ### Phase 5 — Deployment Pipeline
-- Update Raspberry Pi setup docs (`docs/raspberry-pi-setup.md`) with Docker deployment path
+- [x] Update Raspberry Pi setup docs (`docs/raspberry-pi-setup.md`) with Docker deployment path
 - Add GitHub Actions workflow stub (lint on PR, build check, auto-deploy to Pi)
 
 ### Phase 6 — DNS Automation & Unit Tests
