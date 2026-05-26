@@ -42,7 +42,7 @@
 - [x] Switch Let's Encrypt to DNS-01 challenge — no port 80 forwarding needed on home router (see `ROADMAP/home-deployment-security.md`)
 
 ## Deployment / Infrastructure
-- Add a `Dockerfile` and `docker-compose.yml` for containerised deployment (simplifies the Raspberry Pi setup)
+- [x] Add a `Dockerfile` and `docker-compose.yml` for containerised deployment (simplifies the Raspberry Pi setup)
 - The Python deployment scripts could be converted to Ansible playbooks for idempotent provisioning
 - Add a CI/CD pipeline stub (GitHub Actions) for linting on PR and auto-deploy on merge to main
 - Consider using PM2 or `systemd` watchdog to auto-restart the Node process if it crashes

@@ -1,0 +1,14 @@
+.env
+.git
+.gitignore
+node_modules
+ROADMAP
+docs
+scripts
+data
+fonts
+*.md
+*.otf
+*.ttf
+*.json
+!package.json

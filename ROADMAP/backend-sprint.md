@@ -13,8 +13,8 @@
 - [x] Validate `limit` query param as a positive integer; sanitise all inputs
 - [x] Add HTTP request size limits to prevent OOM (1kb JSON body, 10MB upstream response)
 - [x] Add graceful shutdown on `SIGTERM`/`SIGINT`
-- [ ] Create `Dockerfile` and `docker-compose.yml` for containerised deployment
-- [ ] Create `.dockerignore`
+- [x] Create `Dockerfile` and `docker-compose.yml` for containerised deployment
+- [x] Create `.dockerignore`
 - [ ] Add GitHub Actions workflow stub (lint on PR, build check, auto-deploy to Pi)
 - [ ] Update Raspberry Pi setup docs with Docker deployment path
 - [ ] Add unit tests for cache logic, feed validation, and error classification
@@ -50,9 +50,9 @@
 
 ### Phase 4 — Containerisation
 - [x] Implement graceful shutdown (`SIGTERM`/`SIGINT` handlers)
-- Create `Dockerfile` (multi-stage, Node 20 Alpine)
-- Create `docker-compose.yml` with service definition and env file
-- Create `.dockerignore`
+- [x] Create `Dockerfile` (multi-stage, Node 20 Alpine)
+- [x] Create `docker-compose.yml` with service definition and env file
+- [x] Create `.dockerignore`
 
 ### Phase 5 — Deployment Pipeline
 - Update Raspberry Pi setup docs (`docs/raspberry-pi-setup.md`) with Docker deployment path
