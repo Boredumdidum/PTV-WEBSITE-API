@@ -80,7 +80,9 @@ function updateThemeToggle(theme) {
 
 export function setTheme(theme) {
 	const isDark = theme === "dark";
-	document.body.classList.toggle("dark", isDark);
+	const html = document.documentElement;
+	html.classList.toggle("dark", isDark);
+	html.classList.toggle("light", !isDark);
 	localStorage.setItem("theme", isDark ? "dark" : "light");
 	updateThemeToggle(isDark ? "dark" : "light");
 	showToast(isDark ? "Dark mode enabled" : "Light mode enabled", isDark ? "moon" : "sun");
@@ -88,9 +90,19 @@ export function setTheme(theme) {
 
 export function initTheme() {
 	const stored = localStorage.getItem("theme");
-	const theme = stored === "dark" ? "dark" : "light";
-	document.body.classList.toggle("dark", theme === "dark");
-	updateThemeToggle(theme);
+	const html = document.documentElement;
+	if (stored === "dark") {
+		html.classList.add("dark");
+		html.classList.remove("light");
+	} else if (stored === "light") {
+		html.classList.add("light");
+		html.classList.remove("dark");
+	} else {
+		const prefersDark = matchMedia("(prefers-color-scheme: dark)").matches;
+		html.classList.toggle("dark", prefersDark);
+		html.classList.toggle("light", !prefersDark);
+	}
+	updateThemeToggle(stored === "dark" || (!stored && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light");
 }
 
 export function updateRouteSearchUI(feed) {

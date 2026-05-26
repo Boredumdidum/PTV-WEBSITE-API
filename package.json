@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node --test",
+    "test": "node --experimental-test-coverage --test",
     "test:e2e": "playwright test"
   },
   "dependencies": {

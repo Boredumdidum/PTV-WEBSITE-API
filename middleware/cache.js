@@ -1,4 +1,5 @@
 const CACHE_TTL_MS = parseInt(process.env.CACHE_TTL_MS, 10) || 30000;
+const MAX_CACHE_SIZE = 100;
 
 const store = new Map();
 
@@ -15,6 +16,10 @@ function get(feedKey) {
 
 /** Store data for a feed key with the current timestamp. */
 function set(feedKey, data) {
+  if (store.size >= MAX_CACHE_SIZE) {
+    const oldest = store.keys().next().value;
+    store.delete(oldest);
+  }
   store.set(feedKey, { time: Date.now(), data });
 }
 

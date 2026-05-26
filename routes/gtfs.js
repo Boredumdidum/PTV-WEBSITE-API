@@ -6,43 +6,60 @@ const { gtfsUpstreamDuration, gtfsCacheHits, gtfsCacheMisses } = require("../mid
 
 const MAX_RESPONSE_SIZE = 2 * 1024 * 1024; // 2 MB
 const REQUEST_TIMEOUT_MS = 15000; // 15 seconds
+const MAX_RETRIES = 2;
 
-function fetchBuffer(url, headers) {
-  return new Promise((resolve, reject) => {
-    const request = https.get(url, { headers }, (response) => {
-      const { statusCode } = response;
-      if (!statusCode || statusCode < 200 || statusCode >= 300) {
-        response.resume();
-        const error = new Error(`Upstream request failed with status ${statusCode}`);
-        error.statusCode = statusCode;
-        reject(error);
-        return;
-      }
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-      const chunks = [];
-      let totalBytes = 0;
-      response.on("data", (chunk) => {
-        totalBytes += chunk.length;
-        if (totalBytes > MAX_RESPONSE_SIZE) {
-          request.destroy();
-          reject(new Error("Upstream response exceeded maximum size"));
+function shouldRetry(error) {
+  return (error.statusCode && error.statusCode >= 500) || error.code === "ECONNRESET" || error.code === "ENOTFOUND";
+}
+
+async function fetchBuffer(url, headers, attempt = 1) {
+  try {
+    return await new Promise((resolve, reject) => {
+      const request = https.get(url, { headers }, (response) => {
+        const { statusCode } = response;
+        if (!statusCode || statusCode < 200 || statusCode >= 300) {
+          response.resume();
+          const error = new Error(`Upstream request failed with status ${statusCode}`);
+          error.statusCode = statusCode;
+          reject(error);
           return;
         }
-        chunks.push(chunk);
+
+        const chunks = [];
+        let totalBytes = 0;
+        response.on("data", (chunk) => {
+          totalBytes += chunk.length;
+          if (totalBytes > MAX_RESPONSE_SIZE) {
+            request.destroy();
+            reject(new Error("Upstream response exceeded maximum size"));
+            return;
+          }
+          chunks.push(chunk);
+        });
+        response.on("end", () => resolve(Buffer.concat(chunks)));
       });
-      response.on("end", () => resolve(Buffer.concat(chunks)));
-    });
 
-    request.setTimeout(REQUEST_TIMEOUT_MS, () => {
-      request.destroy();
-      reject(new Error("Upstream request timed out"));
-    });
+      request.setTimeout(REQUEST_TIMEOUT_MS, () => {
+        request.destroy();
+        reject(new Error("Upstream request timed out"));
+      });
 
-    request.on("error", (error) => {
-      error.code = error.code || "ENETUNREACH";
-      reject(error);
+      request.on("error", (error) => {
+        error.code = error.code || "ENETUNREACH";
+        reject(error);
+      });
     });
-  });
+  } catch (error) {
+    if (attempt < MAX_RETRIES && shouldRetry(error)) {
+      await sleep(1000 * attempt);
+      return fetchBuffer(url, headers, attempt + 1);
+    }
+    throw error;
+  }
 }
 
 /** Express handler for GET /api/gtfs?feed=<key>&limit=<n>. */

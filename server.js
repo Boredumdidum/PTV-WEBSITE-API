@@ -72,6 +72,11 @@ app.get("/api/gtfs", gtfsLimiter, gtfsHandler);
 
 app.use(express.static(path.join(__dirname), { maxAge: "1d", immutable: true }));
 
+app.use((err, req, res, next) => {
+	req.log.error({ err }, "Unhandled error");
+	res.status(500).json({ error: "Internal server error." });
+});
+
 const server = app.listen(PORT, () => {
   logger.info({ port: PORT }, "Server started");
 });
