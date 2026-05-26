@@ -75,6 +75,7 @@ def write_hook_script(script_dir):
     """Write the DuckDNS certbot hook script if not already present."""
     hook_path = script_dir / "duckdns-hook.sh"
     if hook_path.exists():
+        os.chmod(hook_path, 0o755)
         print(f"  ✓ Hook script already exists at {hook_path}")
         return hook_path
 
@@ -209,7 +210,8 @@ def write_nginx(domain, port):
     ssl_key = f"/etc/letsencrypt/live/{domain}/privkey.pem"
 
     nginx_text = f"""server {{
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name {domain};
 
     ssl_certificate {ssl_cert};
@@ -283,7 +285,7 @@ def verify_cert(domain):
     run(["systemctl", "reload", "nginx"])
 
     result = subprocess.run(
-        ["curl", "-o", "/dev/null", "-s", "-w", "%{http_code}", "https://localhost"],
+        ["curl", "--resolve", f"{domain}:443:127.0.0.1", "-o", "/dev/null", "-s", "-w", "%{http_code}", f"https://{domain}"],
         capture_output=True, text=True, timeout=10,
     )
     if result.stdout == "200":

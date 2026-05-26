@@ -39,12 +39,14 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 ```bash
 npm install
 echo "PTV_API_KEY=your-key-here" > .env
+chmod 600 .env
 npm start
 ```
 
 ### With Docker
 ```bash
 echo "PTV_API_KEY=your-key-here" > .env
+chmod 600 .env
 docker compose up -d --build
 ```
 

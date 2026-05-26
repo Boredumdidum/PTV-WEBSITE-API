@@ -243,7 +243,8 @@ Create `/etc/nginx/sites-available/ptv-tracker`:
 
 ```nginx
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name ptv-tracker.duckdns.org;
 
     ssl_certificate /etc/letsencrypt/live/ptv-tracker.duckdns.org/fullchain.pem;

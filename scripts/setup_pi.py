@@ -93,7 +93,8 @@ def write_nginx(domain, port):
     nginx_text = textwrap.dedent(
         f"""
         server {{
-            listen 443 ssl http2;
+            listen 443 ssl;
+            http2 on;
             server_name {domain};
 
             ssl_certificate {ssl_cert};

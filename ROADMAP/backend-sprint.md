@@ -18,8 +18,8 @@
 - [ ] Add GitHub Actions workflow stub (lint on PR, build check, auto-deploy to Pi)
 - [x] Update Raspberry Pi setup docs with Docker deployment path
 - [ ] Add unit tests for cache logic, feed validation, and error classification
-- [ ] Add JSDoc comments to all exported backend functions
-- [ ] Document all environment variables in `README.md`
+- [x] Add JSDoc comments to all exported backend functions
+- [x] Document all environment variables in `README.md`
 - [x] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge (no port 80 dependency)
 - [x] Remove port 80 server block from nginx config template in `setup_pi.py`
 - [x] Write DuckDNS API hook script for certbot DNS-01 automation (`scripts/duckdns-hook.sh`)
@@ -37,7 +37,7 @@
 - [x] Add `express-rate-limit` to `/api/gtfs` endpoint
 - [x] Validate and sanitise `limit` and `feed` query parameters
 - [x] Add HTTP body/payload size limits (1kb JSON body, 10MB upstream response)
-- [ ] Audit `.env` file handling and document `chmod 600`
+- [x] Audit `.env` file handling and document `chmod 600`
 - [x] Remove port 80 server block from nginx config template in `setup_pi.py`
 - [x] Remove port 80 references from `provision_ssl.py` (rewritten for DNS-01)
 
@@ -65,6 +65,6 @@
 - [ ] Add unit tests for cache logic, feed validation, and error classification (using `node:test` or `vitest`)
 
 ### Phase 7 — Final Documentation
-- Add JSDoc comments to all exported backend functions
-- Document all environment variables in `README.md`
-- Final integration test — deploy to staging, verify all 5 feeds load correctly, Docker container starts cleanly
+- [x] Add JSDoc comments to all exported backend functions
+- [x] Document all environment variables in `README.md`
+- [ ] Final integration test — deploy to staging, verify all 5 feeds load correctly, Docker container starts cleanly
