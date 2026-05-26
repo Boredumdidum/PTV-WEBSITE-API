@@ -27,6 +27,9 @@ const ROUTE_LINE_COLORS = {
 	0: "#ff922b",
 	1: "#339af0",
 };
+const ROUTE_SERVICE_URL = "https://router.project-osrm.org/route/v1/driving/";
+const MAX_ROUTE_POINTS = 40;
+const ROUTE_CACHE = new Map();
 
 let mapInstance = null;
 let markerLayer = null;
@@ -34,6 +37,7 @@ let routeLayer = null;
 let lastPayload = null;
 let lastFeed = null;
 let lastIsMock = false;
+let routeRequestId = 0;
 
 function setStatus(state, text) {
 	statusEl.dataset.state = state;
@@ -148,6 +152,95 @@ function sortPositionsForLine(items) {
 		.sort((a, b) =>
 			sortByLongitude ? a.longitude - b.longitude : a.latitude - b.latitude
 		);
+}
+
+function sampleRoutePoints(points, maxPoints) {
+	if (points.length <= maxPoints) {
+		return points.slice();
+	}
+
+	const sampled = [];
+	const lastIndex = points.length - 1;
+	for (let i = 0; i < maxPoints; i += 1) {
+		const index = Math.round((i * lastIndex) / (maxPoints - 1));
+		sampled.push(points[index]);
+	}
+
+	return sampled;
+}
+
+function buildRouteCacheKey(points) {
+	return points
+		.map((point) => `${point[0].toFixed(5)},${point[1].toFixed(5)}`)
+		.join("|");
+}
+
+async function drawRouteLine(points, color, requestId) {
+	if (!routeLayer || points.length < 2) {
+		return;
+	}
+
+	const sampled = sampleRoutePoints(points, MAX_ROUTE_POINTS);
+	const cacheKey = buildRouteCacheKey(sampled);
+	const cached = ROUTE_CACHE.get(cacheKey);
+	if (cached) {
+		if (requestId !== routeRequestId) {
+			return;
+		}
+		L.polyline(cached, {
+			color,
+			weight: 4,
+			opacity: 0.9,
+			lineJoin: "round",
+			lineCap: "round",
+		}).addTo(routeLayer);
+		return;
+	}
+
+	const coordString = sampled
+		.map((point) => `${point[1]},${point[0]}`)
+		.join(";");
+	const url = `${ROUTE_SERVICE_URL}${coordString}?overview=full&geometries=geojson`;
+
+	try {
+		const response = await fetch(url);
+		if (!response.ok) {
+			throw new Error("Routing failed");
+		}
+
+		const data = await response.json();
+		const coords =
+			data && data.routes && data.routes[0] && data.routes[0].geometry
+				? data.routes[0].geometry.coordinates
+				: null;
+		if (!Array.isArray(coords) || coords.length < 2) {
+			throw new Error("Routing missing geometry");
+		}
+
+		const latLngs = coords.map((coord) => [coord[1], coord[0]]);
+		ROUTE_CACHE.set(cacheKey, latLngs);
+		if (requestId !== routeRequestId) {
+			return;
+		}
+		L.polyline(latLngs, {
+			color,
+			weight: 4,
+			opacity: 0.9,
+			lineJoin: "round",
+			lineCap: "round",
+		}).addTo(routeLayer);
+	} catch (error) {
+		if (requestId !== routeRequestId) {
+			return;
+		}
+		L.polyline(points, {
+			color,
+			weight: 4,
+			opacity: 0.9,
+			lineJoin: "round",
+			lineCap: "round",
+		}).addTo(routeLayer);
+	}
 }
 
 function resolveSelectedRouteId(entities, query) {
@@ -334,6 +427,7 @@ function updateMap(feed, entities, routeQuery) {
 	if (routeLayer) {
 		routeLayer.clearLayers();
 	}
+	const currentRouteRequestId = ++routeRequestId;
 
 	const showVehicles = isVehicleFeed(feed);
 	const busMode = isBusFeed(feed);
@@ -414,11 +508,11 @@ function updateMap(feed, entities, routeQuery) {
 			}
 			const sorted = sortPositionsForLine(items);
 			const latLngs = sorted.map((item) => [item.latitude, item.longitude]);
-			L.polyline(latLngs, {
-				color: ROUTE_LINE_COLORS[directionKey],
-				weight: 4,
-				opacity: 0.9,
-			}).addTo(routeLayer);
+			void drawRouteLine(
+				latLngs,
+				ROUTE_LINE_COLORS[directionKey],
+				currentRouteRequestId
+			);
 		});
 	}
 
