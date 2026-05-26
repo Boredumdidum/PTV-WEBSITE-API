@@ -37,7 +37,7 @@
 - Add CORS configuration (even if same-origin, explicit is better than implicit) — currently relies on default Express behaviour
 - [x] Set security HTTP headers via `helmet` middleware (X-Content-Type-Options, X-Frame-Options, CSP, etc.)
 - [x] Sanitise and validate the `limit` query parameter as a positive integer (currently only capped at 200, but passing `NaN` or negative values could cause unexpected behaviour)
-- Add input size limits to prevent extremely large responses from consuming all server memory
+- [x] Add input size limits to prevent extremely large responses from consuming all server memory
 - Consider adding a CSRF token for any future mutation endpoints
 - [x] Switch Let's Encrypt to DNS-01 challenge — no port 80 forwarding needed on home router (see `ROADMAP/home-deployment-security.md`)
 

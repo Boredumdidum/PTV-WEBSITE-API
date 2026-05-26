@@ -11,7 +11,7 @@
 - [x] Add rate-limiting middleware (`express-rate-limit`)
 - [x] Add `helmet` for security HTTP headers
 - [x] Validate `limit` query param as a positive integer; sanitise all inputs
-- [ ] Add HTTP request size limits to prevent OOM
+- [x] Add HTTP request size limits to prevent OOM (1kb JSON body, 10MB upstream response)
 - [ ] Add graceful shutdown on `SIGTERM`/`SIGINT`
 - [ ] Create `Dockerfile` and `docker-compose.yml` for containerised deployment
 - [ ] Create `.dockerignore`
@@ -36,7 +36,7 @@
 - [x] Add `helmet` middleware with secure defaults
 - [x] Add `express-rate-limit` to `/api/gtfs` endpoint
 - [x] Validate and sanitise `limit` and `feed` query parameters
-- [ ] Add HTTP body/payload size limits
+- [x] Add HTTP body/payload size limits (1kb JSON body, 10MB upstream response)
 - [ ] Audit `.env` file handling and document `chmod 600`
 - [x] Remove port 80 server block from nginx config template in `setup_pi.py`
 - [x] Remove port 80 references from `provision_ssl.py` (rewritten for DNS-01)

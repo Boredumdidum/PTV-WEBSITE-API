@@ -22,6 +22,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(helmet());
+app.use(express.json({ limit: "1kb" }));
 app.use(pinoHttp({ logger }));
 
 const gtfsLimiter = rateLimit({

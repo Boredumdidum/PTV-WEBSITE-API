@@ -3,6 +3,8 @@ const { transit_realtime } = require("gtfs-realtime-bindings");
 const { isValidFeedKey, getFeedUrl } = require("../config/feeds");
 const cache = require("../middleware/cache");
 
+const MAX_RESPONSE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 function fetchBuffer(url, headers) {
   return new Promise((resolve, reject) => {
     const request = https.get(url, { headers }, (response) => {
@@ -16,7 +18,16 @@ function fetchBuffer(url, headers) {
       }
 
       const chunks = [];
-      response.on("data", (chunk) => chunks.push(chunk));
+      let totalBytes = 0;
+      response.on("data", (chunk) => {
+        totalBytes += chunk.length;
+        if (totalBytes > MAX_RESPONSE_SIZE) {
+          request.destroy();
+          reject(new Error("Upstream response exceeded maximum size"));
+          return;
+        }
+        chunks.push(chunk);
+      });
       response.on("end", () => resolve(Buffer.concat(chunks)));
     });
 
