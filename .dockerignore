@@ -12,3 +12,4 @@ fonts
 *.ttf
 *.json
 !package.json
+!package-lock.json
