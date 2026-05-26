@@ -34,7 +34,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://unpkg.com"],
+      scriptSrc: ["'self'", "https://unpkg.com", "'sha256-oZssK+lrCwTVUs7/cKDOSPb7PydRSjjDxXFGtdTIW5o='"],
       styleSrc: ["'self'", "https://fonts.googleapis.com", "https://unpkg.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "https://*.tile.openstreetmap.org", "data:"],
