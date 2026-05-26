@@ -21,7 +21,18 @@ const logger = pino({
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://unpkg.com"],
+      styleSrc: ["'self'", "https://fonts.googleapis.com", "https://unpkg.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "https://tile.openstreetmap.org", "data:"],
+      connectSrc: ["'self'"],
+    },
+  },
+}));
 app.use(express.json({ limit: "1kb" }));
 app.use(pinoHttp({ logger }));
 
