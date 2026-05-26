@@ -13,7 +13,7 @@ COPY config ./config
 COPY middleware ./middleware
 COPY routes ./routes
 COPY fonts ./fonts
-COPY server.js package.json index.html script.js style.css ./
+COPY server.js package.json index.html script.js style.css favicon.svg ./
 
 EXPOSE 3000
 USER ptvtracker
