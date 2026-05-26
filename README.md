@@ -69,6 +69,7 @@ npm run test:e2e         # Playwright browser smoke tests (requires npm install 
 | `PTV_API_KEY` | *required* | PTV Open Data API subscription key |
 | `PORT` | `3000` | Port the Express server listens on |
 | `CACHE_TTL_MS` | `30000` | Feed cache TTL in milliseconds |
+| `REQUEST_TIMEOUT_MS` | `15000` | Upstream fetch timeout in milliseconds |
 | `LOG_LEVEL` | `info` | Pino log level (`fatal`, `error`, `warn`, `info`, `debug`, `trace`) |
 
 ## Raspberry Pi Deployment
