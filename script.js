@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const themeToggle = document.getElementById("theme-toggle");
 	if (themeToggle) {
 		themeToggle.addEventListener("click", () => {
-			const nextTheme = document.body.classList.contains("dark") ? "light" : "dark";
+			const nextTheme = document.documentElement.classList.contains("dark") ? "light" : "dark";
 			setTheme(nextTheme);
 		});
 	}
