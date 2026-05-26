@@ -13,7 +13,7 @@ COPY config ./config
 COPY middleware ./middleware
 COPY routes ./routes
 COPY fonts ./fonts
-COPY server.js package.json index.html script.js style.css favicon.svg ./
+COPY server.js package.json index.html script.js style.css favicon.svg theme-init.js ./
 COPY src ./src
 
 EXPOSE 3000
