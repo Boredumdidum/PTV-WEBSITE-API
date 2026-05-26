@@ -8,6 +8,7 @@ const pinoHttp = require("pino-http");
 const cache = require("./middleware/cache");
 const gtfsHandler = require("./routes/gtfs");
 const { client, metricsMiddleware } = require("./middleware/metrics");
+const restrictMetrics = require("./middleware/restrictMetrics");
 
 require("dotenv").config();
 
@@ -59,7 +60,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.get("/metrics", async (req, res) => {
+app.get("/metrics", restrictMetrics, async (req, res) => {
   res.set("Content-Type", client.register.contentType);
   res.end(await client.register.metrics());
 });
