@@ -689,8 +689,8 @@ function updateMap(feed, entities, routeQuery) {
 	}
 
 	positions.forEach((item) => {
-		const routeId =
-			(item.vehicle.trip && item.vehicle.trip.routeId) || "Unknown route";
+		const rawRouteId = item.vehicle.trip && item.vehicle.trip.routeId;
+		const routeId = rawRouteId ? String(rawRouteId) : "";
 		const updated = formatTimestamp(item.vehicle.timestamp);
 		const speed = formatSpeed(item.position.speed);
 		const occupancy = formatEnum(item.vehicle.occupancyStatus);
@@ -700,9 +700,11 @@ function updateMap(feed, entities, routeQuery) {
 			? direction === 1 ? "City bound" : "Outbound"
 			: direction === 1 ? "City bound" : "Flinders St bound";
 
+		const vehicleType = busMode ? "Bus" : "Train";
+		const title = routeId ? formatRouteName(routeId) : vehicleType;
 		const popupLines = [
-			`<strong>${formatRouteName(routeId)}</strong>`,
-			`${busMode ? "Bus" : "Train"} · ${directionLabel}`,
+			`<strong>${title}</strong>`,
+			`${vehicleType} · ${directionLabel}`,
 			`Updated ${escapeHTML(updated)}`,
 		];
 		if (speed) {
