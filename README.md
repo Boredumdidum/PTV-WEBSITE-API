@@ -22,6 +22,9 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 - **Health endpoint** — `/health` returns cache status, uptime, upstream reachability
 - **Same-origin policy** — explicit `Cross-Origin-Resource-Policy: same-origin` via Helmet
 - **Error classification** — auth failures, upstream 5xx, and network errors return distinct HTTP status codes
+- **Request timeout** — upstream fetches time out after 15 seconds
+- **Prometheus metrics** — request duration, cache hit/miss, upstream latency at `/metrics`
+- **Browser tests** — Playwright smoke tests for UI, map, theme toggles, and feed selection
 
 ## Stack
 
@@ -52,7 +55,12 @@ chmod 600 .env
 docker compose up -d --build
 ```
 
-Open `http://localhost:3000` in your browser.
+## Testing
+
+```bash
+npm test                 # 32 unit tests (node:test, zero dependencies)
+npm run test:e2e         # Playwright browser smoke tests (requires npm install + npx playwright install)
+```
 
 ## Configuration
 
@@ -76,17 +84,26 @@ See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment
 ├── .dockerignore      # Build context exclusions
 ├── index.html         # Single-page app
 ├── favicon.svg        # SVG favicon — map pin with position dot
-├── script.js          # Frontend logic (~1190 lines)
-├── style.css          # Neo-brutalist stylesheet
-├── config/            # Feed configuration and validation
-│   └── feeds.js
-├── middleware/         # Express middleware
-│   └── cache.js       # In-memory TTL cache (get/set/getStatus)
-├── routes/            # Route handlers
+├── script.js          # Entry point — imports from src/ modules
+├── src/               # Frontend modules
+│   ├── constants.js   # Map defaults, feed colors, train route codes
+│   ├── utils/
+│   │   ├── format.js  # Formatting: timestamps, speed, route names
+│   │   └── dom.js     # DOM helpers: status, map hints, theme, toasts
+│   └── components/
+│       ├── map.js     # Leaflet map logic, markers, route lines
+│       └── dashboard.js # Data fetching, mock data, navigation
+├── config/
+│   └── feeds.js       # Feed URLs and validation
+├── middleware/
+│   ├── cache.js       # In-memory TTL cache (get/set/getStatus)
+│   └── metrics.js     # Prometheus metrics (histograms, counters)
+├── routes/
 │   └── gtfs.js        # GTFS-RT feed proxy — fetch, decode, cache, error classify
-├── data/              # OpenAPI specs for upstream PTV endpoints
 ├── scripts/           # Python deployment scripts (Pi setup, certs, certbot hook)
 ├── test/              # Unit tests (node:test)
+├── tests/e2e/         # Browser smoke tests (Playwright)
+├── data/              # GeoJSON line data + OpenAPI specs
 ├── fonts/             # Custom display fonts
 ├── ROADMAP/           # Code review, sprint plans, security doc
 └── docs/              # Deployment guide and UI style guide
@@ -95,9 +112,10 @@ See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for full deployment
 ## API
 
 | Endpoint | Description |
-|---|---|---|
-| `GET /api/gtfs?feed=<key>&limit=<n>` | Fetch and decode a GTFS-RT feed |
+|---|---|
+| `GET /api/gtfs?feed=<key>&limit=<n>` | Fetch and decode a GTFS-RT feed (rate-limited, 60 req/min) |
 | `GET /health` | Health check — cache status, uptime, upstream reachability |
+| `GET /metrics` | Prometheus metrics — request duration, cache hit/miss, upstream latency |
 | `GET /` | Dashboard UI (static files) |
 
 ### Feed Keys

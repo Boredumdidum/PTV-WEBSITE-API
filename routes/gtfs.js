@@ -2,8 +2,10 @@ const https = require("https");
 const { transit_realtime } = require("gtfs-realtime-bindings");
 const { isValidFeedKey, getFeedUrl } = require("../config/feeds");
 const cache = require("../middleware/cache");
+const { gtfsUpstreamDuration, gtfsCacheHits, gtfsCacheMisses } = require("../middleware/metrics");
 
 const MAX_RESPONSE_SIZE = 2 * 1024 * 1024; // 2 MB
+const REQUEST_TIMEOUT_MS = 15000; // 15 seconds
 
 function fetchBuffer(url, headers) {
   return new Promise((resolve, reject) => {
@@ -29,6 +31,11 @@ function fetchBuffer(url, headers) {
         chunks.push(chunk);
       });
       response.on("end", () => resolve(Buffer.concat(chunks)));
+    });
+
+    request.setTimeout(REQUEST_TIMEOUT_MS, () => {
+      request.destroy();
+      reject(new Error("Upstream request timed out"));
     });
 
     request.on("error", (error) => {
@@ -71,15 +78,19 @@ module.exports = function (req, res) {
 
   const cached = cache.get(feedKey);
   if (cached) {
+    gtfsCacheHits.inc({ feed: feedKey });
     req.log.info({ feed: feedKey, cached: true }, "Serving from cache");
     res.set("Cache-Control", "public, max-age=30");
     res.json(slice(cached));
     return;
   }
+  gtfsCacheMisses.inc({ feed: feedKey });
 
   (async () => {
     try {
+      const upstreamStart = Date.now();
       const buffer = await fetchBuffer(getFeedUrl(feedKey), { KeyID: apiKey });
+      gtfsUpstreamDuration.observe({ feed: feedKey }, (Date.now() - upstreamStart) / 1000);
       const feed = transit_realtime.FeedMessage.decode(buffer);
       const data = transit_realtime.FeedMessage.toObject(feed, {
         longs: String,

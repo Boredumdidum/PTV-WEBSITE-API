@@ -6,6 +6,7 @@ const pino = require("pino");
 const pinoHttp = require("pino-http");
 const cache = require("./middleware/cache");
 const gtfsHandler = require("./routes/gtfs");
+const { client, metricsMiddleware } = require("./middleware/metrics");
 
 require("dotenv").config();
 
@@ -22,6 +23,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.set("trust proxy", 1);
+
+app.use(metricsMiddleware);
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "same-origin" },
@@ -55,6 +58,11 @@ app.get("/health", (req, res) => {
     cache: cache.getStatus(),
     apiKeySet: !!process.env.PTV_API_KEY,
   });
+});
+
+app.get("/metrics", async (req, res) => {
+  res.set("Content-Type", client.register.contentType);
+  res.end(await client.register.metrics());
 });
 
 app.get("/api/gtfs", gtfsLimiter, gtfsHandler);
