@@ -125,6 +125,8 @@ The Pi boots from SD card. Frequent writes (logs, system journals, npm cache) ca
 
 The current nginx config handles basic reverse proxying. Strengthen it for internet exposure:
 
+> **Note:** Security headers (`X-Content-Type-Options`, `X-Frame-Options`, etc.) and rate limiting are now handled at the application level via the `helmet` and `express-rate-limit` packages. The nginx-level config below is optional defense-in-depth — redundant headers are harmless.
+
 ```nginx
 server {
     listen 443 ssl http2;
@@ -137,14 +139,14 @@ server {
     ssl_session_cache shared:SSL:10m;
     ssl_session_timeout 10m;
 
-    # Security headers
+    # Security headers (optional — Helmet already sets these in the app)
     add_header X-Content-Type-Options nosniff;
     add_header X-Frame-Options DENY;
     add_header X-XSS-Protection "0" always;
     add_header Referrer-Policy strict-origin-when-cross-origin;
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()";
 
-    # Rate limiting per IP
+    # Rate limiting per IP (optional — express-rate-limit handles this in the app)
     limit_req zone=gtfs:10m rate=10r/s;
     limit_req_status 429;
 
@@ -185,12 +187,13 @@ client_max_body_size 1k;
 
 ## API Key Security
 
-- The `PTV_API_KEY` in `.env` is the single sensitive credential. Protect it:
+- The `PTV_API_KEY` in `.env` is the primary sensitive credential. Protect it:
   ```bash
   sudo chmod 600 /opt/ptv-tracker/.env
   sudo chown ptvtracker:ptvtracker /opt/ptv-tracker/.env
   ```
 - The systemd `EnvironmentFile` directive reads the file as root before dropping to the `ptvtracker` user — this is correct behaviour
+- Additional supported env vars: `LOG_LEVEL` (default `info`), `CACHE_TTL_MS` (default `30000`), `PORT` (default `3000`)
 - If you back up the Pi SD card, ensure the `.env` file is excluded from backups that leave your home
 - Rotate the PTV API key periodically from the [PTV Developer Portal](https://developer.ptv.vic.gov.au)
 - The API key is never sent to the browser — confirmed by code review
@@ -201,6 +204,17 @@ client_max_body_size 1k;
 
 ### Uptime Monitoring
 - **UptimeRobot**: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241) — monitors `https://ptv-tracker.duckdns.org` every 5 minutes, emails on downtime
+- **Health endpoint**: The app exposes `GET /health` returning cache status, uptime, and upstream reachability — can be used by any monitoring tool
+
+### Structured Logging
+The app uses **pino** for JSON-structured logging with per-request correlation IDs. Logs are emitted to stdout and captured by systemd journal:
+```bash
+# Tail recent errors
+journalctl -u ptv-tracker --since "24 hours ago" | grep -i error
+
+# Watch real-time request log
+journalctl -u ptv-tracker -f
+```
 
 ### Log Rotation
 Logs grow unbounded on the Pi's SD card — configure rotation:
@@ -222,8 +236,9 @@ sudo nano /etc/logrotate.d/ptv-tracker
 ```
 
 ### What to Watch For
-- `journalctl -u ptv-tracker --since "24 hours ago" | grep -i error` — backend errors
+- `journalctl -u ptv-tracker --since "24 hours ago" | grep "error"` — backend errors from pino structured logs
 - `tail -f /var/log/nginx/access.log | grep -E " 4[0-9][0-9]| 5[0-9][0-9]"` — client/server errors
+- `curl -s https://ptv-tracker.duckdns.org/health` — health endpoint with cache status
 - `df -h` — SD card free space (logs can fill it quickly)
 - `systemctl status ptv-tracker` — service health at a glance
 
@@ -243,11 +258,13 @@ sudo nano /etc/logrotate.d/ptv-tracker
 - [x] Router: static IP assigned to Pi (no DHCP on this network)
 - [x] DuckDNS: `duck.sh` permissions 600, DNS-01 automation script set up for cert renewal
 - [ ] UFW: deny incoming by default, allow 443 (and SSH if needed)
-- [ ] nginx: TLS 1.2/1.3 only, no port 80 server block, security headers added, rate limiting configured
-- [ ] nginx: `client_max_body_size 1k`, only GET/HEAD allowed
+- [ ] nginx: TLS 1.2/1.3 only, no port 80 server block, only GET/HEAD allowed
+- [ ] nginx: `client_max_body_size 1k` (optional — app-level size limits can replace this)
+- [x] Helmet: 7 security headers set at the Express app level
+- [x] express-rate-limit: 60 req/min per IP on `/api/gtfs` endpoint
 - [x] `.env`: permissions 600, owned by ptvtracker
 - [x] Unattended upgrades enabled
 - [x] Uptime monitoring set up: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)
-- [ ] Log rotation configured for app and nginx logs
+- [ ] Log rotation configured for app (journald) and nginx logs
 - [x] Physical access: Pi in a locked location
 - [ ] SD card mitigations applied (tmpfs for logs/tmp, swap disabled, quality PSU, high-endurance card)

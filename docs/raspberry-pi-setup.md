@@ -331,7 +331,12 @@ Open `https://ptv-tracker.duckdns.org` (or your Pi's IP) and load a feed.
 
 - The API key lives in `.env` only — never in frontend JS.
 - The app listens on port 3000 internally; nginx terminates TLS on 443.
-- GTFS-RT responses are cached for 30 seconds by the proxy.
+- GTFS-RT responses are cached for 30 seconds by the proxy (configurable via `CACHE_TTL_MS`).
+- Security headers are set at the app level via the `helmet` middleware (7 headers).
+- Rate limiting (60 req/min per IP) is applied to `/api/gtfs` via `express-rate-limit`.
+- Structured JSON logging via `pino` and per-request logging via `pino-http`.
+- The `/health` endpoint returns cache status, uptime, and upstream reachability.
+- Log level configurable via `LOG_LEVEL` env var (default: `info`).
 - To regenerate a self-signed cert at any time: `python3 scripts/generate_certs.py --install`
 - To replace with Let's Encrypt later (DNS-01, no port 80 needed): `python3 scripts/provision_ssl.py --domain ... --email ...`
 - Uptime monitoring dashboard: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)

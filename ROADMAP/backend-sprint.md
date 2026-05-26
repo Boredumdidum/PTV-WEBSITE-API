@@ -8,8 +8,8 @@
 - [x] Classify upstream errors and return distinct HTTP status codes
 - [x] Validate required env vars at startup (fail fast)
 - [x] Make cache TTL configurable via environment variable
-- [ ] Add rate-limiting middleware (`express-rate-limit`)
-- [ ] Add `helmet` for security HTTP headers
+- [x] Add rate-limiting middleware (`express-rate-limit`)
+- [x] Add `helmet` for security HTTP headers
 - [ ] Validate `limit` query param as a positive integer; sanitise all inputs
 - [ ] Add HTTP request size limits to prevent OOM
 - [ ] Add graceful shutdown on `SIGTERM`/`SIGINT`
@@ -33,13 +33,13 @@
 - [x] Make cache TTL configurable via `CACHE_TTL_MS` env var
 
 ### Phase 2 — Security Hardening
-- Add `helmet` middleware with secure defaults
-- Add `express-rate-limit` to `/api/gtfs` endpoint
-- Validate and sanitise `limit` and `feed` query parameters
-- Add HTTP body/payload size limits
-- Audit `.env` file handling and document `chmod 600`
-- Remove port 80 server block from nginx config template in `setup_pi.py`
-- Remove port 80 references from `provision_ssl.py`
+- [x] Add `helmet` middleware with secure defaults
+- [x] Add `express-rate-limit` to `/api/gtfs` endpoint
+- [ ] Validate and sanitise `limit` and `feed` query parameters
+- [ ] Add HTTP body/payload size limits
+- [ ] Audit `.env` file handling and document `chmod 600`
+- [ ] Remove port 80 server block from nginx config template in `setup_pi.py`
+- [ ] Remove port 80 references from `provision_ssl.py`
 
 ### Phase 3 — Observability
 - [x] Add structured logging (`pino`) with request ID correlation

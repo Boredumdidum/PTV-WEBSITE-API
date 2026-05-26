@@ -6,14 +6,14 @@
 - Move `package-lock.json` into `.gitattributes` with `linguist-generated` to reduce noise in PR diffs
 
 ## Backend (`server.js`)
-- Extract feed configuration and route handlers into separate modules (e.g. `routes/gtfs.js`, `config/feeds.js`) instead of a single monolithic file
-- Add request logging middleware (e.g. `morgan`) for debugging and observability
-- Add rate-limiting middleware (`express-rate-limit`) to prevent abuse of the proxy endpoint
+- [x] Extract feed configuration and route handlers into separate modules (e.g. `routes/gtfs.js`, `config/feeds.js`, `middleware/cache.js`) instead of a single monolithic file
+- [x] Add request logging middleware (`pino-http`) for debugging and observability
+- [x] Add rate-limiting middleware (`express-rate-limit`) to prevent abuse of the proxy endpoint
 - Replace the ad-hoc `fetchBuffer` Promise with `node:https` — or switch to `node-fetch`/`undici` for cleaner async code
-- Add proper error classification (network error vs auth error vs upstream 5xx) so the frontend can show distinct messages
-- Make the cache TTL configurable via environment variable instead of hardcoded 30000ms
-- Add a `/health` endpoint for uptime monitoring and load-balancer health checks
-- Add environment variable validation at startup (fail fast if `PTV_API_KEY` is missing)
+- [x] Add proper error classification (network error vs auth error vs upstream 5xx) so the frontend can show distinct messages
+- [x] Make the cache TTL configurable via environment variable instead of hardcoded 30000ms
+- [x] Add a `/health` endpoint for uptime monitoring and load-balancer health checks
+- [x] Add environment variable validation at startup (fail fast if `PTV_API_KEY` is missing)
 - Graceful shutdown handler (`SIGTERM`/`SIGINT`) to close the server cleanly
 
 ## Frontend (`script.js`)
@@ -35,11 +35,11 @@
 
 ## Security
 - Add CORS configuration (even if same-origin, explicit is better than implicit) — currently relies on default Express behaviour
-- Set security HTTP headers via `helmet` middleware (X-Content-Type-Options, X-Frame-Options, CSP, etc.)
+- [x] Set security HTTP headers via `helmet` middleware (X-Content-Type-Options, X-Frame-Options, CSP, etc.)
 - Sanitise and validate the `limit` query parameter as a positive integer (currently only capped at 200, but passing `NaN` or negative values could cause unexpected behaviour)
 - Add input size limits to prevent extremely large responses from consuming all server memory
 - Consider adding a CSRF token for any future mutation endpoints
-- Switch Let's Encrypt to DNS-01 challenge — no port 80 forwarding needed on home router (see `ROADMAP/home-deployment-security.md`)
+- [x] Switch Let's Encrypt to DNS-01 challenge — no port 80 forwarding needed on home router (see `ROADMAP/home-deployment-security.md`)
 
 ## Deployment / Infrastructure
 - Add a `Dockerfile` and `docker-compose.yml` for containerised deployment (simplifies the Raspberry Pi setup)
@@ -49,5 +49,5 @@
 - Add Prometheus metrics endpoint (`/metrics`) for monitoring cache hit rates, request latency, and upstream API errors
 
 ## Monitoring / Observability
-- Add structured logging (e.g. `pino` or `winston`) instead of `console.log` — pipe to a file or journald on the Pi
+- [x] Add structured logging (`pino`) instead of `console.log` — pipe to a file or journald on the Pi
 - Add client-side performance instrumentation (time-to-data, map render time)
