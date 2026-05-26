@@ -1,5 +1,3 @@
-import { VEHICLE_FEEDS, FEED_COLORS } from "../constants.js";
-import { setStatus, setError, setMapHint, setMapMessage, updateRouteSearchUI } from "../utils/dom.js";
 import { updateMap, mapInstance } from "./map.js";
 
 let lastPayload = null;

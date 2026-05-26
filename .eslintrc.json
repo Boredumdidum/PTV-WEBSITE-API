@@ -9,18 +9,32 @@
   },
   "extends": ["eslint:recommended", "prettier"],
   "rules": {
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_|^next$" }],
     "no-console": "off"
   },
   "overrides": [
     {
-      "files": ["src/**/*.js"],
+      "files": ["src/**/*.js", "script.js"],
       "env": {
         "browser": true,
         "node": false
       },
       "parserOptions": {
         "sourceType": "module"
+      },
+      "globals": {
+        "L": "readonly",
+        "lucide": "readonly"
+      }
+    },
+    {
+      "files": ["theme-init.js"],
+      "env": {
+        "browser": true,
+        "node": false
+      },
+      "parserOptions": {
+        "sourceType": "script"
       }
     },
     {

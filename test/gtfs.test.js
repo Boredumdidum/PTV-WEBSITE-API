@@ -1,4 +1,4 @@
-const { describe, it, before, beforeEach, afterEach, mock } = require("node:test");
+const { describe, it, beforeEach, afterEach, mock } = require("node:test");
 const assert = require("node:assert");
 const https = require("https");
 const cache = require("../middleware/cache");
@@ -34,14 +34,6 @@ function mockHttpsNetworkError(code) {
   mock.method(https, "get", (_url, _opts, _cb) => {
     const err = Object.assign(new Error("network error"), { code });
     return { on(e, h) { setImmediate(() => h(err)); } };
-  });
-}
-
-function mockHttpsSuccess() {
-  mock.method(https, "get", (_url, _opts, cb) => {
-    const res = { statusCode: 200, resume() {}, on(e, h) { if (e === "end") setImmediate(h); } };
-    cb(res);
-    return { on() {} };
   });
 }
 
