@@ -47,6 +47,7 @@ const gtfsLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.ip,
   message: { error: "Too many requests. Please slow down." },
 });
 

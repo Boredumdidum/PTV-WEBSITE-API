@@ -10,6 +10,14 @@ services:
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - CACHE_TTL_MS=${CACHE_TTL_MS:-30000}
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s

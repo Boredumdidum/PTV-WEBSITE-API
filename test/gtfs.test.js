@@ -1,6 +1,7 @@
 const { describe, it, beforeEach, afterEach, mock } = require("node:test");
 const assert = require("node:assert");
 const https = require("https");
+const bindings = require("gtfs-realtime-bindings");
 const cache = require("../middleware/cache");
 
 process.env.PTV_API_KEY = "test-key";
@@ -182,5 +183,100 @@ describe("routes/gtfs — cached response", () => {
     handler(mockReq("metro-vehicle-positions", "1"), res);
     assert.strictEqual(res._json.entity.length, 1);
     assert.strictEqual(res._json.entity[0].id, "1");
+  });
+});
+
+describe("routes/gtfs — retry and timeout", () => {
+  beforeEach(() => {
+    mock.method(globalThis, "setTimeout", (fn) => fn());
+  });
+
+  it("retries on upstream 5xx and succeeds on second attempt", async () => {
+    let callCount = 0;
+    mock.method(https, "get", (_url, _opts, cb) => {
+      callCount++;
+      if (callCount === 1) {
+        cb({ statusCode: 503, resume() {}, on() {} });
+      } else {
+        cb({
+          statusCode: 200,
+          resume() {},
+          on(e, h) {
+            if (e === "data") h(Buffer.from("mock"));
+            if (e === "end") h();
+          },
+        });
+      }
+      return { on() {}, setTimeout() {}, destroy() {} };
+    });
+    mock.method(bindings.transit_realtime.FeedMessage, "decode", () => ({ entity: [], header: {} }));
+    mock.method(bindings.transit_realtime.FeedMessage, "toObject", () => ({
+      header: { timestamp: "1000000" },
+      entity: [{ id: "1", vehicle: { trip: { routeId: "test" }, position: { latitude: -37.8, longitude: 145.0 } } }],
+    }));
+
+    const res = mockRes();
+    handler(mockReq("metro-vehicle-positions"), res);
+    await tick();
+    assert.strictEqual(callCount, 2);
+    assert.strictEqual(res._json.entity[0].id, "1");
+  });
+
+  it("fails after exhausting all retries on upstream 5xx", async () => {
+    let callCount = 0;
+    mock.method(https, "get", (_url, _opts, cb) => {
+      callCount++;
+      cb({ statusCode: 503, resume() {}, on() {} });
+      return { on() {}, setTimeout() {}, destroy() {} };
+    });
+
+    const res = mockRes();
+    handler(mockReq("metro-vehicle-positions"), res);
+    await tick();
+    assert.strictEqual(callCount, 3);
+    assert.strictEqual(res._status, 502);
+    assert.strictEqual(res._json.error, "Upstream server error.");
+  });
+
+  it("returns 502 on upstream timeout", async () => {
+    mock.method(https, "get", (_url, _opts, _cb) => {
+      return {
+        on() {},
+        setTimeout(_ms, cb) { cb(); },
+        destroy() {},
+      };
+    });
+
+    const res = mockRes();
+    handler(mockReq("metro-vehicle-positions"), res);
+    await tick();
+    assert.strictEqual(res._status, 502);
+    assert.strictEqual(res._json.error, "Upstream request failed.");
+  });
+
+  it("returns 502 when upstream response exceeds size limit", async () => {
+    const bigChunk = Buffer.alloc(1024 * 1024);
+    mock.method(https, "get", (_url, _opts, cb) => {
+      const response = {
+        statusCode: 200,
+        resume() {},
+        on(e, h) {
+          if (e === "data") {
+            setImmediate(() => h(bigChunk));
+            setImmediate(() => h(bigChunk));
+            setImmediate(() => h(bigChunk));
+          }
+          if (e === "end") setImmediate(() => h());
+        },
+      };
+      cb(response);
+      return { on() {}, setTimeout() {}, destroy() {} };
+    });
+
+    const res = mockRes();
+    handler(mockReq("metro-vehicle-positions"), res);
+    for (let i = 0; i < 5; i++) await tick();
+    assert.strictEqual(res._status, 502);
+    assert.strictEqual(res._json.error, "Upstream request failed.");
   });
 });
