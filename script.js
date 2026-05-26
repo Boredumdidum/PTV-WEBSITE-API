@@ -566,6 +566,15 @@ function updateMap(feed, entities, routeQuery) {
 		return;
 	}
 
+	const showVehicles = isVehicleFeed(feed);
+
+	if (!showVehicles) {
+		if (markerLayer) markerLayer.clearLayers();
+		if (routeLayer) routeLayer.clearLayers();
+		setMapMessage("Select a vehicle positions feed to see markers.");
+		return;
+	}
+
 	initMap();
 	if (!mapInstance || !markerLayer) {
 		return;
@@ -575,24 +584,15 @@ function updateMap(feed, entities, routeQuery) {
 	}
 	const currentRouteRequestId = ++routeRequestId;
 
-	const showVehicles = isVehicleFeed(feed);
 	const busMode = isBusFeed(feed);
 	const normalizedRouteQuery = routeQuery ? routeQuery.trim() : "";
 	setMapHint(
-		showVehicles
-			? busMode && normalizedRouteQuery
-				? "Route line loading..."
-				: "Vehicle positions only"
-			: "Select a vehicle positions feed"
+		busMode && normalizedRouteQuery
+			? "Route line loading..."
+			: "Vehicle positions only"
 	);
 
 	markerLayer.clearLayers();
-
-	if (!showVehicles) {
-		setMapMessage("Select a vehicle positions feed to see markers.");
-		mapInstance.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
-		return;
-	}
 
 	const positions = (Array.isArray(entities) ? entities : [])
 		.map((entity) => {
@@ -1107,7 +1107,8 @@ async function loadFeed() {
 			`/api/gtfs?feed=${encodeURIComponent(feed)}&limit=${limit}`
 		);
 		if (!response.ok) {
-			throw new Error(`Request failed (${response.status})`);
+			const body = await response.json().catch(() => ({}));
+			throw new Error(body.error || `Request failed (${response.status})`);
 		}
 
 		const data = await response.json();
@@ -1118,7 +1119,7 @@ async function loadFeed() {
 		previewEl.textContent = "No data";
 		updatedEl.textContent = "-";
 		countEl.textContent = "-";
-		setMapMessage("Unable to load feed data.");
+		setMapMessage("No data");
 		lastPayload = null;
 		lastFeed = null;
 		lastIsMock = false;
