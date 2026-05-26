@@ -560,6 +560,12 @@ function initMap() {
 	setTimeout(() => mapInstance.invalidateSize(), 0);
 }
 
+function formatRouteName(routeId) {
+	const cleaned = String(routeId);
+	const parts = cleaned.split(":");
+	return escapeHTML(parts[parts.length - 1]);
+}
+
 function updateMap(feed, entities, routeQuery) {
 	if (!mapEl) {
 		return;
@@ -695,7 +701,7 @@ function updateMap(feed, entities, routeQuery) {
 			: direction === 1 ? "City bound" : "Flinders St bound";
 
 		const popupLines = [
-			`<strong>${escapeHTML(routeId)}</strong>`,
+			`<strong>${formatRouteName(routeId)}</strong>`,
 			`${busMode ? "Bus" : "Train"} · ${directionLabel}`,
 			`Updated ${escapeHTML(updated)}`,
 		];
@@ -722,7 +728,7 @@ function updateMap(feed, entities, routeQuery) {
 			}
 			routeSearchInput.value = routeId;
 			if (lastPayload && lastFeed) {
-				applyData(lastPayload, lastIsMock, lastFeed);
+				setTimeout(() => applyData(lastPayload, lastIsMock, lastFeed), 300);
 			}
 		});
 		marker.bindPopup(popupLines.join("<br />"));
