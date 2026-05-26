@@ -1,9 +1,9 @@
 # PTV GTFS-R Proxy — Code Review
 
 ## General / Project Health
-- Lock Node.js engine version in `package.json` (`"engines": { "node": ">=18.x" }`) to avoid runtime incompatibilities
-- Add `.nvmrc` or `.node-version` file to standardise Node version across environments
-- Move `package-lock.json` into `.gitattributes` with `linguist-generated` to reduce noise in PR diffs
+- [x] Lock Node.js engine version in `package.json` (`"engines": { "node": ">=18.x" }`) to avoid runtime incompatibilities
+- [x] Add `.nvmrc` or `.node-version` file to standardise Node version across environments
+- [x] Move `package-lock.json` into `.gitattributes` with `linguist-generated` to reduce noise in PR diffs
 
 ## Backend (`server.js`)
 - [x] Extract feed configuration and route handlers into separate modules (e.g. `routes/gtfs.js`, `config/feeds.js`, `middleware/cache.js`) instead of a single monolithic file

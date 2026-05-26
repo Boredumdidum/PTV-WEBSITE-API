@@ -4,6 +4,9 @@
   "private": true,
   "description": "Local proxy for PTV GTFS Realtime feeds",
   "main": "server.js",
+  "engines": {
+    "node": ">=18.x"
+  },
   "scripts": {
     "start": "node server.js"
   },
