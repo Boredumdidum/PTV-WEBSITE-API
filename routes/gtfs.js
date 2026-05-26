@@ -3,7 +3,7 @@ const { transit_realtime } = require("gtfs-realtime-bindings");
 const { isValidFeedKey, getFeedUrl } = require("../config/feeds");
 const cache = require("../middleware/cache");
 
-const MAX_RESPONSE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_RESPONSE_SIZE = 2 * 1024 * 1024; // 2 MB
 
 function fetchBuffer(url, headers) {
   return new Promise((resolve, reject) => {
