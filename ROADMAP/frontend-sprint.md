@@ -14,6 +14,7 @@
 - [ ] Create `src/components/`, `src/utils/`, `src/config/` directory structure
 - [ ] Add basic DOM smoke tests (Playwright or happy-dom)
 - [ ] Create `.env.example` with all documented variables
+- [ ] Design and add favicon (SVG + ICO) with neo-brutalist tram icon, configure links in `<head>`
 
 ## Weekly Phases
 
