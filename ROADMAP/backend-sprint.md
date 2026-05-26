@@ -1,37 +1,20 @@
 # Back-End / Security Developer — Sprint Plan
 
 ## Task List
-- [ ] Extract `server.js` into modular structure (routes, config, middleware)
-- [ ] Add request logging middleware (`morgan` or `pino-http`)
-- [ ] Add rate-limiting middleware (`express-rate-limit`)
-- [ ] Add `helmet` for security HTTP headers
-- [ ] Validate `limit` query param as a positive integer; sanitise all inputs
-- [ ] Make cache TTL configurable via environment variable
-- [ ] Add `/health` endpoint for monitoring
-- [ ] Validate required env vars at startup (fail fast)
-- [ ] Classify upstream errors and return distinct HTTP status codes
-- [ ] Add graceful shutdown on `SIGTERM`/`SIGINT`
-- [ ] Add structured logging (e.g. `pino`)
-- [ ] Add HTTP request size limits to prevent OOM
-- [ ] Create `Dockerfile` and `docker-compose.yml` for containerised deployment
-- [ ] Create `.dockerignore`
-- [ ] Add GitHub Actions workflow stub (lint on PR, build check, auto-deploy to Pi)
-- [ ] Update Raspberry Pi setup docs with Docker deployment path
-- [ ] Add unit tests for cache logic, feed validation, and error classification
-- [ ] Add JSDoc comments to all exported backend functions
-- [ ] Document all environment variables in `README.md`
-- [ ] Audit `.env` file handling and document `chmod 600`
-- [ ] Switch Let's Encrypt renewal from HTTP-01 to DNS-01 challenge (no port 80 dependency)
-- [ ] Remove port 80 server block from nginx config template in `setup_pi.py`
-- [ ] Write DuckDNS API hook script for certbot DNS-01 automation
-- [ ] Remove port 80 references from `provision_ssl.py`
+- [x] Extract `server.js` into modular structure (routes, config, middleware)
+- [x] Add structured logging (e.g. `pino`)
+- [x] Add request logging middleware (`morgan` or `pino-http`)
+- [x] Add `/health` endpoint for monitoring
+- [x] Classify upstream errors and return distinct HTTP status codes
+- [x] Validate required env vars at startup (fail fast)
+- [x] Make cache TTL configurable via environment variable
 
 ## Weekly Phases
 
 ### Phase 1 — Foundations
-- Extract `server.js` into `routes/gtfs.js` + `config/feeds.js` + `middleware/cache.js`
-- Add environment variable validation at startup (fail fast on missing `PTV_API_KEY`)
-- Make cache TTL configurable via `CACHE_TTL_MS` env var
+- [x] Extract `server.js` into `routes/gtfs.js` + `config/feeds.js` + `middleware/cache.js`
+- [x] Add environment variable validation at startup (fail fast on missing `PTV_API_KEY`)
+- [x] Make cache TTL configurable via `CACHE_TTL_MS` env var
 
 ### Phase 2 — Security Hardening
 - Add `helmet` middleware with secure defaults
@@ -43,10 +26,10 @@
 - Remove port 80 references from `provision_ssl.py`
 
 ### Phase 3 — Observability
-- Add structured logging (`pino`) with request ID correlation
-- Add request logging middleware (`pino-http`)
-- Add `/health` endpoint with cache status and upstream reachability
-- Classify upstream errors (network vs auth vs 5xx) and return distinct HTTP status codes
+- [x] Add structured logging (`pino`) with request ID correlation
+- [x] Add request logging middleware (`pino-http`)
+- [x] Add `/health` endpoint with cache status and upstream reachability
+- [x] Classify upstream errors (network vs auth vs 5xx) and return distinct HTTP status codes
 - [x] Document UptimeRobot dashboard URL in setup docs: [https://stats.uptimerobot.com/5o9cNzBkeD/803146241](https://stats.uptimerobot.com/5o9cNzBkeD/803146241)
 
 ### Phase 4 — Containerisation
