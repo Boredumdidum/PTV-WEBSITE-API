@@ -1,6 +1,7 @@
 const path = require("path");
 const express = require("express");
 const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const pino = require("pino");
 const pinoHttp = require("pino-http");
 const cache = require("./middleware/cache");
@@ -23,6 +24,14 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 app.use(pinoHttp({ logger }));
 
+const gtfsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please slow down." },
+});
+
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -33,7 +42,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.get("/api/gtfs", gtfsHandler);
+app.get("/api/gtfs", gtfsLimiter, gtfsHandler);
 
 app.use(express.static(path.join(__dirname)));
 
