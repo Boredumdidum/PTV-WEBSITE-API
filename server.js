@@ -28,7 +28,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "https://unpkg.com"],
       styleSrc: ["'self'", "https://fonts.googleapis.com", "https://unpkg.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "https://tile.openstreetmap.org", "data:"],
+      imgSrc: ["'self'", "https://*.tile.openstreetmap.org", "data:"],
       connectSrc: ["'self'"],
     },
   },
