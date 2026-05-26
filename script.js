@@ -1132,56 +1132,58 @@ async function loadFeed() {
 	}
 }
 
-if (window.lucide && typeof lucide.createIcons === "function") {
-	lucide.createIcons();
-}
+document.addEventListener("DOMContentLoaded", () => {
+	if (window.lucide && typeof lucide.createIcons === "function") {
+		lucide.createIcons();
+	}
 
-initTheme();
-initNavigation();
+	initTheme();
+	initNavigation();
 
-if (themeToggle) {
-	themeToggle.addEventListener("click", () => {
-		const nextTheme = document.body.classList.contains("dark") ? "light" : "dark";
-		setTheme(nextTheme);
-	});
-}
+	if (themeToggle) {
+		themeToggle.addEventListener("click", () => {
+			const nextTheme = document.body.classList.contains("dark") ? "light" : "dark";
+			setTheme(nextTheme);
+		});
+	}
 
-const sidebarToggle = document.getElementById("sidebar-toggle");
-if (sidebarToggle) {
-	const isClosed = localStorage.getItem("sidebar-closed") === "true";
-	if (isClosed) document.body.classList.add("sidebar-closed");
+	const sidebarToggle = document.getElementById("sidebar-toggle");
+	if (sidebarToggle) {
+		const isClosed = localStorage.getItem("sidebar-closed") === "true";
+		if (isClosed) document.body.classList.add("sidebar-closed");
 
-	sidebarToggle.addEventListener("click", () => {
-		const closed = document.body.classList.toggle("sidebar-closed");
-		localStorage.setItem("sidebar-closed", closed);
-	});
-}
+		sidebarToggle.addEventListener("click", () => {
+			const closed = document.body.classList.toggle("sidebar-closed");
+			localStorage.setItem("sidebar-closed", closed);
+		});
+	}
 
-if (routeSearchInput) {
-	routeSearchInput.addEventListener("input", () => {
-		if (lastPayload && lastFeed) {
-			applyData(lastPayload, lastIsMock, lastFeed);
-		}
-	});
-
-	routeSearchInput.addEventListener("keydown", (event) => {
-		if (event.key === "Enter") {
-			event.preventDefault();
+	if (routeSearchInput) {
+		routeSearchInput.addEventListener("input", () => {
 			if (lastPayload && lastFeed) {
 				applyData(lastPayload, lastIsMock, lastFeed);
 			}
-		}
-	});
-}
+		});
 
-loadButton.addEventListener("click", loadFeed);
-feedSelect.addEventListener("change", () => {
+		routeSearchInput.addEventListener("keydown", (event) => {
+			if (event.key === "Enter") {
+				event.preventDefault();
+				if (lastPayload && lastFeed) {
+					applyData(lastPayload, lastIsMock, lastFeed);
+				}
+			}
+		});
+	}
+
+	loadButton.addEventListener("click", loadFeed);
+	feedSelect.addEventListener("change", () => {
+		updateRouteSearchUI(feedSelect.value);
+		loadFeed();
+	});
+	if (mockToggle) {
+		mockToggle.addEventListener("change", loadFeed);
+	}
+
 	updateRouteSearchUI(feedSelect.value);
 	loadFeed();
 });
-if (mockToggle) {
-	mockToggle.addEventListener("change", loadFeed);
-}
-
-updateRouteSearchUI(feedSelect.value);
-loadFeed();
