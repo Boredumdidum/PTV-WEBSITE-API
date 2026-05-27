@@ -71,9 +71,8 @@ scp -r ./PTV-WEBSITE-API pi@<pi-ip>:/opt/ptv-tracker
 
 ```bash
 ssh pi@<pi-ip>
-sudo python3 /opt/ptv-tracker/scripts/setup_pi.py \
-  --app-dir /opt/ptv-tracker \
-  --duck-token "your-duckdns-token"
+sudo DUCKDNS_TOKEN="your-duckdns-token" python3 /opt/ptv-tracker/scripts/setup_pi.py \
+  --app-dir /opt/ptv-tracker
 ```
 
 > **Always use `--app-dir`.** Without it, the systemd unit points to the clone directory and the service won't start.
@@ -100,7 +99,7 @@ This setup uses the **DNS-01 ACME challenge** — Let's Encrypt verifies domain 
 
 ### Prerequisites
 
-- DuckDNS token set up at `/etc/duckdns/duck.sh` (from running `setup_pi.py --duck-token` or manually)
+- DuckDNS token set up at `/etc/duckdns/duck.sh` (from running `setup_pi.py` with `DUCKDNS_TOKEN` env var or manually)
 - Pi must be reachable on port 443
 
 ### Run the provisioning script
@@ -133,7 +132,6 @@ After it completes, the browser warning will be gone.
 | -------------------- | --------------------------------------------------------------- |
 | `--app-dir PATH`     | **Required** — deployment path (e.g. `/opt/ptv-tracker`)        |
 | `--domain DOMAIN`    | Domain for cert and nginx (default: `ptv-tracker.duckdns.org`)  |
-| `--duck-token TOKEN` | DuckDNS token for dynamic DNS updates                           |
 | `--skip-ssl`         | Skip certificate generation (HTTP only)                         |
 | `--skip-duckdns`     | Skip DuckDNS cron setup                                         |
 | `--skip-ufw`         | Skip UFW firewall configuration                                 |
@@ -141,6 +139,8 @@ After it completes, the browser warning will be gone.
 | `--skip-node`        | Skip Node.js installation                                       |
 | `--skip-npm`         | Skip `npm install`                                              |
 | `--cert-days N`      | Self-signed cert validity (default: 3650)                       |
+
+> **DuckDNS token**: set the `DUCKDNS_TOKEN` environment variable before running. Never pass it as a CLI argument — it would be visible in `ps aux` and shell history.
 
 ### `provision_ssl.py` flags
 

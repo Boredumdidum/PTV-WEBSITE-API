@@ -141,7 +141,6 @@ def main():
     parser.add_argument("--app-dir")
     parser.add_argument("--service-user", default="ptvtracker")
     parser.add_argument("--port", default="3000")
-    parser.add_argument("--duck-token", default=os.environ.get("DUCKDNS_TOKEN"))
     parser.add_argument("--cert-days", type=int, default=3650,
                         help="Self-signed certificate validity in days (default: 3650)")
     parser.add_argument("--skip-ssl", action="store_true",
@@ -161,7 +160,8 @@ def main():
     print("=== PTV Tracker — Raspberry Pi Setup ===")
     print(f"  App dir:   {args.app_dir or '(auto)'}")
     print(f"  Domain:    {args.domain}")
-    print(f"  DuckDNS:   {'yes' if args.duck_token else 'no'}")
+    duck_token = os.environ.get("DUCKDNS_TOKEN")
+    print(f"  DuckDNS:   {'yes' if duck_token else 'no'}")
     print(f"  SSL:       {'self-signed' if not args.skip_ssl else 'no (plain HTTP)'}")
     print(f"  UFW:       {'configured (22,25,443,587 always open)' if not args.skip_ufw else 'skipped'}")
     print()
@@ -271,10 +271,10 @@ def main():
     print("  ✓ ptv-tracker service started")
 
     if not args.skip_duckdns:
-        if not args.duck_token:
-            print("  DuckDNS token missing. Set DUCKDNS_TOKEN or pass --duck-token.")
+        if not duck_token:
+            print("  DuckDNS token missing. Set the DUCKDNS_TOKEN environment variable (e.g. DUCKDNS_TOKEN=xxx sudo -E python3 setup_pi.py).")
         else:
-            write_duckdns(args.domain, args.duck_token)
+            write_duckdns(args.domain, duck_token)
             run(["bash", "/etc/duckdns/duck.sh"], check=False)
             print("  ✓ DuckDNS cron set up")
     print()
