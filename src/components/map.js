@@ -445,18 +445,6 @@ export function updateMap(feed, entities, routeQuery) {
 			directionBuckets[key].push(item);
 		});
 
-		const drawFromPositions = () => {
-			[0, 1].forEach((directionKey) => {
-				const items = directionBuckets[directionKey];
-				if (!items || items.length < 2) {
-					return;
-				}
-				const sorted = sortPositionsForLine(items);
-				const latLngs = sorted.map((item) => [item.latitude, item.longitude]);
-				void drawRouteLine(latLngs, ROUTE_LINE_COLORS[directionKey], currentRouteRequestId);
-			});
-		};
-
 		void drawBusRouteFromLines(selectedRouteId, currentRouteRequestId).then((drawn) => {
 			if (currentRouteRequestId !== routeRequestId) {
 				return;
@@ -464,8 +452,7 @@ export function updateMap(feed, entities, routeQuery) {
 			if (drawn) {
 				setMapHint(`Route ${selectedRouteId}: line from GTFS shapes`);
 			} else {
-				setMapHint(`Route ${selectedRouteId}: estimated path`);
-				drawFromPositions();
+				setMapHint(`Route ${selectedRouteId}: no GTFS line found`);
 			}
 		});
 	}
