@@ -113,7 +113,11 @@ function normalizeBusRoute(value) {
 		return "";
 	}
 	const parts = normalized.split(/[^a-z0-9]+/).filter(Boolean);
-	return parts.length ? parts[parts.length - 1] : normalized;
+	if (!parts.length) {
+		return normalized;
+	}
+	const withDigits = parts.find((part) => /\d/.test(part));
+	return withDigits || parts[parts.length - 1];
 }
 
 function bboxIntersects(bbox, bounds) {
@@ -321,26 +325,21 @@ async function drawRouteLine(points, color, requestId) {
 }
 
 function resolveSelectedRouteId(entities, query) {
-	const normalizedQuery = query ? query.trim().toLowerCase() : "";
+	const normalizedQuery = normalizeBusRoute(query);
 	if (!normalizedQuery) {
 		return "";
 	}
 
-	let fallback = "";
 	for (const entity of entities) {
 		const routes = getEntityRouteIds(entity);
 		for (const route of routes) {
-			const normalizedRoute = String(route).toLowerCase();
-			if (!fallback) {
-				fallback = route;
-			}
-			if (normalizedRoute === normalizedQuery || normalizedRoute.endsWith(`-${normalizedQuery}`)) {
+			if (normalizeBusRoute(route) === normalizedQuery) {
 				return route;
 			}
 		}
 	}
 
-	return fallback;
+	return "";
 }
 
 function getEntityRouteIds(entity) {
@@ -394,8 +393,9 @@ export function updateMap(feed, entities, routeQuery) {
 
 	const busMode = isBusFeed(feed);
 	const normalizedRouteQuery = routeQuery ? routeQuery.trim() : "";
-	setMapHint(busMode && normalizedRouteQuery ? "Route line loading..." : "");
-
+	const selectedRouteId = busMode ? resolveSelectedRouteId(entities, normalizedRouteQuery) : "";
+	const shouldDrawRoute = Boolean(busMode && normalizedRouteQuery && selectedRouteId && routeLayer);
+	setMapHint(shouldDrawRoute ? "Route line loading..." : "");
 	markerLayer.clearLayers();
 
 	const positions = (Array.isArray(entities) ? entities : [])
@@ -427,8 +427,7 @@ export function updateMap(feed, entities, routeQuery) {
 	const markerColor = FEED_COLORS[feed] || "#0f5b61";
 	const bounds = [];
 
-	const selectedRouteId = busMode ? resolveSelectedRouteId(entities, normalizedRouteQuery) : "";
-	if (busMode && normalizedRouteQuery && selectedRouteId && routeLayer) {
+	if (shouldDrawRoute) {
 		setMapHint(`Route ${selectedRouteId}: loading line data`);
 
 		const directionBuckets = {
