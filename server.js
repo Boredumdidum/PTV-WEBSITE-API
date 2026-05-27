@@ -31,10 +31,10 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "https://unpkg.com"],
-        styleSrc: ["'self'", "https://fonts.googleapis.com", "https://unpkg.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "https://*.tile.openstreetmap.org", "data:"],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", "https://router.project-osrm.org"],
       },
     },
   }),
