@@ -28,7 +28,7 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 - **Health endpoint** — `/health` returns cache status, uptime, upstream reachability
 - **Same-origin policy** — explicit `Cross-Origin-Resource-Policy: same-origin` via Helmet
 - **Error classification** — auth failures, upstream 5xx, and network errors return distinct HTTP status codes
-- **Prometheus metrics** — request duration, cache hit/miss, upstream latency at `/metrics`
+- **Prometheus metrics** — request duration, cache hit/miss, upstream latency at `/metrics` (IP-allowlisted to private ranges)
 - **Browser tests** — Playwright smoke tests for UI, map, theme toggles, and feed selection
 - **Linted + formatted** — ESLint with recommended rules, Prettier with project-specific overrides
 
@@ -67,7 +67,7 @@ docker compose up -d --build
 ## Testing
 
 ```bash
-npm test                 # 37 unit + integration tests with coverage (node:test --experimental-test-coverage)
+npm test                 # 41 unit + integration tests with coverage (node:test --experimental-test-coverage)
 npm run test:e2e         # 10 Playwright browser smoke tests (requires npm install + npx playwright install)
 npm run lint             # ESLint check
 npm run format:check     # Prettier check

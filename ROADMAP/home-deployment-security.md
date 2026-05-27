@@ -47,7 +47,7 @@ This setup uses the **DNS-01 ACME challenge** for Let's Encrypt — no port 80 r
 
 ### Current Risks
 
-- Token stored in plaintext at `/etc/duckdns/duck.sh`
+- Token stored in plaintext at `/etc/duckdns/duck.sh` (mitigated: file is `chmod 700`)
 - Script runs every 5 minutes as root via cron
 - DuckDNS has no auth beyond the token — anyone with the token can hijack your domain
 - The certbot DNS-01 hook (`scripts/duckdns-hook.sh`) reads the token from `duck.sh` to automate Let's Encrypt verification

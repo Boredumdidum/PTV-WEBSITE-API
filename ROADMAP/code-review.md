@@ -49,6 +49,7 @@
 - [x] Move inline theme script to external file (fix CSP violation)
 - [x] Add integration tests with supertest (full middleware chain via Express, not isolated handler)
 - [x] Refactor server.js to export app for supertest (startup behind `require.main === module` guard)
+- [x] Add retry, timeout, and size-limit unit tests (4 tests, total 41)
 
 ## Frontend (additional)
 
@@ -68,6 +69,11 @@
 - [x] Add input size limits to prevent extremely large responses from consuming all server memory
 - Consider adding a CSRF token for any future mutation endpoints
 - [x] Switch Let's Encrypt to DNS-01 challenge — no port 80 forwarding needed on home router (see `ROADMAP/home-deployment-security.md`)
+- [x] Add IP allowlist middleware for `/metrics` endpoint (`middleware/restrictMetrics.js`)
+- [x] Add SRI integrity hashes to all CDN resources (Leaflet CSS/JS, Lucide), pin Lucide to specific version
+- [x] Make rate limiter per-IP explicit with `keyGenerator: (req) => req.ip`
+- [x] Harden Docker container: `read_only: true`, `cap_drop: [ALL]`, `tmpfs: /tmp`, `no-new-privileges`
+- [x] Remove `--duck-token` CLI arg from `setup_pi.py` — token now env-only (`DUCKDNS_TOKEN`)
 
 ## Deployment / Infrastructure
 
