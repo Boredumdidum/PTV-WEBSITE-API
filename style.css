@@ -264,6 +264,28 @@ body {
 .stat-value {
 	font-family: var(--font-data);
 	font-size: 26px;
+	min-height: 1.4em;
+}
+
+.stat-card.loading .stat-value {
+	position: relative;
+	color: transparent;
+	overflow: hidden;
+}
+
+.stat-card.loading .stat-value::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent 0%, var(--bg) 50%, transparent 100%);
+	background-size: 200% 100%;
+	animation: shimmer 1.2s ease-in-out infinite;
+	border: 2px solid var(--border);
+}
+
+@keyframes shimmer {
+	0% { background-position: 200% 0; }
+	100% { background-position: -200% 0; }
 }
 
 .icon {
@@ -412,8 +434,20 @@ textarea:focus-visible {
 }
 
 .error {
-	color: var(--danger);
-	font-size: 14px;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.countdown {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-data);
+  margin-left: auto;
+  letter-spacing: 0.5px;
+}
+
+.countdown:empty {
+  display: none;
 }
 
 .note {
@@ -453,6 +487,23 @@ pre {
 	line-height: 1.5;
 	white-space: pre-wrap;
 	word-break: break-word;
+	min-height: 3em;
+}
+
+pre.loading {
+	position: relative;
+	color: transparent;
+	overflow: hidden;
+}
+
+pre.loading::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent 0%, var(--bg) 50%, transparent 100%);
+	background-size: 200% 100%;
+	animation: shimmer 1.2s ease-in-out infinite;
+	border: 2px solid var(--border);
 }
 
 .footer {

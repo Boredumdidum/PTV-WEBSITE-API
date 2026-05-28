@@ -5,7 +5,64 @@ let lastPayload = null;
 let lastFeed = null;
 let lastIsMock = false;
 
+let autoRefreshTimer = null;
+let autoCountdownTimer = null;
+let secondsUntilRefresh = 0;
+
 export { lastPayload, lastFeed, lastIsMock };
+
+const AUTO_REFRESH_MS = 30000;
+
+function updateCountdownDisplay() {
+	const el = document.getElementById("countdown");
+	if (!el) return;
+	if (secondsUntilRefresh > 0) {
+		el.textContent = `Next refresh in ${secondsUntilRefresh}s`;
+	} else {
+		el.textContent = "";
+	}
+}
+
+export function setupAutoRefresh(enabled) {
+	clearTimeout(autoRefreshTimer);
+	clearInterval(autoCountdownTimer);
+	autoRefreshTimer = null;
+	autoCountdownTimer = null;
+
+	if (enabled) {
+		secondsUntilRefresh = AUTO_REFRESH_MS / 1000;
+		updateCountdownDisplay();
+		scheduleNextRefresh();
+	} else {
+		secondsUntilRefresh = 0;
+		updateCountdownDisplay();
+	}
+}
+
+function scheduleNextRefresh() {
+	clearInterval(autoCountdownTimer);
+
+	autoRefreshTimer = setTimeout(() => {
+		loadFeed();
+	}, AUTO_REFRESH_MS);
+
+	autoCountdownTimer = setInterval(() => {
+		secondsUntilRefresh--;
+		updateCountdownDisplay();
+		if (secondsUntilRefresh <= 0) {
+			clearInterval(autoCountdownTimer);
+		}
+	}, 1000);
+}
+
+export function resetAutoRefreshCountdown() {
+	if (autoRefreshTimer === null) return;
+	clearTimeout(autoRefreshTimer);
+	clearInterval(autoCountdownTimer);
+	secondsUntilRefresh = AUTO_REFRESH_MS / 1000;
+	updateCountdownDisplay();
+	scheduleNextRefresh();
+}
 
 export function filterEntitiesByRoute(entities, query) {
 	const trimmed = query ? query.trim().toLowerCase() : "";
@@ -68,6 +125,17 @@ export function applyData(data, isMock, feed) {
 	updateMap(feed, filteredEntities, routeQuery);
 }
 
+function setStatCardsLoading(loading) {
+	document.querySelectorAll(".stat-card").forEach((el) => {
+		el.classList.toggle("loading", loading);
+	});
+}
+
+function setPreviewLoading(loading) {
+	const el = document.getElementById("preview");
+	if (el) el.classList.toggle("loading", loading);
+}
+
 export async function loadFeed() {
 	const feedSelect = document.getElementById("feed");
 	const mockToggle = document.getElementById("mock");
@@ -78,12 +146,17 @@ export async function loadFeed() {
 	const feed = feedSelect.value;
 	setStatus("loading", "Loading");
 	setError("");
+	setStatCardsLoading(true);
+	setPreviewLoading(true);
 	if (previewEl) previewEl.textContent = "Fetching feed...";
 	setMapMessage("Loading feed data...");
 
 	if (mockToggle && mockToggle.checked) {
 		const data = buildMockData(feed);
 		applyData(data, true, feed);
+		resetAutoRefreshCountdown();
+		setStatCardsLoading(false);
+		setPreviewLoading(false);
 		return;
 	}
 
@@ -107,6 +180,9 @@ export async function loadFeed() {
 		lastFeed = null;
 		lastIsMock = false;
 	}
+	setStatCardsLoading(false);
+	setPreviewLoading(false);
+	resetAutoRefreshCountdown();
 }
 
 export function initNavigation() {

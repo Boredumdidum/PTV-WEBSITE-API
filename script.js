@@ -1,5 +1,5 @@
 import { setTheme, initTheme, updateRouteSearchUI } from "./src/utils/dom.js";
-import { initNavigation, loadFeed, applyData, lastPayload, lastFeed, lastIsMock } from "./src/components/dashboard.js";
+import { initNavigation, loadFeed, applyData, lastPayload, lastFeed, lastIsMock, setupAutoRefresh } from "./src/components/dashboard.js";
 
 function debounce(fn, ms) {
   let timer;
@@ -68,6 +68,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const mockToggle = document.getElementById("mock");
   if (mockToggle) {
     mockToggle.addEventListener("change", loadFeed);
+  }
+
+  const autoRefreshCheckbox = document.getElementById("auto-refresh");
+  if (autoRefreshCheckbox) {
+    autoRefreshCheckbox.addEventListener("change", () => {
+      setupAutoRefresh(autoRefreshCheckbox.checked);
+    });
   }
 
   updateRouteSearchUI(feedSelect.value);
