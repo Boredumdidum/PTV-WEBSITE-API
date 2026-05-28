@@ -12,6 +12,7 @@ A local proxy dashboard for Victoria's Public Transport GTFS Realtime feeds. Fet
 - **Compressed responses** — all JSON, CSS, JS, HTML gzip-compressed
 - **Leaflet map** — vehicle positions plotted on an OpenStreetMap base layer, locked to Victoria bounds with train route names
 - **Route search** — filter entities by route ID in real time with debounced input (250ms)
+- **Loading skeleton** — shimmer animation on stat cards and preview during data fetch
 - **Mock data mode** — offline testing with generated data
 - **Dark/light theme** — persisted to `localStorage`, respects OS preference on first visit
 - **Collapsible sidebar** — toggle with hamburger button, state saved to `localStorage`

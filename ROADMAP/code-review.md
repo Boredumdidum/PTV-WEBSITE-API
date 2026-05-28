@@ -24,7 +24,7 @@
 - Replace raw DOM manipulation with a small reactive pattern or vanilla web components for better state management
 - [x] Debounce the route search input handler to avoid excessive re-renders during fast typing
 - Handle network errors more gracefully — show a retry button with exponential backoff instead of a static error message
-- Add a loading skeleton / shimmer for stat cards while data is fetched
+- [x] Add a loading skeleton / shimmer for stat cards while data is fetched
 - [x] Move Leaflet tile URL and map defaults into a config object instead of hardcoding in `initMap()`
 - [x] Add keyboard navigation support for the sidebar (arrow keys, Enter/Space to activate)
 - [x] Add ARIA labels to interactive elements (nav buttons, feed selector, theme toggle) for accessibility
