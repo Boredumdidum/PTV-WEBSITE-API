@@ -23,9 +23,9 @@ Add remaining PTV realtime feed types (trip updates, service alerts) as proxy en
 
 ## Phase 2 — Backend: Mock data
 
-- [ ] Add service-alert mock entities to `buildMockData()` in `src/components/dashboard.js`
+- [x] Add service-alert mock entities to `buildMockData()` in `src/components/dashboard.js`
   - Structure: `{ id, alert: { informedEntity: [{ routeId }], headerText, description, cause, effect, activePeriod } }`
-- [ ] Mock data generation already handles trip-update entities (line 443+) — verify it works for explicit `*-trip-updates` feed keys
+- [x] Mock data generation already handles trip-update entities for `*-trip-updates` feed keys via the existing catch-all path
 
 ## Phase 3 — Frontend: Feed selection
 

@@ -440,6 +440,36 @@ function buildMockData(feed) {
 		};
 	}
 
+	if (feed.endsWith("-service-alerts")) {
+		const alerts = isBus
+			? [
+					{ routeId: "246", cause: "MAINTENANCE", effect: "DELAY", headerText: "Bus route 246 — delays due to road works", descriptionText: "Road works on Dandenong Road are causing delays of up to 15 minutes on route 246 between Elsternwick and St Kilda." },
+					{ routeId: "250", cause: "SPECIAL_EVENT", effect: "DETOUR", headerText: "Bus route 250 — detour via La Trobe Street", descriptionText: "Due to the Melbourne Marathon, route 250 will be diverted via La Trobe Street between 6am and 2pm. Passengers should allow extra travel time." },
+					{ routeId: "903", cause: "WEATHER", effect: "MODIFIED_SERVICE", headerText: "SmartBus route 903 — reduced frequency", descriptionText: "Due to severe weather conditions, services on route 903 are running at reduced frequency. Expect longer wait times." },
+				]
+			: [
+					{ routeId: "Werribee", cause: "MAINTENANCE", effect: "DETOUR", headerText: "Werribee line — buses replace trains between Newport and Laverton", descriptionText: "Buses are replacing trains on the Werribee line between Newport and Laverton due to planned track maintenance from 8pm to last service." },
+					{ routeId: "Frankston", cause: "TECHNICAL_PROBLEM", effect: "DELAY", headerText: "Frankston line — delays of up to 20 minutes", descriptionText: "A signal fault at Caulfield is causing delays of up to 20 minutes on the Frankston line. Services are operating with extended travel times." },
+					{ routeId: "Craigieburn", cause: "STRIKE", effect: "SUSPENSION", headerText: "Craigieburn line — services suspended", descriptionText: "Due to industrial action, all services on the Craigieburn line are suspended until further notice. Replacement buses are not available." },
+					{ routeId: "Sunbury", cause: "ACCIDENT", effect: "DELAY", headerText: "Sunbury line — major delays due to a police incident", descriptionText: "A police incident near Footscray is causing major delays on the Sunbury line. Trains may be held at platforms or terminated early." },
+				];
+
+		return {
+			...base,
+			entity: alerts.map((alert, index) => ({
+				id: `${isBus ? "bus" : "metro"}-alert-${index + 1}`,
+				alert: {
+					informedEntity: [{ routeId: alert.routeId }],
+					headerText: { translation: [{ text: alert.headerText, language: "en" }] },
+					descriptionText: { translation: [{ text: alert.descriptionText, language: "en" }] },
+					cause: alert.cause,
+					effect: alert.effect,
+					activePeriod: [{ start: String(now), end: String(now + 7200) }],
+				},
+			})),
+		};
+	}
+
 	const trips = isBus
 		? [
 				{
