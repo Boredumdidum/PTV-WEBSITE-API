@@ -123,7 +123,7 @@
 									<i data-lucide="layers" class="icon icon-lg"></i>
 								</div>
 								<div>
-									<span class="label">Entities in preview</span>
+									<span id="stat-label" class="label">Entities in preview</span>
 									<div id="count" class="stat-value">-</div>
 								</div>
 							</div>
@@ -136,7 +136,8 @@
 								<h2 class="card-title">Preview payload</h2>
 								<span class="note">First 5 entities</span>
 							</div>
-							<pre id="preview">Waiting for data...</pre>
+							<pre id="preview-json" class="preview-json">Waiting for data...</pre>
+							<div id="preview-list" class="preview-list"></div>
 						</div>
 					</section>
 				</div>

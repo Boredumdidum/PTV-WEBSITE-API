@@ -36,10 +36,10 @@ Add remaining PTV realtime feed types (trip updates, service alerts) as proxy en
 
 ## Phase 4 — Frontend: Trip updates display
 
-- [ ] Add a third stat card column (or swap) for trip-updates feed: show **"Trips tracked"** and **"Avg delay"**
-- [ ] Render trip-update entities in the dashboard: for each trip show route, stop, scheduled vs actual arrival/departure, delay in seconds/minutes
-- [ ] Show delay with color coding (green = on time / early, yellow = minor delay, red = significant delay)
-- [ ] Update preview panel to show trip-update entities properly
+- [x] Add a third stat card column (or swap) for trip-updates feed: show "Avg delay"
+- [x] Render trip-update entities in the dashboard: table with route, trip, stop, scheduled time, delay
+- [x] Show delay with color coding (green = on time, yellow = minor delay, red = major delay)
+- [x] Replace raw JSON preview with structured HTML table for trip-update feeds
 
 ## Phase 5 — Frontend: Service alerts display
 

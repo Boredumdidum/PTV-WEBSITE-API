@@ -1,5 +1,6 @@
 import { setStatus, setError, setMapMessage } from "../utils/dom.js";
 import { updateMap, mapInstance } from "./map.js";
+import { displayRouteName, escapeHTML } from "../utils/format.js";
 
 let lastPayload = null;
 let lastFeed = null;
@@ -106,21 +107,83 @@ export function applyData(data, isMock, feed) {
 
 	const updatedEl = document.getElementById("updated");
 	const countEl = document.getElementById("count");
-	const previewEl = document.getElementById("preview");
+	const jsonEl = document.getElementById("preview-json");
+	const listEl = document.getElementById("preview-list");
+	const statLabelEl = document.getElementById("stat-label");
 
 	const timestampRaw = data.header && data.header.timestamp ? data.header.timestamp : null;
 	const timestamp = timestampRaw ? Number(timestampRaw) : 0;
 	const formattedTime = timestamp ? new Date(timestamp * 1000).toLocaleString() : "Unknown";
 
 	if (updatedEl) updatedEl.textContent = formattedTime;
-	if (countEl) countEl.textContent = `${filteredEntities.length}`;
-	if (previewEl) {
-		previewEl.textContent = filteredEntities.length
-			? JSON.stringify(filteredEntities.slice(0, 5), null, 2)
-			: routeQuery
-				? "No entities match that route."
-				: "No entities";
+
+	const isTripUpdates = feed.endsWith("-trip-updates");
+	const isServiceAlerts = feed.endsWith("-service-alerts");
+
+	if (isTripUpdates) {
+		if (statLabelEl) statLabelEl.textContent = "Avg delay";
+		const delays = filteredEntities
+			.map((e) => e.tripUpdate && e.tripUpdate.delay)
+			.filter((d) => d != null);
+		const avgDelay = delays.length ? Math.round(delays.reduce((a, b) => a + b, 0) / delays.length) : 0;
+		if (countEl) {
+			const mins = Math.abs(Math.round(avgDelay / 60));
+			if (avgDelay > 60) {
+				countEl.textContent = `+${mins}m`;
+				countEl.style.color = "var(--danger)";
+			} else if (avgDelay > 0) {
+				countEl.textContent = `+${mins}m`;
+				countEl.style.color = "#f08c00";
+			} else if (avgDelay < 0) {
+				countEl.textContent = `-${mins}m`;
+				countEl.style.color = "#2b8a3e";
+			} else {
+				countEl.textContent = "On time";
+				countEl.style.color = "";
+			}
+		}
+		if (jsonEl) jsonEl.textContent = "";
+		if (listEl) {
+			if (!filteredEntities.length) {
+				listEl.innerHTML = routeQuery ? "No trip updates match that route." : "No trip updates.";
+			} else {
+				const rows = filteredEntities.slice(0, 20).map((e) => {
+					const tu = e.tripUpdate || {};
+					const trip = tu.trip || {};
+					const stopTime = (tu.stopTimeUpdate && tu.stopTimeUpdate[0]) || {};
+					const delay = tu.delay;
+					const arrTime = stopTime.arrival ? new Date(Number(stopTime.arrival.time) * 1000).toLocaleTimeString() : "-";
+					const depTime = stopTime.departure ? new Date(Number(stopTime.departure.time) * 1000).toLocaleTimeString() : "-";
+
+					let cls = "delay-on-time";
+					let text = "On time";
+					if (delay > 300) { cls = "delay-major"; text = `${Math.round(delay / 60)}m late`; }
+					else if (delay > 60) { cls = "delay-minor"; text = `${Math.round(delay / 60)}m late`; }
+					else if (delay < -60) { text = `${Math.round(Math.abs(delay) / 60)}m early`; }
+					else if (delay < 0) { text = `${Math.abs(delay)}s early`; }
+					else if (delay > 0) { text = `${delay}s`; }
+
+					return `<tr><td>${displayRouteName(trip.routeId || "?")}</td><td>${escapeHTML(trip.tripId || "?")}</td><td>${escapeHTML(stopTime.stopId || "?")}</td><td>${arrTime}</td><td><span class="delay-badge ${cls}">${text}</span></td></tr>`;
+				}).join("");
+				listEl.innerHTML = `<table><thead><tr><th>Route</th><th>Trip</th><th>Stop</th><th>Scheduled</th><th>Delay</th></tr></thead><tbody>${rows}</tbody></table>`;
+			}
+		}
+	} else {
+		if (statLabelEl) statLabelEl.textContent = isServiceAlerts ? "Active alerts" : "Entities in preview";
+		if (listEl) listEl.innerHTML = "";
+		if (jsonEl) {
+			jsonEl.textContent = filteredEntities.length
+				? JSON.stringify(filteredEntities.slice(0, 5), null, 2)
+				: routeQuery
+					? "No entities match that route."
+					: "No entities";
+		}
+		if (countEl) {
+			countEl.textContent = `${filteredEntities.length}`;
+			countEl.style.color = "";
+		}
 	}
+
 	setStatus("ok", isMock ? "Mock" : "OK");
 	updateMap(feed, filteredEntities, routeQuery);
 }
@@ -132,14 +195,16 @@ function setStatCardsLoading(loading) {
 }
 
 function setPreviewLoading(loading) {
-	const el = document.getElementById("preview");
-	if (el) el.classList.toggle("loading", loading);
+	document.querySelectorAll("#preview-json, #preview-list").forEach((el) => {
+		if (el) el.classList.toggle("loading", loading);
+	});
 }
 
 export async function loadFeed() {
 	const feedSelect = document.getElementById("feed");
 	const mockToggle = document.getElementById("mock");
-	const previewEl = document.getElementById("preview");
+	const jsonEl = document.getElementById("preview-json");
+	const listEl = document.getElementById("preview-list");
 	const updatedEl = document.getElementById("updated");
 	const countEl = document.getElementById("count");
 
@@ -148,7 +213,8 @@ export async function loadFeed() {
 	setError("");
 	setStatCardsLoading(true);
 	setPreviewLoading(true);
-	if (previewEl) previewEl.textContent = "Fetching feed...";
+	if (jsonEl) jsonEl.textContent = "Fetching feed...";
+	if (listEl) listEl.innerHTML = "";
 	setMapMessage("Loading feed data...");
 
 	if (mockToggle && mockToggle.checked) {
@@ -172,7 +238,8 @@ export async function loadFeed() {
 	} catch (error) {
 		setStatus("error", "Error");
 		setError(error.message || "Something went wrong.");
-		if (previewEl) previewEl.textContent = "No data";
+		if (jsonEl) jsonEl.textContent = "No data";
+		if (listEl) listEl.innerHTML = "";
 		if (updatedEl) updatedEl.textContent = "-";
 		if (countEl) countEl.textContent = "-";
 		setMapMessage("No data");
@@ -180,8 +247,8 @@ export async function loadFeed() {
 		lastFeed = null;
 		lastIsMock = false;
 	}
-	setStatCardsLoading(false);
 	setPreviewLoading(false);
+	setStatCardsLoading(false);
 	resetAutoRefreshCountdown();
 }
 
