@@ -29,9 +29,10 @@ Add remaining PTV realtime feed types (trip updates, service alerts) as proxy en
 
 ## Phase 3 — Frontend: Feed selection
 
-- [ ] Add 4 new `<option>` elements to the feed `<select>` in `index.html`
-- [ ] Update `filterEntitiesByRoute()` / `getEntityRouteIds()` — already handles `vehicle`, `tripUpdate`, `alert` entity types, confirm no changes needed
-- [ ] Verify route search input and `updateRouteSearchUI()` work for all feed types
+- [x] Add 4 new `<option>` elements to the feed `<select>` in `index.html`
+- [x] `getEntityRouteIds()` already handles `vehicle`, `tripUpdate`, `alert` entity types — no changes needed
+- [x] `filterEntitiesByRoute()` delegates to `getEntityRouteIds()` — no changes needed
+- [x] `updateRouteSearchUI()` uses `feed.startsWith("bus-")` — works for all 6 feed keys without changes
 
 ## Phase 4 — Frontend: Trip updates display
 
