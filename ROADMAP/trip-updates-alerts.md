@@ -43,10 +43,10 @@ Add remaining PTV realtime feed types (trip updates, service alerts) as proxy en
 
 ## Phase 5 — Frontend: Service alerts display
 
-- [ ] Add dedicated **Alerts** panel/tab (separate from Dashboard + Preview) as a new nav section
-- [ ] Render alerts as a list of cards: header text, description, affected routes, cause/effect, time window
-- [ ] Add alert severity/type badges (e.g. "Delayed", "Cancelled", "Platform change")
-- [ ] Add alert badge/counter to the sidebar nav button
+- [x] Add dedicated **Alerts** panel/tab (separate from Dashboard + Preview) as a new nav section
+- [x] Render alerts as a list of cards: header text, description, affected routes, cause/effect, time window
+- [x] Add alert severity/type badges (e.g. "Delayed", "Cancelled", "Platform change")
+- [x] Add alert badge/counter to the sidebar nav button
 
 ## Phase 6 — Frontend: Map integration
 

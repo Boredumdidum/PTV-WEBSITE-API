@@ -24,6 +24,66 @@ function updateCountdownDisplay() {
 	}
 }
 
+function severityClass(effect) {
+	const map = {
+		DELAY: "alert-severity-delay",
+		DETOUR: "alert-severity-detour",
+		SUSPENSION: "alert-severity-suspension",
+		MODIFIED_SERVICE: "alert-severity-detour",
+	};
+	return map[effect] || "alert-severity-info";
+}
+
+function formatActivePeriod(period) {
+	if (!period || (!period.start && !period.end)) return "";
+	const start = period.start ? new Date(Number(period.start) * 1000).toLocaleString() : "now";
+	const end = period.end ? new Date(Number(period.end) * 1000).toLocaleString() : "unknown";
+	return `${start} — ${end}`;
+}
+
+function updateAlerts(entities) {
+	const listEl = document.getElementById("alerts-list");
+	const countEl = document.getElementById("alert-count");
+	const subtitleEl = document.getElementById("alert-subtitle");
+
+	if (!entities.length) {
+		if (listEl) listEl.innerHTML = "";
+		if (countEl) countEl.textContent = "";
+		if (subtitleEl) subtitleEl.textContent = "No active alerts";
+		return;
+	}
+
+	if (subtitleEl) subtitleEl.textContent = `${entities.length} active alert${entities.length > 1 ? "s" : ""}`;
+	if (countEl) countEl.textContent = String(entities.length);
+
+	if (listEl) {
+		listEl.innerHTML = entities.map((e) => {
+			const alert = e.alert || {};
+			const header = alert.headerText && alert.headerText.translation && alert.headerText.translation[0]
+				? alert.headerText.translation[0].text : "Untitled alert";
+			const desc = alert.descriptionText && alert.descriptionText.translation && alert.descriptionText.translation[0]
+				? alert.descriptionText.translation[0].text : "";
+			const cause = alert.cause || "UNKNOWN";
+			const effect = alert.effect || "UNKNOWN";
+			const period = alert.activePeriod && alert.activePeriod[0] ? alert.activePeriod[0] : null;
+			const routes = alert.informedEntity
+				? alert.informedEntity.map((ie) => ie.routeId).filter(Boolean)
+				: [];
+
+			return `<div class="alert-card">
+				<span class="alert-severity ${severityClass(effect)}">${effect.replace(/_/g, " ")}</span>
+				<div class="alert-header">${escapeHTML(header)}</div>
+				${desc ? `<p class="alert-description">${escapeHTML(desc)}</p>` : ""}
+				<div class="alert-meta">
+					${routes.length ? `<span>Routes: ${routes.map((r) => displayRouteName(r)).join(", ")}</span>` : ""}
+					<span>Cause: ${cause.replace(/_/g, " ")}</span>
+					${period ? `<span>${formatActivePeriod(period)}</span>` : ""}
+				</div>
+			</div>`;
+		}).join("");
+	}
+}
+
 export function setupAutoRefresh(enabled) {
 	clearTimeout(autoRefreshTimer);
 	clearInterval(autoCountdownTimer);
@@ -153,7 +213,6 @@ export function applyData(data, isMock, feed) {
 					const stopTime = (tu.stopTimeUpdate && tu.stopTimeUpdate[0]) || {};
 					const delay = tu.delay;
 					const arrTime = stopTime.arrival ? new Date(Number(stopTime.arrival.time) * 1000).toLocaleTimeString() : "-";
-					const depTime = stopTime.departure ? new Date(Number(stopTime.departure.time) * 1000).toLocaleTimeString() : "-";
 
 					let cls = "delay-on-time";
 					let text = "On time";
@@ -168,8 +227,18 @@ export function applyData(data, isMock, feed) {
 				listEl.innerHTML = `<table><thead><tr><th>Route</th><th>Trip</th><th>Stop</th><th>Scheduled</th><th>Delay</th></tr></thead><tbody>${rows}</tbody></table>`;
 			}
 		}
+		updateAlerts([]);
+	} else if (isServiceAlerts) {
+		if (statLabelEl) statLabelEl.textContent = "Active alerts";
+		if (countEl) {
+			countEl.textContent = `${filteredEntities.length}`;
+			countEl.style.color = filteredEntities.length > 0 ? "var(--danger)" : "";
+		}
+		if (jsonEl) jsonEl.textContent = "";
+		if (listEl) listEl.innerHTML = "";
+		updateAlerts(filteredEntities);
 	} else {
-		if (statLabelEl) statLabelEl.textContent = isServiceAlerts ? "Active alerts" : "Entities in preview";
+		if (statLabelEl) statLabelEl.textContent = "Entities in preview";
 		if (listEl) listEl.innerHTML = "";
 		if (jsonEl) {
 			jsonEl.textContent = filteredEntities.length
@@ -182,6 +251,7 @@ export function applyData(data, isMock, feed) {
 			countEl.textContent = `${filteredEntities.length}`;
 			countEl.style.color = "";
 		}
+		updateAlerts([]);
 	}
 
 	setStatus("ok", isMock ? "Mock" : "OK");
@@ -215,6 +285,7 @@ export async function loadFeed() {
 	setPreviewLoading(true);
 	if (jsonEl) jsonEl.textContent = "Fetching feed...";
 	if (listEl) listEl.innerHTML = "";
+	updateAlerts([]);
 	setMapMessage("Loading feed data...");
 
 	if (mockToggle && mockToggle.checked) {
@@ -240,6 +311,7 @@ export async function loadFeed() {
 		setError(error.message || "Something went wrong.");
 		if (jsonEl) jsonEl.textContent = "No data";
 		if (listEl) listEl.innerHTML = "";
+		updateAlerts([]);
 		if (updatedEl) updatedEl.textContent = "-";
 		if (countEl) countEl.textContent = "-";
 		setMapMessage("No data");

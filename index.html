@@ -42,6 +42,11 @@
 						<i data-lucide="file-text" class="icon"></i>
 						<span>Preview</span>
 					</button>
+					<button class="nav-btn" type="button" data-panel="panel-alerts" role="tab" aria-selected="false" tabindex="-1">
+						<i data-lucide="alert-triangle" class="icon"></i>
+						<span>Alerts</span>
+						<span id="alert-count" class="nav-badge"></span>
+					</button>
 				</nav>
 				<div class="sidebar-footer">
 					<button id="theme-toggle" class="btn btn-outline btn-sm" type="button">
@@ -138,6 +143,16 @@
 							</div>
 							<pre id="preview-json" class="preview-json">Waiting for data...</pre>
 							<div id="preview-list" class="preview-list"></div>
+						</div>
+					</section>
+
+					<section id="panel-alerts" class="panel">
+						<div class="card">
+							<div class="card-header">
+								<h2 class="card-title">Service alerts</h2>
+								<span id="alert-subtitle" class="note">Select a service-alerts feed</span>
+							</div>
+							<div id="alerts-list" class="alerts-list"></div>
 						</div>
 					</section>
 				</div>
