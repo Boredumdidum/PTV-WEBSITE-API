@@ -17,9 +17,9 @@ Add remaining PTV realtime feed types (trip updates, service alerts) as proxy en
 
 ## Phase 1 — Backend: Feed configs
 
-- [ ] Add 4 new feed URLs to `config/feeds.js` (metro-trip-updates, metro-service-alerts, bus-trip-updates, bus-service-alerts)
-- [ ] Update `test/feeds.test.js`: change "has all 2 feed keys" → "has all 6 feed keys", add new keys to `VALID_KEYS` array
-- [ ] Verify no changes needed in `routes/gtfs.js` (validation, cache, metrics all use feed key generically)
+- [x] Add 4 new feed URLs to `config/feeds.js` (metro-trip-updates, metro-service-alerts, bus-trip-updates, bus-service-alerts)
+- [x] Update `test/feeds.test.js`: change "has all 2 feed keys" → "has all 6 feed keys", add new keys to `VALID_KEYS` array
+- [x] Verify no changes needed in `routes/gtfs.js` (validation, cache, metrics all use feed key generically)
 
 ## Phase 2 — Backend: Mock data
 
