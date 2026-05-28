@@ -43,21 +43,17 @@ function formatActivePeriod(period) {
 
 function updateAlerts(entities) {
 	const listEl = document.getElementById("alerts-list");
+	const dashEl = document.getElementById("alerts-dashboard");
 	const countEl = document.getElementById("alert-count");
 	const subtitleEl = document.getElementById("alert-subtitle");
 
-	if (!entities.length) {
-		if (listEl) listEl.innerHTML = "";
-		if (countEl) countEl.textContent = "";
-		if (subtitleEl) subtitleEl.textContent = "No active alerts";
-		return;
-	}
-
-	if (subtitleEl) subtitleEl.textContent = `${entities.length} active alert${entities.length > 1 ? "s" : ""}`;
-	if (countEl) countEl.textContent = String(entities.length);
-
-	if (listEl) {
-		listEl.innerHTML = entities.map((e) => {
+	const renderAlerts = (container) => {
+		if (!container) return;
+		if (!entities.length) {
+			container.innerHTML = "";
+			return;
+		}
+		container.innerHTML = entities.map((e) => {
 			const alert = e.alert || {};
 			const header = alert.headerText && alert.headerText.translation && alert.headerText.translation[0]
 				? alert.headerText.translation[0].text : "Untitled alert";
@@ -81,7 +77,19 @@ function updateAlerts(entities) {
 				</div>
 			</div>`;
 		}).join("");
+	};
+
+	renderAlerts(listEl);
+	renderAlerts(dashEl);
+
+	if (!entities.length) {
+		if (countEl) countEl.textContent = "";
+		if (subtitleEl) subtitleEl.textContent = "No active alerts";
+		return;
 	}
+
+	if (subtitleEl) subtitleEl.textContent = `${entities.length} active alert${entities.length > 1 ? "s" : ""}`;
+	if (countEl) countEl.textContent = String(entities.length);
 }
 
 export function setupAutoRefresh(enabled) {
