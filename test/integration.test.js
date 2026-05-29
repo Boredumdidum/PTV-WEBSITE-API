@@ -113,3 +113,47 @@ describe("integration — GTFS endpoint with mocked upstream", () => {
     assert.deepStrictEqual(res.body.entity, mockEntities);
   });
 });
+
+describe("integration — Timetable endpoint", () => {
+  before(() => {
+    process.env.SWAGGER_API_KEY = "test-swagger-key";
+    process.env.SWAGGER_DEV_ID = "999";
+  });
+
+  after(() => {
+    mock.restoreAll();
+    delete process.env.SWAGGER_API_KEY;
+    delete process.env.SWAGGER_DEV_ID;
+  });
+
+  it("returns 200 with mocked timetable data through full chain", async () => {
+    const mockRoutes = { routes: [{ route_id: "1", route_name: "Werribee" }] };
+    mock.method(https, "get", (_url, _opts, cb) => {
+      cb({
+        statusCode: 200,
+        resume() {},
+        on(e, h) {
+          if (e === "data") setImmediate(() => h(Buffer.from(JSON.stringify(mockRoutes))));
+          if (e === "end") setImmediate(() => h());
+        },
+      });
+      return { on() {}, setTimeout() {}, destroy() {} };
+    });
+
+    const res = await request(app).get("/api/timetable/v3/routes?route_types=0");
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers["cache-control"], "public, max-age=30");
+    assert.deepStrictEqual(res.body, mockRoutes);
+  });
+
+  it("returns 502 when upstream timetable API returns 401", async () => {
+    mock.method(https, "get", (_url, _opts, cb) => {
+      cb({ statusCode: 401, resume() {}, on() {} });
+      return { on() {}, setTimeout() {}, destroy() {} };
+    });
+
+    const res = await request(app).get("/api/timetable/v3/route_types");
+    assert.strictEqual(res.status, 502);
+    assert.ok(res.body.error.includes("authentication failed"));
+  });
+});
