@@ -5,10 +5,8 @@ import {
 	VEHICLE_FEEDS,
 	FEED_COLORS,
 	ROUTE_LINE_COLORS,
-	ROUTE_SERVICE_URL,
-	MAX_ROUTE_POINTS,
 	LINE_INDEX_URL,
-	LINE_DATA_BASE,
+	TRAIN_ROUTE_SHORT_CODES,
 } from "../constants.js";
 import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName } from "../utils/format.js";
 import { setMapMessage, setMapHint } from "../utils/dom.js";
@@ -74,30 +72,6 @@ export function getDirectionKey(item) {
 	}
 
 	return 0;
-}
-
-function sortPositionsForLine(items) {
-	if (items.length <= 2) {
-		return items.slice();
-	}
-
-	let minLat = Infinity;
-	let maxLat = -Infinity;
-	let minLng = Infinity;
-	let maxLng = -Infinity;
-
-	items.forEach((item) => {
-		minLat = Math.min(minLat, item.latitude);
-		maxLat = Math.max(maxLat, item.latitude);
-		minLng = Math.min(minLng, item.longitude);
-		maxLng = Math.max(maxLng, item.longitude);
-	});
-
-	const latRange = maxLat - minLat;
-	const lngRange = maxLng - minLng;
-	const sortByLongitude = lngRange >= latRange;
-
-	return items.slice().sort((a, b) => (sortByLongitude ? a.longitude - b.longitude : a.latitude - b.latitude));
 }
 
 function normalizeRouteValue(value) {
@@ -239,89 +213,6 @@ async function drawBusRouteFromLines(routeId, requestId) {
 		},
 	).addTo(routeLayer);
 	return true;
-}
-
-function sampleRoutePoints(points, maxPoints) {
-	if (points.length <= maxPoints) {
-		return points.slice();
-	}
-
-	const sampled = [];
-	const lastIndex = points.length - 1;
-	for (let i = 0; i < maxPoints; i += 1) {
-		const index = Math.round((i * lastIndex) / (maxPoints - 1));
-		sampled.push(points[index]);
-	}
-
-	return sampled;
-}
-
-function buildRouteCacheKey(points) {
-	return points.map((point) => `${point[0].toFixed(5)},${point[1].toFixed(5)}`).join("|");
-}
-
-async function drawRouteLine(points, color, requestId) {
-	if (!routeLayer || points.length < 2) {
-		return;
-	}
-
-	const sampled = sampleRoutePoints(points, MAX_ROUTE_POINTS);
-	const cacheKey = buildRouteCacheKey(sampled);
-	const cached = ROUTE_CACHE.get(cacheKey);
-	if (cached) {
-		if (requestId !== routeRequestId) {
-			return;
-		}
-		L.polyline(cached, {
-			color,
-			weight: 4,
-			opacity: 0.9,
-			lineJoin: "round",
-			lineCap: "round",
-		}).addTo(routeLayer);
-		return;
-	}
-
-	const coordString = sampled.map((point) => `${point[1]},${point[0]}`).join(";");
-	const url = `${ROUTE_SERVICE_URL}${coordString}?overview=full&geometries=geojson`;
-
-	try {
-		const response = await fetch(url);
-		if (!response.ok) {
-			throw new Error("Routing failed");
-		}
-
-		const data = await response.json();
-		const coords =
-			data && data.routes && data.routes[0] && data.routes[0].geometry ? data.routes[0].geometry.coordinates : null;
-		if (!Array.isArray(coords) || coords.length < 2) {
-			throw new Error("Routing missing geometry");
-		}
-
-		const latLngs = coords.map((coord) => [coord[1], coord[0]]);
-		ROUTE_CACHE.set(cacheKey, latLngs);
-		if (requestId !== routeRequestId) {
-			return;
-		}
-		L.polyline(latLngs, {
-			color,
-			weight: 4,
-			opacity: 0.9,
-			lineJoin: "round",
-			lineCap: "round",
-		}).addTo(routeLayer);
-	} catch (error) {
-		if (requestId !== routeRequestId) {
-			return;
-		}
-		L.polyline(points, {
-			color,
-			weight: 4,
-			opacity: 0.9,
-			lineJoin: "round",
-			lineCap: "round",
-		}).addTo(routeLayer);
-	}
 }
 
 function resolveSelectedRouteId(entities, query) {
