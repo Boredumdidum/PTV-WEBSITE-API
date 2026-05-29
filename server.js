@@ -119,7 +119,7 @@ if (require.main === module) {
     logger.info({ port: PORT }, "Server started");
   });
 
-  function shutdown(signal) {
+  const shutdown = (signal) => {
     logger.info({ signal }, "Shutting down gracefully");
     server.close(() => {
       logger.info("Server closed");
@@ -129,7 +129,7 @@ if (require.main === module) {
       logger.error("Forced shutdown after timeout");
       process.exit(1);
     }, 10000).unref();
-  }
+  };
 
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
