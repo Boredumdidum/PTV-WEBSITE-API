@@ -168,6 +168,63 @@ function featureMatchesRoute(feature, routeId) {
 	return longName ? longName.includes(normalizedRoute) : false;
 }
 
+function getFeatureDirectionTag(feature) {
+	const props = feature && feature.properties ? feature.properties : null;
+	if (!props) {
+		return "";
+	}
+	const headsign = normalizeRouteValue(props.HEADSIGN);
+	if (headsign) {
+		return `headsign:${headsign}`;
+	}
+	const shapeId = props.SHAPE_ID ? String(props.SHAPE_ID) : "";
+	if (!shapeId) {
+		return "";
+	}
+	const directionMatch = shapeId.match(/\.([12])\./);
+	if (directionMatch) {
+		return `shape:${directionMatch[1]}`;
+	}
+	const suffix = shapeId.split(".").pop();
+	if (suffix && suffix.length <= 2) {
+		return `shape:${suffix.toLowerCase()}`;
+	}
+	return "";
+}
+
+function splitFeaturesByDirection(features) {
+	const buckets = new Map();
+	features.forEach((feature) => {
+		const tag = getFeatureDirectionTag(feature) || "unknown";
+		if (!buckets.has(tag)) {
+			buckets.set(tag, []);
+		}
+		buckets.get(tag).push(feature);
+	});
+	const ordered = [...buckets.values()].sort((a, b) => b.length - a.length);
+	const primary = ordered[0] || [];
+	const secondary = ordered.slice(1).flat();
+	return { primary, secondary };
+}
+
+function drawRouteLines(features, color) {
+	if (!routeLayer || !features.length) {
+		return;
+	}
+	L.geoJSON(
+		{ type: "FeatureCollection", features },
+		{
+			style: {
+				color,
+				weight: 4,
+				opacity: 0.9,
+				lineJoin: "round",
+				lineCap: "round",
+			},
+		},
+	).addTo(routeLayer);
+}
+
 async function drawBusRouteFromLines(routeId, requestId) {
 	if (!routeLayer || !mapInstance) {
 		return false;
@@ -199,18 +256,11 @@ async function drawBusRouteFromLines(routeId, requestId) {
 	if (!features.length) {
 		return false;
 	}
-	L.geoJSON(
-		{ type: "FeatureCollection", features },
-		{
-			style: {
-				color: ROUTE_LINE_COLORS[0],
-				weight: 4,
-				opacity: 0.9,
-				lineJoin: "round",
-				lineCap: "round",
-			},
-		},
-	).addTo(routeLayer);
+	const { primary, secondary } = splitFeaturesByDirection(features);
+	drawRouteLines(primary, ROUTE_LINE_COLORS[0]);
+	if (secondary.length) {
+		drawRouteLines(secondary, ROUTE_LINE_COLORS[1]);
+	}
 	return true;
 }
 

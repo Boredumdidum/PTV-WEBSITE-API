@@ -10,8 +10,8 @@ export const FEED_COLORS = {
 	"bus-vehicle-positions": "#e27d60",
 };
 export const ROUTE_LINE_COLORS = {
-	0: "#ff922b",
-	1: "#339af0",
+	0: "#0f5b61",
+	1: "#ff922b",
 };
 export const ROUTE_SERVICE_URL = "https://router.project-osrm.org/route/v1/driving/";
 export const MAX_ROUTE_POINTS = 40;
