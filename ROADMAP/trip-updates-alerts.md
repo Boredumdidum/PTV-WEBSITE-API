@@ -7,11 +7,12 @@ Add remaining PTV realtime feed types (trip updates, service alerts) as proxy en
 | Feed Key | Upstream URL |
 |---|---|
 | `metro-vehicle-positions` | `…/v1/metro/vehicle-positions` ✅ existing |
-| `metro-trip-updates` | `…/v1/metro/trip-updates` |
-| `metro-service-alerts` | `…/v1/metro/service-alerts` |
+| `metro-trip-updates` | `…/v1/metro/trip-updates` ✅ |
+| `metro-service-alerts` | `…/v1/metro/service-alerts` ✅ |
 | `bus-vehicle-positions` | `…/v1/bus/vehicle-positions` ✅ existing |
-| `bus-trip-updates` | `…/v1/bus/trip-updates` |
-| `bus-service-alerts` | `…/v1/bus/service-alerts` (confirm endpoint exists) |
+| `bus-trip-updates` | `…/v1/bus/trip-updates` ✅ |
+
+> Note: Bus service alerts are **not exposed** by the PTV API — no OpenAPI spec exists and the upstream returns an error. Skipped.
 
 ---
 

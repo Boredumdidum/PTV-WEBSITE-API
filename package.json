@@ -2,7 +2,7 @@
   "name": "ptv-gtfsr-proxy",
   "version": "0.1.0",
   "private": true,
-  "description": "Local proxy for PTV GTFS Realtime feeds",
+  "description": "Local proxy for PTV GTFS Realtime feeds + Timetable API v3 dashboard",
   "main": "server.js",
   "engines": {
     "node": ">=18.x"

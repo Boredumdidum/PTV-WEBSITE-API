@@ -12,6 +12,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY config ./config
 COPY middleware ./middleware
 COPY routes ./routes
+COPY utils ./utils
 COPY fonts ./fonts
 COPY server.js package.json index.html script.js style.css favicon.svg theme-init.js ./
 COPY src ./src

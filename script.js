@@ -1,5 +1,6 @@
 import { setTheme, initTheme, updateRouteSearchUI } from "./src/utils/dom.js";
 import { initNavigation, loadFeed, applyData, lastPayload, lastFeed, lastIsMock, setupAutoRefresh } from "./src/components/dashboard.js";
+import { initTimetable } from "./src/components/timetable.js";
 
 function debounce(fn, ms) {
   let timer;
@@ -16,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initTheme();
   initNavigation();
+  initTimetable();
 
   const themeToggle = document.getElementById("theme-toggle");
   if (themeToggle) {

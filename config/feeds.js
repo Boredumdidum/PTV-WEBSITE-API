@@ -9,8 +9,6 @@ const FEEDS = {
     "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/bus/vehicle-positions",
   "bus-trip-updates":
     "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/bus/trip-updates",
-  "bus-service-alerts":
-    "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/bus/service-alerts",
 };
 
 /** Check if a feed key is valid. */

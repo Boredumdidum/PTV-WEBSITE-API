@@ -7,6 +7,7 @@ const pino = require("pino");
 const pinoHttp = require("pino-http");
 const cache = require("./middleware/cache");
 const gtfsHandler = require("./routes/gtfs");
+const timetableHandler = require("./routes/timetable");
 const { client, metricsMiddleware } = require("./middleware/metrics");
 const restrictMetrics = require("./middleware/restrictMetrics");
 
@@ -51,6 +52,15 @@ const gtfsLimiter = rateLimit({
   message: { error: "Too many requests. Please slow down." },
 });
 
+const timetableLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip,
+  message: { error: "Too many requests. Please slow down." },
+});
+
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -58,6 +68,8 @@ app.get("/health", (req, res) => {
     uptime: process.uptime(),
     cache: cache.getStatus(),
     apiKeySet: !!process.env.PTV_API_KEY,
+    swaggerKeySet: !!process.env.SWAGGER_API_KEY,
+    swaggerDevIdSet: !!process.env.SWAGGER_DEV_ID,
   });
 });
 
@@ -67,6 +79,8 @@ app.get("/metrics", restrictMetrics, async (req, res) => {
 });
 
 app.get("/api/gtfs", gtfsLimiter, gtfsHandler);
+
+app.use("/api/timetable", timetableLimiter, timetableHandler);
 
 app.use(
   express.static(path.join(__dirname), {
@@ -90,6 +104,13 @@ module.exports = app;
 if (require.main === module) {
   if (!process.env.PTV_API_KEY) {
     console.error("FATAL: PTV_API_KEY environment variable is not set.");
+    process.exit(1);
+  }
+
+  if (!process.env.SWAGGER_API_KEY || !process.env.SWAGGER_DEV_ID) {
+    console.error(
+      "FATAL: SWAGGER_API_KEY and SWAGGER_DEV_ID environment variables must be set.",
+    );
     process.exit(1);
   }
 

@@ -8,12 +8,11 @@ const VALID_KEYS = [
   "metro-service-alerts",
   "bus-vehicle-positions",
   "bus-trip-updates",
-  "bus-service-alerts",
 ];
 
 describe("config/feeds", () => {
-  it("has all 6 feed keys", () => {
-    assert.strictEqual(Object.keys(FEEDS).length, 6);
+  it("has all 5 feed keys", () => {
+    assert.strictEqual(Object.keys(FEEDS).length, 5);
   });
 
   for (const key of VALID_KEYS) {

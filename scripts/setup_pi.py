@@ -213,7 +213,7 @@ def main():
     print("[5/8] Creating configuration files...")
     env_path = pathlib.Path(app_dir) / ".env"
     if not env_path.exists():
-        env_path.write_text("PTV_API_KEY=\n", encoding="utf-8")
+        env_path.write_text("PTV_API_KEY=\nSWAGGER_API_KEY=\nSWAGGER_DEV_ID=\n", encoding="utf-8")
         print(f"  Created {env_path} — add your PTV_API_KEY")
     else:
         print(f"  {env_path} already exists, keeping as-is")
