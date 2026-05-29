@@ -207,7 +207,7 @@ function splitFeaturesByDirection(features) {
 	return { primary, secondary };
 }
 
-function drawRouteLines(features, color) {
+function drawRouteLines(features, color, options = {}) {
 	if (!routeLayer || !features.length) {
 		return;
 	}
@@ -220,6 +220,8 @@ function drawRouteLines(features, color) {
 				opacity: 0.9,
 				lineJoin: "round",
 				lineCap: "round",
+				dashArray: options.dashArray || null,
+				dashOffset: options.dashOffset || null,
 			},
 		},
 	).addTo(routeLayer);
@@ -257,9 +259,11 @@ async function drawBusRouteFromLines(routeId, requestId) {
 		return false;
 	}
 	const { primary, secondary } = splitFeaturesByDirection(features);
-	drawRouteLines(primary, ROUTE_LINE_COLORS[0]);
+	const hasBothDirections = primary.length && secondary.length;
+	const dashArray = hasBothDirections ? "10 10" : null;
+	drawRouteLines(primary, ROUTE_LINE_COLORS[0], { dashArray, dashOffset: "0" });
 	if (secondary.length) {
-		drawRouteLines(secondary, ROUTE_LINE_COLORS[1]);
+		drawRouteLines(secondary, ROUTE_LINE_COLORS[1], { dashArray, dashOffset: hasBothDirections ? "10" : "0" });
 	}
 	return true;
 }
