@@ -7,6 +7,7 @@ const ROUTE_TYPES = {
 };
 
 let selectedStop = null;
+let lastDisruptions = [];
 
 function escapeHTML(str) {
   const div = document.createElement("div");
@@ -224,29 +225,87 @@ function initDisruptions() {
   if (!container) return;
 
   const disruptionsFilter = document.getElementById("disruptions-filter");
+  const disruptionsRoute = document.getElementById("disruptions-route");
+  const disruptionsSort = document.getElementById("disruptions-sort");
   const loadBtn = document.getElementById("load-disruptions");
+
+  const applyFilters = () => {
+    const routeQuery = disruptionsRoute ? disruptionsRoute.value.trim() : "";
+    const sortOrder = disruptionsSort ? disruptionsSort.value : "recent";
+    let filtered = filterDisruptionsByRoute(lastDisruptions, routeQuery);
+    filtered = sortDisruptions(filtered, sortOrder);
+    const emptyMessage = routeQuery
+      ? "No disruptions match that route."
+      : "No current disruptions";
+    renderDisruptions(filtered, container, emptyMessage);
+  };
 
   const loadDisruptions = async () => {
     container.innerHTML = '<div class="departures-loading">Loading disruptions...</div>';
     try {
       const routeTypes = disruptionsFilter ? disruptionsFilter.value : "0,1,2,3,4";
       const data = await fetchTimetable(`/v3/disruptions?route_types=${routeTypes}`);
-      const disruptions = data.disruptions || [];
-      renderDisruptions(disruptions, container);
+      lastDisruptions = data.disruptions || [];
+      applyFilters();
     } catch (err) {
       container.innerHTML = `<div class="disruptions-empty">Error: ${escapeHTML(err.message)}</div>`;
     }
   };
 
   if (disruptionsFilter) disruptionsFilter.addEventListener("change", loadDisruptions);
+  if (disruptionsRoute) disruptionsRoute.addEventListener("input", applyFilters);
+  if (disruptionsSort) disruptionsSort.addEventListener("change", applyFilters);
   if (loadBtn) loadBtn.addEventListener("click", loadDisruptions);
 
   loadDisruptions();
 }
 
-function renderDisruptions(disruptions, container) {
+function getDisruptionSortValue(disruption) {
+  const raw = disruption.published_on
+    || disruption.created_utc
+    || disruption.last_updated
+    || disruption.updated_utc
+    || disruption.start_date
+    || disruption.end_date
+    || "";
+  if (!raw) return 0;
+  if (typeof raw === "number") return raw * 1000;
+  const parsed = Date.parse(raw);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function filterDisruptionsByRoute(disruptions, query) {
+  const trimmed = query ? query.trim().toLowerCase() : "";
+  if (!trimmed) return disruptions;
+
+  return disruptions.filter((d) => {
+    const routes = Array.isArray(d.routes) ? d.routes : [];
+    const routeMatch = routes.some((r) => {
+      const name = r && (r.route_name || r.route_id) ? String(r.route_name || r.route_id) : "";
+      return name.toLowerCase().includes(trimmed);
+    });
+    if (routeMatch) return true;
+    const text = `${d.title || ""} ${d.description || ""}`.toLowerCase();
+    return text.includes(trimmed);
+  });
+}
+
+function sortDisruptions(disruptions, order) {
+  const sorted = [...disruptions];
+  sorted.sort((a, b) => {
+    const ta = getDisruptionSortValue(a);
+    const tb = getDisruptionSortValue(b);
+    if (order === "oldest") {
+      return ta - tb;
+    }
+    return tb - ta;
+  });
+  return sorted;
+}
+
+function renderDisruptions(disruptions, container, emptyMessage = "No current disruptions") {
   if (!disruptions.length) {
-    container.innerHTML = '<div class="disruptions-empty">No current disruptions</div>';
+    container.innerHTML = `<div class="disruptions-empty">${escapeHTML(emptyMessage)}</div>`;
     return;
   }
 

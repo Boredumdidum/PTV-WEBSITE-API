@@ -676,6 +676,15 @@ textarea:focus-visible {
 	margin-top: 16px;
 }
 
+.alerts-empty {
+	padding: 20px;
+	text-align: center;
+	border: 3px solid var(--border);
+	background: var(--bg);
+	font-size: 14px;
+	color: var(--text-muted);
+}
+
 .footer {
 	text-align: center;
 	font-size: 13px;
@@ -1121,10 +1130,25 @@ textarea:focus-visible {
 }
 
 .disruptions-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 16px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: end;
+	margin-bottom: 16px;
+}
+
+.alerts-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: end;
+	margin-bottom: 16px;
+}
+
+.alerts-actions .field,
+.disruptions-actions .field {
+	flex: 1 1 180px;
+	min-width: 180px;
 }
 
 @media (prefers-reduced-motion: reduce) {

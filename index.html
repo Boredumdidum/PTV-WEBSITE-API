@@ -96,11 +96,8 @@
 								<div class="field">
 									<label for="feed">Feed</label>
 									<select id="feed">
-										<option value="metro-vehicle-positions">Metro train vehicle positions</option>
-										<option value="metro-trip-updates">Metro train trip updates</option>
-										<option value="metro-service-alerts">Metro train service alerts</option>
+										<option value="metro-vehicle-positions">Train vehicle positions</option>
 										<option value="bus-vehicle-positions">Bus vehicle positions</option>
-										<option value="bus-trip-updates">Bus trip updates</option>
 									</select>
 								</div>
 								<div class="field">
@@ -162,7 +159,24 @@
 						<div class="card">
 							<div class="card-header">
 								<h2 class="card-title">Service alerts</h2>
-								<span id="alert-subtitle" class="note">Select a service-alerts feed</span>
+								<span id="alert-subtitle" class="note">Filter by route or line</span>
+							</div>
+							<div class="alerts-actions">
+								<div class="field">
+									<label for="alerts-route">Route or line</label>
+									<input id="alerts-route" type="text" placeholder="e.g. Werribee or 901" autocomplete="off" />
+								</div>
+								<div class="field">
+									<label for="alerts-sort">Sort</label>
+									<select id="alerts-sort">
+										<option value="recent">Most recent</option>
+										<option value="oldest">Oldest first</option>
+									</select>
+								</div>
+								<button id="load-alerts" class="btn btn-primary" type="button">
+									<i data-lucide="refresh-cw" class="icon"></i>
+									<span>Refresh</span>
+								</button>
 							</div>
 							<div id="alerts-list" class="alerts-list"></div>
 						</div>
@@ -204,7 +218,7 @@
 								<span class="note">Current & planned disruptions from PTV</span>
 							</div>
 							<div class="disruptions-actions">
-								<div class="field" style="flex:1">
+								<div class="field">
 									<label for="disruptions-filter">Route types</label>
 									<select id="disruptions-filter">
 										<option value="0,1,2,3,4">All modes</option>
@@ -215,7 +229,18 @@
 										<option value="4">Night Bus only</option>
 									</select>
 								</div>
-								<button id="load-disruptions" class="btn btn-primary" type="button" style="margin-top:20px">
+								<div class="field">
+									<label for="disruptions-route">Route or line</label>
+									<input id="disruptions-route" type="text" placeholder="e.g. Werribee or 75" autocomplete="off" />
+								</div>
+								<div class="field">
+									<label for="disruptions-sort">Sort</label>
+									<select id="disruptions-sort">
+										<option value="recent">Most recent</option>
+										<option value="oldest">Oldest first</option>
+									</select>
+								</div>
+								<button id="load-disruptions" class="btn btn-primary" type="button">
 									<i data-lucide="refresh-cw" class="icon"></i>
 									<span>Refresh</span>
 								</button>

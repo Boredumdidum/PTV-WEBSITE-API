@@ -9,10 +9,12 @@ let lastIsMock = false;
 let autoRefreshTimer = null;
 let autoCountdownTimer = null;
 let secondsUntilRefresh = 0;
+let lastAlertEntities = [];
 
 export { lastPayload, lastFeed, lastIsMock };
 
 const AUTO_REFRESH_MS = 30000;
+const ALERTS_FEED = "metro-service-alerts";
 
 function updateCountdownDisplay() {
 	const el = document.getElementById("countdown");
@@ -41,16 +43,20 @@ function formatActivePeriod(period) {
 	return `${start} — ${end}`;
 }
 
-function updateAlerts(entities) {
+function updateAlerts(entities, options = {}) {
 	const listEl = document.getElementById("alerts-list");
 	const dashEl = document.getElementById("alerts-dashboard");
 	const countEl = document.getElementById("alert-count");
 	const subtitleEl = document.getElementById("alert-subtitle");
+	const emptyMessage = options.emptyMessage || "No active alerts";
+	const subtitle = options.subtitle || "";
 
 	const renderAlerts = (container) => {
 		if (!container) return;
 		if (!entities.length) {
-			container.innerHTML = "";
+			container.innerHTML = emptyMessage
+				? `<div class="alerts-empty">${escapeHTML(emptyMessage)}</div>`
+				: "";
 			return;
 		}
 		container.innerHTML = entities.map((e) => {
@@ -84,12 +90,103 @@ function updateAlerts(entities) {
 
 	if (!entities.length) {
 		if (countEl) countEl.textContent = "";
-		if (subtitleEl) subtitleEl.textContent = "No active alerts";
+		if (subtitleEl) subtitleEl.textContent = subtitle || emptyMessage;
 		return;
 	}
 
-	if (subtitleEl) subtitleEl.textContent = `${entities.length} active alert${entities.length > 1 ? "s" : ""}`;
+	if (subtitleEl) {
+		subtitleEl.textContent = subtitle || `${entities.length} active alert${entities.length > 1 ? "s" : ""}`;
+	}
 	if (countEl) countEl.textContent = String(entities.length);
+}
+
+function getAlertRouteIds(entity) {
+	if (!entity || !entity.alert || !Array.isArray(entity.alert.informedEntity)) {
+		return [];
+	}
+	return entity.alert.informedEntity
+		.map((info) => info && info.routeId)
+		.filter(Boolean);
+}
+
+function filterAlertsByRoute(entities, query) {
+	const trimmed = query ? query.trim().toLowerCase() : "";
+	if (!trimmed) {
+		return entities;
+	}
+
+	return entities.filter((entity) => {
+		const routes = getAlertRouteIds(entity);
+		return routes.some((route) => String(route).toLowerCase().includes(trimmed));
+	});
+}
+
+function getAlertSortValue(entity) {
+	const alert = entity && entity.alert ? entity.alert : null;
+	const period = alert && Array.isArray(alert.activePeriod) ? alert.activePeriod[0] : null;
+	const start = period && period.start ? Number(period.start) : 0;
+	const end = period && period.end ? Number(period.end) : 0;
+	return (start || end) * 1000;
+}
+
+function sortAlerts(entities, order) {
+	const sorted = [...entities];
+	sorted.sort((a, b) => {
+		const ta = getAlertSortValue(a);
+		const tb = getAlertSortValue(b);
+		if (order === "oldest") {
+			return ta - tb;
+		}
+		return tb - ta;
+	});
+	return sorted;
+}
+
+function applyAlertFilters() {
+	const routeInput = document.getElementById("alerts-route");
+	const sortSelect = document.getElementById("alerts-sort");
+	const routeQuery = routeInput ? routeInput.value.trim() : "";
+	const sortOrder = sortSelect ? sortSelect.value : "recent";
+
+	let filtered = filterAlertsByRoute(lastAlertEntities, routeQuery);
+	filtered = sortAlerts(filtered, sortOrder);
+
+	const emptyMessage = routeQuery
+		? "No alerts match that route."
+		: "No active alerts";
+	updateAlerts(filtered, { emptyMessage });
+}
+
+export async function loadAlerts() {
+	updateAlerts([], { emptyMessage: "Loading alerts...", subtitle: "Loading alerts..." });
+	try {
+		const response = await fetch(`/api/gtfs?feed=${encodeURIComponent(ALERTS_FEED)}&limit=200`);
+		if (!response.ok) {
+			const body = await response.json().catch(() => ({}));
+			throw new Error(body.error || `Request failed (${response.status})`);
+		}
+		const data = await response.json();
+		lastAlertEntities = Array.isArray(data.entity) ? data.entity : [];
+		applyAlertFilters();
+	} catch (error) {
+		lastAlertEntities = [];
+		updateAlerts([], {
+			emptyMessage: "Failed to load alerts.",
+			subtitle: "Service alerts unavailable",
+		});
+	}
+}
+
+export function initAlerts() {
+	const routeInput = document.getElementById("alerts-route");
+	const sortSelect = document.getElementById("alerts-sort");
+	const loadBtn = document.getElementById("load-alerts");
+
+	if (routeInput) routeInput.addEventListener("input", applyAlertFilters);
+	if (sortSelect) sortSelect.addEventListener("change", applyAlertFilters);
+	if (loadBtn) loadBtn.addEventListener("click", loadAlerts);
+
+	loadAlerts();
 }
 
 export function setupAutoRefresh(enabled) {
@@ -235,7 +332,6 @@ export function applyData(data, isMock, feed) {
 				listEl.innerHTML = `<table><thead><tr><th>Route</th><th>Trip</th><th>Stop</th><th>Scheduled</th><th>Delay</th></tr></thead><tbody>${rows}</tbody></table>`;
 			}
 		}
-		updateAlerts([]);
 	} else if (isServiceAlerts) {
 		if (statLabelEl) statLabelEl.textContent = "Active alerts";
 		if (countEl) {
@@ -244,7 +340,6 @@ export function applyData(data, isMock, feed) {
 		}
 		if (jsonEl) jsonEl.textContent = "";
 		if (listEl) listEl.innerHTML = "";
-		updateAlerts(filteredEntities);
 	} else {
 		if (statLabelEl) statLabelEl.textContent = "Entities in preview";
 		if (listEl) listEl.innerHTML = "";
@@ -259,7 +354,6 @@ export function applyData(data, isMock, feed) {
 			countEl.textContent = `${filteredEntities.length}`;
 			countEl.style.color = "";
 		}
-		updateAlerts([]);
 	}
 
 	setStatus("ok", isMock ? "Mock" : "OK");
@@ -293,7 +387,6 @@ export async function loadFeed() {
 	setPreviewLoading(true);
 	if (jsonEl) jsonEl.textContent = "Fetching feed...";
 	if (listEl) listEl.innerHTML = "";
-	updateAlerts([]);
 	setMapMessage("Loading feed data...");
 
 	if (mockToggle && mockToggle.checked) {
@@ -319,7 +412,6 @@ export async function loadFeed() {
 		setError(error.message || "Something went wrong.");
 		if (jsonEl) jsonEl.textContent = "No data";
 		if (listEl) listEl.innerHTML = "";
-		updateAlerts([]);
 		if (updatedEl) updatedEl.textContent = "-";
 		if (countEl) countEl.textContent = "-";
 		setMapMessage("No data");
