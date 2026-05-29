@@ -30,7 +30,7 @@ function tick() {
 }
 
 function mockHttpsJson(statusCode, json) {
-  mock.method(https, "get", (_url, _opts, cb) => {
+  mock.method(https, "get", (_url, cb) => {
     cb({
       statusCode,
       resume() {},
@@ -44,14 +44,14 @@ function mockHttpsJson(statusCode, json) {
 }
 
 function mockHttpsStatus(statusCode) {
-  mock.method(https, "get", (_url, _opts, cb) => {
+  mock.method(https, "get", (_url, cb) => {
     cb({ statusCode, resume() {}, on() {} });
     return { on() {}, setTimeout() {}, destroy() {} };
   });
 }
 
 function mockHttpsNetworkError(code) {
-  mock.method(https, "get", (_url, _opts, _cb) => {
+  mock.method(https, "get", (_url, _cb) => {
     const err = Object.assign(new Error("network error"), { code });
     return { on(e, h) { h(err); }, setTimeout() {}, destroy() {} };
   });

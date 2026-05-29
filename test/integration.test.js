@@ -128,7 +128,7 @@ describe("integration — Timetable endpoint", () => {
 
   it("returns 200 with mocked timetable data through full chain", async () => {
     const mockRoutes = { routes: [{ route_id: "1", route_name: "Werribee" }] };
-    mock.method(https, "get", (_url, _opts, cb) => {
+    mock.method(https, "get", (_url, cb) => {
       cb({
         statusCode: 200,
         resume() {},
@@ -147,7 +147,7 @@ describe("integration — Timetable endpoint", () => {
   });
 
   it("returns 502 when upstream timetable API returns 401", async () => {
-    mock.method(https, "get", (_url, _opts, cb) => {
+    mock.method(https, "get", (_url, cb) => {
       cb({ statusCode: 401, resume() {}, on() {} });
       return { on() {}, setTimeout() {}, destroy() {} };
     });
