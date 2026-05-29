@@ -6,7 +6,7 @@ import {
 	FEED_COLORS,
 	ROUTE_LINE_COLORS,
 	LINE_INDEX_URL,
-	TRAIN_ROUTE_SHORT_CODES,
+	LINE_DATA_BASE,
 } from "../constants.js";
 import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName } from "../utils/format.js";
 import { setMapMessage, setMapHint } from "../utils/dom.js";
@@ -16,7 +16,6 @@ export { mapInstance };
 let markerLayer = null;
 let routeLayer = null;
 let routeRequestId = 0;
-const ROUTE_CACHE = new Map();
 const LINE_CHUNK_CACHE = new Map();
 let lineIndex = null;
 let lineIndexPromise = null;

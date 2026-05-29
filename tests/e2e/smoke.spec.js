@@ -17,8 +17,8 @@ test("feed selector has all feed options", async ({ page }) => {
   const select = page.locator("#feed");
   const options = select.locator("option");
   await expect(options).toHaveCount(5);
-  await expect(options.nth(0)).toHaveValue("metro-vehicle-positions");
-  await expect(options.nth(4)).toHaveValue("bus-trip-updates");
+  await expect(options.nth(0)).toHaveAttribute("value", "metro-vehicle-positions");
+  await expect(options.nth(4)).toHaveAttribute("value", "bus-trip-updates");
 });
 
 test("theme toggle switches between dark and light", async ({ page }) => {
@@ -26,16 +26,16 @@ test("theme toggle switches between dark and light", async ({ page }) => {
   const toggle = page.locator("#theme-toggle");
   await expect(toggle).toBeVisible();
 
-  const isDark = await page.locator("body").evaluate((el) => el.classList.contains("dark"));
+  const isDark = await page.locator("html").evaluate((el) => el.classList.contains("dark"));
   const initialLabel = isDark ? "Light mode" : "Dark mode";
   await expect(toggle).toContainText(initialLabel);
 
   await toggle.click();
-  const nowDark = await page.locator("body").evaluate((el) => el.classList.contains("dark"));
+  const nowDark = await page.locator("html").evaluate((el) => el.classList.contains("dark"));
   expect(nowDark).toBe(!isDark);
 
   await toggle.click();
-  const backToOriginal = await page.locator("body").evaluate((el) => el.classList.contains("dark"));
+  const backToOriginal = await page.locator("html").evaluate((el) => el.classList.contains("dark"));
   expect(backToOriginal).toBe(isDark);
 });
 
