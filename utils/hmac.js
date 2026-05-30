@@ -8,10 +8,12 @@ const crypto = require("crypto");
 function signUrl(path, devId, apiKey) {
   const base = `https://timetableapi.ptv.vic.gov.au${path}`;
   const separator = path.includes("?") ? "&" : "?";
-  const urlWithDevId = `${base}${separator}devid=${encodeURIComponent(devId)}`;
+  const devIdParam = `devid=${encodeURIComponent(devId)}`;
+  const urlWithDevId = `${base}${separator}${devIdParam}`;
+  const pathWithDevId = `${path}${separator}${devIdParam}`;
   const signature = crypto
     .createHmac("sha1", apiKey)
-    .update(urlWithDevId)
+    .update(pathWithDevId)
     .digest("hex")
     .toLowerCase();
   return `${urlWithDevId}&signature=${signature}`;
