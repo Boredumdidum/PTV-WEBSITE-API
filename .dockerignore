@@ -5,7 +5,7 @@ node_modules
 ROADMAP
 docs
 scripts
-data
+data/gtfsr_*.json
 *.md
 *.json
 !package.json

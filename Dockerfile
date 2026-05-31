@@ -15,6 +15,7 @@ COPY routes ./routes
 COPY utils ./utils
 COPY fonts ./fonts
 COPY server.js package.json index.html script.js style.css favicon.svg theme-init.js ./
+COPY data ./data
 COPY src ./src
 
 EXPOSE 3000
