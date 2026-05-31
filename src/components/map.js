@@ -17,6 +17,23 @@ let markerLayer = null;
 let routeLayer = null;
 let routeRequestId = 0;
 const LINE_CHUNK_CACHE = new Map();
+const ROUTE_NAME_CACHE = new Map();
+
+async function fetchRouteNames(routeType) {
+  const cacheKey = `type_${routeType}`;
+  if (ROUTE_NAME_CACHE.has(cacheKey)) return;
+  try {
+    const res = await fetch(`/api/timetable/v3/routes?route_types=${routeType}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    for (const r of data.routes || []) {
+      ROUTE_NAME_CACHE.set(String(r.route_id), `${r.route_number || ""} ${r.route_name || ""}`.trim());
+    }
+    ROUTE_NAME_CACHE.set(cacheKey, true);
+  } catch {
+    /* ignore */
+  }
+}
 let lineIndex = null;
 let lineIndexPromise = null;
 
@@ -304,7 +321,7 @@ function getEntityRouteIds(entity) {
 	return routes;
 }
 
-export function updateMap(feed, entities, routeQuery) {
+export async function updateMap(feed, entities, routeQuery) {
 	const mapEl = document.getElementById("map");
 	const routeSearchInput = document.getElementById("route-search");
 
@@ -336,6 +353,9 @@ export function updateMap(feed, entities, routeQuery) {
 	const currentRouteRequestId = ++routeRequestId;
 
 	const busMode = isBusFeed(feed);
+	const routeType = busMode ? 2 : 0;
+	await fetchRouteNames(routeType);
+
 	const normalizedRouteQuery = routeQuery ? routeQuery.trim() : "";
 	const selectedRouteId = busMode ? resolveSelectedRouteId(entities, normalizedRouteQuery) : "";
 	const shouldDrawRoute = Boolean(busMode && normalizedRouteQuery && selectedRouteId && routeLayer);
@@ -418,7 +438,8 @@ export function updateMap(feed, entities, routeQuery) {
 				: "Flinders St bound";
 
 		const vehicleType = busMode ? "Bus" : "Train";
-		const title = routeId ? displayRouteName(routeId, busMode) : vehicleType;
+		const cachedName = routeId ? ROUTE_NAME_CACHE.get(routeId) : "";
+		const title = routeId ? (cachedName || displayRouteName(routeId, busMode)) : vehicleType;
 		const popupHtml =
 			"<strong>" +
 			title +

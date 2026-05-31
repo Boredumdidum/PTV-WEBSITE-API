@@ -112,13 +112,13 @@ async function loadDepartures(stop) {
       container.innerHTML = '<div class="departures-empty">No departures found for this stop</div>';
       return;
     }
-    displayDepartures(departures, container, data.runs || {}, data.directions || {});
+    displayDepartures(departures, container, data.runs || {}, data.directions || {}, data.routes || {});
   } catch (err) {
     container.innerHTML = `<div class="departures-empty">Error: ${escapeHTML(err.message)}</div>`;
   }
 }
 
-function displayDepartures(departures, container, runs, directions) {
+function displayDepartures(departures, container, runs, directions, routes) {
   const rows = departures.slice(0, 30).map((d) => {
     const scheduled = d.scheduled_departure_utc ? formatTime(d.scheduled_departure_utc) : "-";
     const estimated = d.estimated_departure_utc ? formatTime(d.estimated_departure_utc) : "-";
@@ -128,8 +128,12 @@ function displayDepartures(departures, container, runs, directions) {
     const direction = run
       ? directions[run.direction_id]?.direction_name || ""
       : "";
+    const route = routes[d.route_id] || null;
+    const routeLabel = route
+      ? `${escapeHTML(route.route_number || d.route_id)} ${escapeHTML(route.route_name || "")}`
+      : escapeHTML(d.route_id || "?");
     return `<tr>
-      <td><strong>${escapeHTML(d.route_id || "?")}</strong></td>
+      <td><strong>${routeLabel}</strong></td>
       <td>${escapeHTML(direction)}</td>
       <td>${scheduled}</td>
       <td>${estimated}</td>
