@@ -1,5 +1,5 @@
 import { setStatus, setError, setMapMessage } from "../utils/dom.js";
-import { updateMap, mapInstance } from "./map.js";
+import { updateMap, mapInstance, ROUTE_NAME_CACHE } from "./map.js";
 import { displayRouteName, escapeHTML } from "../utils/format.js";
 
 let lastPayload = null;
@@ -68,16 +68,17 @@ function updateAlerts(entities, options = {}) {
 			const cause = alert.cause || "UNKNOWN";
 			const effect = alert.effect || "UNKNOWN";
 			const period = alert.activePeriod && alert.activePeriod[0] ? alert.activePeriod[0] : null;
-			const routes = alert.informedEntity
-				? alert.informedEntity.map((ie) => ie.routeId).filter(Boolean)
+			const routeIds = alert.informedEntity
+				? [...new Set(alert.informedEntity.map((ie) => ie.routeId).filter(Boolean))]
 				: [];
+			const routes = routeIds.map((id) => ROUTE_NAME_CACHE.get(String(id)) || displayRouteName(id)).filter(Boolean);
 
 			return `<div class="alert-card">
 				<span class="alert-severity ${severityClass(effect)}">${effect.replace(/_/g, " ")}</span>
 				<div class="alert-header">${escapeHTML(header)}</div>
 				${desc ? `<p class="alert-description">${escapeHTML(desc)}</p>` : ""}
 				<div class="alert-meta">
-					${routes.length ? `<span>Routes: ${routes.map((r) => displayRouteName(r)).join(", ")}</span>` : ""}
+					${routes.length ? `<span>Routes: ${routes.map((r) => escapeHTML(r)).join(", ")}</span>` : ""}
 					<span>Cause: ${cause.replace(/_/g, " ")}</span>
 					${period ? `<span>${formatActivePeriod(period)}</span>` : ""}
 				</div>

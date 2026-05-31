@@ -18,6 +18,7 @@ let routeLayer = null;
 let routeRequestId = 0;
 const LINE_CHUNK_CACHE = new Map();
 const ROUTE_NAME_CACHE = new Map();
+export { ROUTE_NAME_CACHE };
 
 async function fetchRouteNames(routeType) {
   const cacheKey = `type_${routeType}`;
