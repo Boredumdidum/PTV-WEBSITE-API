@@ -1,5 +1,5 @@
 import { setStatus, setError, setMapMessage } from "../utils/dom.js";
-import { updateMap, mapInstance, routeNames, fetchRouteNames } from "./map.js";
+import { updateMap, mapInstance } from "./map.js";
 import { displayRouteName, escapeHTML } from "../utils/format.js";
 
 let lastPayload = null;
@@ -323,7 +323,7 @@ export function applyData(data, isMock, feed) {
 					else if (delay < 0) { text = `${Math.abs(delay)}s early`; }
 					else if (delay > 0) { text = `${delay}s`; }
 
-					return `<tr><td>${displayRouteName(trip.routeId || "?", busMode, routeNames)}</td><td>${escapeHTML(trip.tripId || "?")}</td><td>${escapeHTML(stopTime.stopId || "?")}</td><td>${arrTime}</td><td><span class="delay-badge ${cls}">${text}</span></td></tr>`;
+					return `<tr><td>${displayRouteName(trip.routeId || "?", busMode)}</td><td>${escapeHTML(trip.tripId || "?")}</td><td>${escapeHTML(stopTime.stopId || "?")}</td><td>${arrTime}</td><td><span class="delay-badge ${cls}">${text}</span></td></tr>`;
 				}).join("");
 				listEl.innerHTML = `<table><thead><tr><th>Route</th><th>Trip</th><th>Stop</th><th>Scheduled</th><th>Delay</th></tr></thead><tbody>${rows}</tbody></table>`;
 			}
@@ -384,9 +384,6 @@ export async function loadFeed() {
 	if (jsonEl) jsonEl.textContent = "Fetching feed...";
 	if (listEl) listEl.innerHTML = "";
 	setMapMessage("Loading feed data...");
-
-	const routeType = feed === "metro-vehicle-positions" ? 0 : feed.startsWith("bus-") ? 2 : 0;
-	await fetchRouteNames(routeType);
 
 	if (mockToggle && mockToggle.checked) {
 		const data = buildMockData(feed);

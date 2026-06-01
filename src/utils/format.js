@@ -1,3 +1,34 @@
+export const TRAIN_ROUTE_NAMES = {
+	1: "Alamein", ALM: "Alamein",
+	2: "Belgrave", BEL: "Belgrave",
+	3: "Craigieburn", CGB: "Craigieburn", CRA: "Craigieburn",
+	4: "Cranbourne", CRN: "Cranbourne",
+	5: "Mernda", MDD: "Mernda",
+	6: "Frankston", FKN: "Frankston",
+	7: "Glen Waverley", GWS: "Glen Waverley",
+	8: "Hurstbridge", HUR: "Hurstbridge",
+	9: "Lilydale", LIL: "Lilydale",
+	11: "Pakenham", PKM: "Pakenham",
+	12: "Sandringham", SAN: "Sandringham", SHM: "Sandringham",
+	13: "Stony Point", STP: "Stony Point",
+	14: "Sunbury", SUN: "Sunbury", SUY: "Sunbury",
+	15: "Upfield", UFD: "Upfield",
+	16: "Werribee", WER: "Werribee",
+	17: "Williamstown", WIL: "Williamstown", WLW: "Williamstown",
+	1482: "Flemington Racecourse",
+};
+
+function extractCode(routeId) {
+	return String(routeId).split(":").filter(Boolean).pop().split("-").pop();
+}
+
+export function displayRouteName(routeId, busMode) {
+	const name = TRAIN_ROUTE_NAMES[routeId] || TRAIN_ROUTE_NAMES[extractCode(routeId)] || TRAIN_ROUTE_NAMES[String(routeId)];
+	if (name) return name;
+	const code = extractCode(routeId);
+	return code;
+}
+
 export function escapeHTML(str) {
 	const div = document.createElement("div");
 	div.textContent = str;
@@ -25,25 +56,4 @@ export function formatEnum(value) {
 		return null;
 	}
 	return String(value).replace(/_/g, " ").toLowerCase();
-}
-
-function extractCode(routeId) {
-	return String(routeId).split(":").filter(Boolean).pop().split("-").pop();
-}
-
-export function displayRouteName(routeId, busMode, routeNames) {
-	if (busMode) {
-		const code = extractCode(routeId);
-		return routeNames?.get(code) || routeNames?.get(String(routeId)) || code;
-	}
-	const code = extractCode(routeId);
-	const cached = routeNames?.get(code) || routeNames?.get(String(routeId));
-	if (cached) return cached;
-	if (routeNames) {
-		for (const [key, label] of routeNames) {
-			if (key.toLowerCase() === code.toLowerCase()) return label;
-			if (label.toLowerCase().includes(code.toLowerCase())) return label;
-		}
-	}
-	return code;
 }

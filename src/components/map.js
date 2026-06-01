@@ -8,7 +8,7 @@ import {
 	LINE_INDEX_URL,
 	LINE_DATA_BASE,
 } from "../constants.js";
-import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName } from "../utils/format.js";
+import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName, TRAIN_ROUTE_NAMES } from "../utils/format.js";
 import { setMapMessage, setMapHint } from "../utils/dom.js";
 
 let mapInstance = null;
@@ -17,21 +17,11 @@ let markerLayer = null;
 let routeLayer = null;
 let routeRequestId = 0;
 const LINE_CHUNK_CACHE = new Map();
-let routeNames = null;
-export { routeNames };
-
-export async function fetchRouteNames(routeType) {
+async function fetchRouteNames(routeType) {
 	try {
 		const res = await fetch(`/api/timetable/v3/routes?route_types=${routeType}`);
 		if (!res.ok) return;
 		const data = await res.json();
-		const map = new Map();
-		for (const r of data.routes || []) {
-			const id = r.route_gtfs_id || String(r.route_id);
-			const label = `${r.route_number || ""} ${r.route_name || ""}`.trim();
-			if (id && label) map.set(id, label);
-		}
-		routeNames = map;
 	} catch {
 		/* ignore */
 	}
@@ -303,6 +293,10 @@ async function drawBusRouteFromLines(routeId, requestId) {
 	return true;
 }
 
+function extractCode(routeId) {
+	return String(routeId).split(":").filter(Boolean).pop().split("-").pop();
+}
+
 function resolveSelectedRouteId(entities, query) {
 	const normalizedQuery = normalizeBusRoute(query);
 	if (!normalizedQuery) {
@@ -318,7 +312,7 @@ function resolveSelectedRouteId(entities, query) {
 			if (normalized.includes(normalizedQuery) || normalizedQuery.includes(normalized)) {
 				return route;
 			}
-			const name = routeNames?.get(route);
+			const name = TRAIN_ROUTE_NAMES?.[route] || TRAIN_ROUTE_NAMES?.[extractCode(route)];
 			if (name && name.toLowerCase().includes(lowerQuery)) {
 				return route;
 			}
@@ -482,7 +476,7 @@ export async function updateMap(feed, entities, routeQuery) {
 				: "Flinders St bound";
 
 		const vehicleType = busMode ? "Bus" : "Train";
-		const title = routeId ? displayRouteName(routeId, busMode, routeNames) : vehicleType;
+		const title = routeId ? displayRouteName(routeId, busMode) : vehicleType;
 		const popupHtml =
 			"<strong>" +
 			title +
