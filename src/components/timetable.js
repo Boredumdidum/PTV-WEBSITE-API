@@ -293,28 +293,38 @@ function showStopOnMap(stop, departure, routes, stops) {
 }
 
 function displayDepartures(departures, container, runs, directions, routes) {
-  const rows = departures.slice(0, 30).map((d) => {
-    const scheduled = d.scheduled_departure_utc ? formatTime(d.scheduled_departure_utc) : "-";
-    const estimated = d.estimated_departure_utc ? formatTime(d.estimated_departure_utc) : "-";
-    const platform = d.platform_number || d.platform || "-";
+  const slice = departures.slice(0, 30);
+  const cols = { hasDirection: false, hasEstimated: false, hasPlatform: false, hasStatus: false };
+
+  const rowData = slice.map((d) => {
+    const scheduled = d.scheduled_departure_utc ? formatTime(d.scheduled_departure_utc) : "";
+    const estimated = d.estimated_departure_utc ? formatTime(d.estimated_departure_utc) : "";
+    const showEstimated = estimated && estimated !== scheduled;
+    const platform = d.platform_number || d.platform || "";
     const cancelled = d.cancelled ? '<span class="departure-cancelled">Cancelled</span>' : "";
     const run = runs[d.run_ref] || null;
-    const direction = run
-      ? directions[run.direction_id]?.direction_name || ""
-      : "";
+    const direction = run ? directions[run.direction_id]?.direction_name || "" : "";
     const route = routes[d.route_id] || null;
     const routeLabel = route
       ? `${escapeHTML(route.route_number || d.route_id)} ${escapeHTML(route.route_name || "")}`
-      : escapeHTML(d.route_id || "?");
-    return `<tr>
-      <td><strong>${routeLabel}</strong></td>
-      <td>${escapeHTML(direction)}</td>
-      <td>${scheduled}</td>
-      <td>${estimated}</td>
-      <td>${platform}</td>
-      <td>${cancelled}</td>
-    </tr>`;
-  }).join("");
+      : escapeHTML(d.route_id || "");
+
+    if (direction) cols.hasDirection = true;
+    if (showEstimated) cols.hasEstimated = true;
+    if (platform) cols.hasPlatform = true;
+    if (cancelled) cols.hasStatus = true;
+
+    return { routeLabel, direction, scheduled, estimated, showEstimated, platform, cancelled };
+  });
+
+  const rows = rowData.map((r) => `<tr>
+    <td><strong>${r.routeLabel || "?"}</strong></td>
+    ${cols.hasDirection ? `<td>${escapeHTML(r.direction)}</td>` : ""}
+    <td>${r.scheduled || "-"}</td>
+    ${cols.hasEstimated ? `<td>${r.showEstimated ? r.estimated : "-"}</td>` : ""}
+    ${cols.hasPlatform ? `<td>${escapeHTML(r.platform) || "-"}</td>` : ""}
+    ${cols.hasStatus ? `<td>${r.cancelled}</td>` : ""}
+  </tr>`).join("");
 
   container.innerHTML = `<div class="departures-header">
     <h3>Departures from <strong>${escapeHTML(selectedStop?.name || "?")}</strong></h3>
@@ -323,11 +333,11 @@ function displayDepartures(departures, container, runs, directions, routes) {
   <table class="departures-table">
     <thead><tr>
       <th>Route</th>
-      <th>Direction</th>
+      ${cols.hasDirection ? "<th>Direction</th>" : ""}
       <th>Scheduled</th>
-      <th>Estimated</th>
-      <th>Platform</th>
-      <th>Status</th>
+      ${cols.hasEstimated ? "<th>Estimated</th>" : ""}
+      ${cols.hasPlatform ? "<th>Platform</th>" : ""}
+      ${cols.hasStatus ? "<th>Status</th>" : ""}
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
