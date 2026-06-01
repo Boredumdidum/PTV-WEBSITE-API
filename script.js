@@ -64,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadButton.addEventListener("click", loadFeed);
   feedSelect.addEventListener("change", () => {
+    routeSearchInput.value = "";
     updateRouteSearchUI(feedSelect.value);
     loadFeed();
   });
