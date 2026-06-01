@@ -21,6 +21,54 @@ function formatTime(dateStr) {
   return d.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
 }
 
+function buildMockDisruptions() {
+  const now = Date.now();
+  const hour = 60 * 60 * 1000;
+  const day = 24 * 60 * 60 * 1000;
+  return [
+    {
+      disruption_id: 1001,
+      title: "Werribee Line delays",
+      description: "Signal fault near Newport. Expect delays up to 20 minutes.",
+      disruption_status: "Current",
+      published_on: new Date(now - 2 * hour).toISOString(),
+      routes: [{ route_id: 1, route_name: "Werribee", route_type: 0 }],
+    },
+    {
+      disruption_id: 1002,
+      title: "Route 75 stop closure",
+      description: "Stop 31 (Auburn Rd) closed for roadworks until Friday.",
+      disruption_status: "Planned",
+      published_on: new Date(now - 6 * hour).toISOString(),
+      routes: [{ route_id: 75, route_name: "Route 75", route_type: 1 }],
+    },
+    {
+      disruption_id: 1003,
+      title: "Route 246 service changes",
+      description: "Short-term detours between Elsternwick and St Kilda.",
+      disruption_status: "Current",
+      published_on: new Date(now - day).toISOString(),
+      routes: [{ route_id: 246, route_name: "Route 246", route_type: 2 }],
+    },
+    {
+      disruption_id: 1004,
+      title: "Geelong Line works complete",
+      description: "Buses replaced trains overnight. Services now restored.",
+      disruption_status: "Past",
+      published_on: new Date(now - 3 * day).toISOString(),
+      routes: [{ route_id: 1100, route_name: "Geelong", route_type: 3 }],
+    },
+    {
+      disruption_id: 1005,
+      title: "Network-wide info",
+      description: "Minor delays possible during peak due to signal upgrades.",
+      disruption_status: "Current",
+      published_on: new Date(now - 4 * hour).toISOString(),
+      routes: [],
+    },
+  ];
+}
+
 async function fetchTimetable(path) {
   const response = await fetch(`/api/timetable${path}`);
   if (!response.ok) {
@@ -232,6 +280,7 @@ function initDisruptions() {
   const disruptionsRoute = document.getElementById("disruptions-route");
   const disruptionsSort = document.getElementById("disruptions-sort");
   const loadBtn = document.getElementById("load-disruptions");
+  const mockToggle = document.getElementById("mock");
 
   const applyFilters = () => {
     const routeQuery = disruptionsRoute ? disruptionsRoute.value.trim() : "";
@@ -246,10 +295,21 @@ function initDisruptions() {
 
   const loadDisruptions = async () => {
     container.innerHTML = '<div class="departures-loading">Loading disruptions...</div>';
+    const routeTypes = disruptionsFilter ? disruptionsFilter.value : "0,1,2,3,4";
+    if (mockToggle && mockToggle.checked) {
+      const typeSet = new Set(routeTypes.split(",").map((value) => Number(value)));
+      lastDisruptions = buildMockDisruptions().filter((d) => {
+        const routes = Array.isArray(d.routes) ? d.routes : [];
+        if (!routes.length) return true;
+        return routes.some((r) => typeSet.has(Number(r.route_type)));
+      });
+      applyFilters();
+      return;
+    }
+
     try {
-      const routeTypes = disruptionsFilter ? disruptionsFilter.value : "0,1,2,3,4";
       const data = await fetchTimetable(`/v3/disruptions?route_types=${routeTypes}`);
-      lastDisruptions = data.disruptions || [];
+      lastDisruptions = normalizeDisruptions(data ? data.disruptions : null);
       applyFilters();
     } catch (err) {
       container.innerHTML = `<div class="disruptions-empty">Error: ${escapeHTML(err.message)}</div>`;
@@ -260,6 +320,7 @@ function initDisruptions() {
   if (disruptionsRoute) disruptionsRoute.addEventListener("input", applyFilters);
   if (disruptionsSort) disruptionsSort.addEventListener("change", applyFilters);
   if (loadBtn) loadBtn.addEventListener("click", loadDisruptions);
+  if (mockToggle) mockToggle.addEventListener("change", loadDisruptions);
 
   loadDisruptions();
 }
@@ -276,6 +337,17 @@ function getDisruptionSortValue(disruption) {
   if (typeof raw === "number") return raw * 1000;
   const parsed = Date.parse(raw);
   return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function normalizeDisruptions(disruptions) {
+  if (Array.isArray(disruptions)) return disruptions;
+  if (!disruptions || typeof disruptions !== "object") return [];
+  return Object.values(disruptions).reduce((acc, value) => {
+    if (Array.isArray(value)) {
+      acc.push(...value);
+    }
+    return acc;
+  }, []);
 }
 
 function filterDisruptionsByRoute(disruptions, query) {
