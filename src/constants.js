@@ -34,6 +34,7 @@ export const TRAIN_ROUTE_SHORT_CODES = {
 	MDD: "Mernda",
 	PKM: "Pakenham",
 	SAN: "Sandringham",
+	SHM: "Sandringham",
 	STP: "Stony Point",
 	SUN: "Sunbury",
 	SUY: "Sunbury",

@@ -55,5 +55,12 @@ export function displayRouteName(routeId, busMode) {
 	}
 	const code = String(routeId).split(":").filter(Boolean).pop().split("-").pop();
 	const cached = routeNameCache.get(code) || routeNameCache.get(String(routeId));
-	return cached || TRAIN_ROUTE_SHORT_CODES[code] || code;
+	if (cached) return cached;
+	const shortCode = TRAIN_ROUTE_SHORT_CODES[code] || TRAIN_ROUTE_SHORT_CODES[String(routeId)];
+	if (shortCode) return shortCode;
+	for (const [key, label] of routeNameCache) {
+		if (key.toLowerCase() === code.toLowerCase()) return label;
+		if (label.toLowerCase().includes(code.toLowerCase())) return label;
+	}
+	return code;
 }

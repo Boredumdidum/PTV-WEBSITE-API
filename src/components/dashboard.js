@@ -307,6 +307,7 @@ export function applyData(data, isMock, feed) {
 			if (!filteredEntities.length) {
 				listEl.innerHTML = routeQuery ? "No trip updates match that route." : "No trip updates.";
 			} else {
+				const busMode = typeof feed === "string" && feed.startsWith("bus-");
 				const rows = filteredEntities.slice(0, 20).map((e) => {
 					const tu = e.tripUpdate || {};
 					const trip = tu.trip || {};
@@ -322,7 +323,7 @@ export function applyData(data, isMock, feed) {
 					else if (delay < 0) { text = `${Math.abs(delay)}s early`; }
 					else if (delay > 0) { text = `${delay}s`; }
 
-					return `<tr><td>${displayRouteName(trip.routeId || "?")}</td><td>${escapeHTML(trip.tripId || "?")}</td><td>${escapeHTML(stopTime.stopId || "?")}</td><td>${arrTime}</td><td><span class="delay-badge ${cls}">${text}</span></td></tr>`;
+					return `<tr><td>${displayRouteName(trip.routeId || "?", busMode)}</td><td>${escapeHTML(trip.tripId || "?")}</td><td>${escapeHTML(stopTime.stopId || "?")}</td><td>${arrTime}</td><td><span class="delay-badge ${cls}">${text}</span></td></tr>`;
 				}).join("");
 				listEl.innerHTML = `<table><thead><tr><th>Route</th><th>Trip</th><th>Stop</th><th>Scheduled</th><th>Delay</th></tr></thead><tbody>${rows}</tbody></table>`;
 			}
