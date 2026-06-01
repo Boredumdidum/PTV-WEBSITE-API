@@ -8,7 +8,7 @@ import {
 	LINE_INDEX_URL,
 	LINE_DATA_BASE,
 } from "../constants.js";
-import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName, populateRouteNames } from "../utils/format.js";
+import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName, populateRouteNames, routeNameCache } from "../utils/format.js";
 import { setMapMessage, setMapHint } from "../utils/dom.js";
 
 let mapInstance = null;
@@ -304,10 +304,17 @@ function resolveSelectedRouteId(entities, query) {
 		return "";
 	}
 
+	const lowerQuery = query.trim().toLowerCase();
+
 	for (const entity of entities) {
 		const routes = getEntityRouteIds(entity);
 		for (const route of routes) {
-			if (normalizeBusRoute(route) === normalizedQuery) {
+			const normalized = normalizeBusRoute(route);
+			if (normalized.includes(normalizedQuery) || normalizedQuery.includes(normalized)) {
+				return route;
+			}
+			const name = routeNameCache.get(route);
+			if (name && name.toLowerCase().includes(lowerQuery)) {
 				return route;
 			}
 		}

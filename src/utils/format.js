@@ -1,6 +1,7 @@
 import { TRAIN_ROUTE_SHORT_CODES } from "../constants.js";
 
 const routeNameCache = new Map();
+export { routeNameCache };
 
 export function populateRouteNames(routes) {
 	for (const r of routes) {
