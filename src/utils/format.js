@@ -1,5 +1,15 @@
 import { TRAIN_ROUTE_SHORT_CODES } from "../constants.js";
 
+const routeNameCache = new Map();
+
+export function populateRouteNames(routes) {
+	for (const r of routes) {
+		const id = r.route_gtfs_id || String(r.route_id);
+		const label = `${r.route_number || ""} ${r.route_name || ""}`.trim();
+		if (id && label) routeNameCache.set(id, label);
+	}
+}
+
 export function escapeHTML(str) {
 	const div = document.createElement("div");
 	div.textContent = str;
@@ -34,7 +44,8 @@ export function formatRouteName(routeId) {
 	const parts = cleaned.split(":");
 	const nonEmpty = parts.filter(Boolean);
 	const last = nonEmpty.length ? nonEmpty[nonEmpty.length - 1] : cleaned;
-	return escapeHTML(last);
+	const cached = routeNameCache.get(last) || routeNameCache.get(cleaned);
+	return cached ? escapeHTML(cached) : escapeHTML(last);
 }
 
 export function displayRouteName(routeId, busMode) {
@@ -42,5 +53,6 @@ export function displayRouteName(routeId, busMode) {
 		return formatRouteName(routeId);
 	}
 	const code = String(routeId).split(":").filter(Boolean).pop().split("-").pop();
-	return TRAIN_ROUTE_SHORT_CODES[code] || code;
+	const cached = routeNameCache.get(code) || routeNameCache.get(String(routeId));
+	return cached || TRAIN_ROUTE_SHORT_CODES[code] || code;
 }

@@ -1,5 +1,5 @@
 import { setStatus, setError, setMapMessage } from "../utils/dom.js";
-import { updateMap, mapInstance, ROUTE_NAME_CACHE } from "./map.js";
+import { updateMap, mapInstance } from "./map.js";
 import { displayRouteName, escapeHTML } from "../utils/format.js";
 
 let lastPayload = null;

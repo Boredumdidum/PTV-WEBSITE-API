@@ -8,7 +8,7 @@ import {
 	LINE_INDEX_URL,
 	LINE_DATA_BASE,
 } from "../constants.js";
-import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName } from "../utils/format.js";
+import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName, populateRouteNames } from "../utils/format.js";
 import { setMapMessage, setMapHint } from "../utils/dom.js";
 
 let mapInstance = null;
@@ -17,20 +17,16 @@ let markerLayer = null;
 let routeLayer = null;
 let routeRequestId = 0;
 const LINE_CHUNK_CACHE = new Map();
-const ROUTE_NAME_CACHE = new Map();
-export { ROUTE_NAME_CACHE };
+let routesFetched = {};
 
 async function fetchRouteNames(routeType) {
-  const cacheKey = `type_${routeType}`;
-  if (ROUTE_NAME_CACHE.has(cacheKey)) return;
+  if (routesFetched[routeType]) return;
+  routesFetched[routeType] = true;
   try {
     const res = await fetch(`/api/timetable/v3/routes?route_types=${routeType}`);
     if (!res.ok) return;
     const data = await res.json();
-    for (const r of data.routes || []) {
-      ROUTE_NAME_CACHE.set(String(r.route_id), `${r.route_number || ""} ${r.route_name || ""}`.trim());
-    }
-    ROUTE_NAME_CACHE.set(cacheKey, true);
+    populateRouteNames(data.routes || []);
   } catch {
     /* ignore */
   }
@@ -474,8 +470,7 @@ export async function updateMap(feed, entities, routeQuery) {
 				: "Flinders St bound";
 
 		const vehicleType = busMode ? "Bus" : "Train";
-		const cachedName = routeId ? ROUTE_NAME_CACHE.get(routeId) : "";
-		const title = routeId ? (cachedName || displayRouteName(routeId, busMode)) : vehicleType;
+		const title = routeId ? displayRouteName(routeId, busMode) : vehicleType;
 		const popupHtml =
 			"<strong>" +
 			title +
