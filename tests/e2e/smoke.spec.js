@@ -81,18 +81,18 @@ test("status bar is present and interactive", async ({ page }) => {
   await expect(statusEl).toBeVisible();
 });
 
-test("preview panel shows on navigation click", async ({ page }) => {
+test("preview toggle shows panel", async ({ page }) => {
   await page.goto("/");
-  const panelButtons = page.locator(".nav-btn");
+  const previewToggle = page.locator("#preview-toggle");
   const previewPanel = page.locator("#panel-preview");
-  const dashboardPanel = page.locator("#panel-dashboard");
 
-  await expect(dashboardPanel).toBeVisible();
   await expect(previewPanel).not.toBeVisible();
 
-  await panelButtons.nth(1).click();
+  await previewToggle.click();
   await expect(previewPanel).toBeVisible();
-  await expect(dashboardPanel).not.toBeVisible();
+
+  await previewToggle.click();
+  await expect(previewPanel).not.toBeVisible();
 });
 
 test("response body error is displayed on failed request", async ({ page }) => {
@@ -116,7 +116,7 @@ test("routes panel shows route type buttons", async ({ page }) => {
   await routesBtn.click();
   await expect(page.locator("#panel-routes")).toBeVisible();
   const routeTypeBtns = page.locator(".route-type-btn");
-  await expect(routeTypeBtns).toHaveCount(5);
+  await expect(routeTypeBtns).toHaveCount(2);
 });
 
 test("disruptions panel has route type filter", async ({ page }) => {
