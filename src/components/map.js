@@ -528,18 +528,51 @@ export async function updateMap(feed, entities, routeQuery) {
 	}
 }
 
+function getMockRouteStops(routeType, routeId) {
+	const key = `${routeType}:${routeId}`;
+	const mock = {
+		"0:Werribee": [
+			{ stop_name: "Flinders Street Station", stop_latitude: -37.8183, stop_longitude: 144.9671, direction_id: 1 },
+			{ stop_name: "Southern Cross Station", stop_latitude: -37.8181, stop_longitude: 144.9526, direction_id: 1 },
+			{ stop_name: "Richmond Station", stop_latitude: -37.8237, stop_longitude: 144.9897, direction_id: 0 },
+		],
+		"0:Craigieburn": [
+			{ stop_name: "Flinders Street Station", stop_latitude: -37.8183, stop_longitude: 144.9671, direction_id: 0 },
+			{ stop_name: "Southern Cross Station", stop_latitude: -37.8181, stop_longitude: 144.9526, direction_id: 0 },
+		],
+		"1:75": [
+			{ stop_name: "Stop 28: Auburn Rd", stop_latitude: -37.8294, stop_longitude: 145.0451, direction_id: 0 },
+			{ stop_name: "Stop 20: Burke Rd", stop_latitude: -37.8342, stop_longitude: 145.0568, direction_id: 1 },
+		],
+		"2:246": [
+			{ stop_name: "Elsternwick Station", stop_latitude: -37.8845, stop_longitude: 144.9982, direction_id: 0 },
+			{ stop_name: "St Kilda Station", stop_latitude: -37.8677, stop_longitude: 144.9774, direction_id: 1 },
+		],
+	};
+	return mock[key] || null;
+}
+
 async function loadAndDrawRouteStops(routeType, selectedRouteId, requestId) {
 	if (!routeStopLayer || !mapInstance) return;
 	const routeId = pendingRouteStops ? pendingRouteStops.routeId : selectedRouteId;
 	if (!routeId) return;
 	pendingRouteStops = null;
-	try {
-		const res = await fetch(`/api/timetable/v3/stops/route_type/${routeType}/route/${encodeURIComponent(routeId)}`);
-		if (!res.ok) return;
-		if (requestId !== routeRequestId) return;
-		const data = await res.json();
-		const stops = data.stops || [];
-		if (!stops.length) return;
+	let stops;
+	const mockToggle = document.getElementById("mock");
+	if (mockToggle && mockToggle.checked) {
+		stops = getMockRouteStops(routeType, routeId);
+	} else {
+		try {
+			const res = await fetch(`/api/timetable/v3/stops/route_type/${routeType}/route/${encodeURIComponent(routeId)}`);
+			if (!res.ok) return;
+			if (requestId !== routeRequestId) return;
+			const data = await res.json();
+			stops = data.stops || [];
+		} catch {
+			return;
+		}
+	}
+	if (!stops || !stops.length) return;
 		const size = 10;
 		const icons = {
 			0: L.divIcon({
