@@ -2,15 +2,15 @@ export const TRAIN_ROUTE_NAMES = {
 	1: "Alamein", ALM: "Alamein",
 	2: "Belgrave", BEL: "Belgrave", BEG: "Belgrave",
 	3: "Craigieburn", CGB: "Craigieburn", CRA: "Craigieburn",
-	4: "Cranbourne", CRN: "Cranbourne",
+	4: "Cranbourne", CRN: "Cranbourne", CBE: "Cranbourne",
 	5: "Mernda", MDD: "Mernda",
 	6: "Frankston", FKN: "Frankston",
 	7: "Glen Waverley", GWS: "Glen Waverley", GWY: "Glen Waverley",
-	8: "Hurstbridge", HUR: "Hurstbridge",
+	8: "Hurstbridge", HUR: "Hurstbridge", HBE: "Hurstbridge",
 	9: "Lilydale", LIL: "Lilydale",
 	11: "Pakenham", PKM: "Pakenham",
 	12: "Sandringham", SAN: "Sandringham", SHM: "Sandringham",
-	13: "Stony Point", STP: "Stony Point",
+	13: "Stony Point", STP: "Stony Point", STY: "Stony Point",
 	14: "Sunbury", SUN: "Sunbury", SUY: "Sunbury", SYB: "Sunbury",
 	15: "Upfield", UFD: "Upfield",
 	16: "Werribee", WER: "Werribee",
@@ -18,7 +18,7 @@ export const TRAIN_ROUTE_NAMES = {
 	1482: "Flemington Racecourse", FLE: "Flemington Racecourse",
 };
 
-function extractCode(routeId) {
+export function extractCode(routeId) {
 	return String(routeId).split(":").filter(Boolean).pop().split("-").pop();
 }
 

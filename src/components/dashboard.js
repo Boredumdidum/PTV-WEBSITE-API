@@ -233,7 +233,11 @@ export function filterEntitiesByRoute(entities, query) {
 
 	return entities.filter((entity) => {
 		const routes = getEntityRouteIds(entity);
-		return routes.some((route) => String(route).toLowerCase().includes(trimmed));
+		return routes.some((route) => {
+			if (String(route).toLowerCase().includes(trimmed)) return true;
+			const name = displayRouteName(route, false);
+			return name && name.toLowerCase().includes(trimmed);
+		});
 	});
 }
 

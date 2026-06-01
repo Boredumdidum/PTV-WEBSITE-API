@@ -8,7 +8,7 @@ import {
 	LINE_INDEX_URL,
 	LINE_DATA_BASE,
 } from "../constants.js";
-import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName, TRAIN_ROUTE_NAMES } from "../utils/format.js";
+import { escapeHTML, formatTimestamp, formatSpeed, formatEnum, displayRouteName, TRAIN_ROUTE_NAMES, extractCode } from "../utils/format.js";
 import { setMapMessage, setMapHint } from "../utils/dom.js";
 
 let mapInstance = null;
