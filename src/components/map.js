@@ -35,12 +35,15 @@ async function fetchRouteNames(routeType) {
     /* ignore */
   }
 }
+let stopMarkerLayer = null;
 let lineIndex = null;
 let lineIndexPromise = null;
 let pendingMapCenter = null;
+let pendingStopName = null;
 
-export function setMapCenter(lat, lng) {
+export function setMapCenter(lat, lng, stopName) {
 	pendingMapCenter = [lat, lng];
+	pendingStopName = stopName || null;
 }
 
 export function isVehicleFeed(feed) {
@@ -79,6 +82,7 @@ export function initMap() {
 
 	routeLayer = L.layerGroup().addTo(mapInstance);
 	markerLayer = L.layerGroup().addTo(mapInstance);
+	stopMarkerLayer = L.layerGroup().addTo(mapInstance);
 	setTimeout(() => mapInstance.invalidateSize(), 0);
 }
 
@@ -356,6 +360,9 @@ export async function updateMap(feed, entities, routeQuery) {
 	if (routeLayer) {
 		routeLayer.clearLayers();
 	}
+	if (stopMarkerLayer) {
+		stopMarkerLayer.clearLayers();
+	}
 	const currentRouteRequestId = ++routeRequestId;
 
 	const busMode = isBusFeed(feed);
@@ -393,8 +400,11 @@ export async function updateMap(feed, entities, routeQuery) {
 		);
 		if (pendingMapCenter) {
 			const [lat, lng] = pendingMapCenter;
+			const stopName = pendingStopName;
 			pendingMapCenter = null;
+			pendingStopName = null;
 			mapInstance.setView([lat, lng], 15);
+			drawStopMarker(lat, lng, stopName);
 		} else {
 			mapInstance.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
 		}
@@ -496,9 +506,31 @@ export async function updateMap(feed, entities, routeQuery) {
 
 	if (pendingMapCenter) {
 		const [lat, lng] = pendingMapCenter;
+		const stopName = pendingStopName;
 		pendingMapCenter = null;
+		pendingStopName = null;
 		mapInstance.setView([lat, lng], 15);
+		drawStopMarker(lat, lng, stopName);
 	} else {
 		mapInstance.fitBounds(bounds, { padding: [24, 24], maxZoom: 15 });
+	}
+}
+
+function drawStopMarker(lat, lng, name) {
+	if (!stopMarkerLayer || !mapInstance) return;
+	const size = 14;
+	const icon = L.divIcon({
+		className: "",
+		html: `<svg width="${size * 2}" height="${size * 2 + 6}" viewBox="0 0 ${size * 2} ${size * 2 + 6}" xmlns="http://www.w3.org/2000/svg">
+			<polygon points="${size},0 ${size * 2},${size * 2} 0,${size * 2}" fill="#e74c3c" stroke="#fff" stroke-width="2"/>
+			<line x1="${size}" y1="0" x2="${size}" y2="${size}" stroke="#fff" stroke-width="2"/>
+		</svg>`,
+		iconSize: [size * 2, size * 2 + 6],
+		iconAnchor: [size, size * 2 + 6],
+		popupAnchor: [0, -(size * 2 + 6)],
+	});
+	const marker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(stopMarkerLayer);
+	if (name) {
+		marker.bindPopup(`<strong>${name}</strong>`);
 	}
 }

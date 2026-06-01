@@ -284,7 +284,7 @@ function showStopOnMap(stop, departure, routes, stops) {
   }
 
   updateRouteSearchUI(feed);
-  setMapCenter(Number(stopInfo.stop_latitude), Number(stopInfo.stop_longitude));
+  setMapCenter(Number(stopInfo.stop_latitude), Number(stopInfo.stop_longitude), stopInfo.stop_name);
 
   const dashboardBtn = document.querySelector('[data-panel="panel-dashboard"]');
   if (dashboardBtn) dashboardBtn.click();
