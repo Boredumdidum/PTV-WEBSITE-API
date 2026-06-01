@@ -74,6 +74,89 @@ function buildMockDisruptions() {
   ];
 }
 
+const MOCK_STOPS = [
+  { stop_id: "1000", stop_name: "Flinders Street Station", route_type: 0, suburb: "Melbourne", stop_latitude: -37.8183, stop_longitude: 144.9671 },
+  { stop_id: "1001", stop_name: "Southern Cross Station", route_type: 0, suburb: "Melbourne", stop_latitude: -37.8181, stop_longitude: 144.9526 },
+  { stop_id: "1002", stop_name: "Richmond Station", route_type: 0, suburb: "Richmond", stop_latitude: -37.8237, stop_longitude: 144.9897 },
+  { stop_id: "2001", stop_name: "Stop 28: Auburn Rd", route_type: 1, suburb: "Hawthorn", stop_latitude: -37.8294, stop_longitude: 145.0451, stop_landmark: "Auburn Rd/Hawthorn Rd" },
+  { stop_id: "2002", stop_name: "Stop 20: Burke Rd", route_type: 1, suburb: "Camberwell", stop_latitude: -37.8342, stop_longitude: 145.0568, stop_landmark: "Burke Rd/Camberwell Rd" },
+  { stop_id: "3001", stop_name: "Elsternwick Station", route_type: 2, suburb: "Elsternwick", stop_latitude: -37.8845, stop_longitude: 144.9982 },
+  { stop_id: "3002", stop_name: "St Kilda Station", route_type: 2, suburb: "St Kilda", stop_latitude: -37.8677, stop_longitude: 144.9774 },
+];
+
+function getMockDepartures(stop) {
+  const now = new Date();
+  const addMin = (m) => new Date(now.getTime() + m * 60000).toISOString();
+  const addHour = (h) => new Date(now.getTime() + h * 3600000).toISOString();
+
+  if (stop.routeType === 0) {
+    return {
+      departures: [
+        { scheduled_departure_utc: addMin(2), estimated_departure_utc: addMin(3), route_id: "Werribee", run_ref: "run-wer-1", platform_number: "1" },
+        { scheduled_departure_utc: addMin(4), estimated_departure_utc: addMin(5), route_id: "Werribee", run_ref: "run-wer-2", platform_number: "2" },
+        { scheduled_departure_utc: addMin(7), estimated_departure_utc: addMin(8), route_id: "Craigieburn", run_ref: "run-cra-1", platform_number: "3" },
+        { scheduled_departure_utc: addMin(12), estimated_departure_utc: addMin(13), route_id: "Craigieburn", run_ref: "run-cra-2", platform_number: "3" },
+        { scheduled_departure_utc: addMin(15), estimated_departure_utc: addMin(16), route_id: "Werribee", run_ref: "run-wer-3", platform_number: "1" },
+      ],
+      runs: {
+        "run-wer-1": { run_id: "wer-1", direction_id: 1 },
+        "run-wer-2": { run_id: "wer-2", direction_id: 1 },
+        "run-wer-3": { run_id: "wer-3", direction_id: 1 },
+        "run-cra-1": { run_id: "cra-1", direction_id: 0 },
+        "run-cra-2": { run_id: "cra-2", direction_id: 0 },
+      },
+      directions: { 0: { direction_name: "Craigieburn", direction_id: 0 }, 1: { direction_name: "Werribee", direction_id: 1 } },
+      routes: {
+        "Werribee": { route_id: "Werribee", route_name: "Werribee", route_number: "WER" },
+        "Craigieburn": { route_id: "Craigieburn", route_name: "Craigieburn", route_number: "CRA" },
+      },
+      stops: Object.fromEntries(MOCK_STOPS.filter((s) => s.route_type === 0).map((s) => [s.stop_id, s])),
+    };
+  }
+
+  if (stop.routeType === 1) {
+    return {
+      departures: [
+        { scheduled_departure_utc: addMin(1), estimated_departure_utc: addMin(2), route_id: "75", run_ref: "run-t75-1" },
+        { scheduled_departure_utc: addMin(5), estimated_departure_utc: addMin(6), route_id: "75", run_ref: "run-t75-2" },
+        { scheduled_departure_utc: addMin(10), estimated_departure_utc: "", route_id: "75", run_ref: "run-t75-3" },
+        { scheduled_departure_utc: addMin(12), estimated_departure_utc: addMin(15), route_id: "75", run_ref: "run-t75-4", cancelled: true },
+        { scheduled_departure_utc: addMin(18), estimated_departure_utc: addMin(19), route_id: "75", run_ref: "run-t75-5" },
+      ],
+      runs: {
+        "run-t75-1": { run_id: "t75-1", direction_id: 0 },
+        "run-t75-2": { run_id: "t75-2", direction_id: 0 },
+        "run-t75-3": { run_id: "t75-3", direction_id: 1 },
+        "run-t75-4": { run_id: "t75-4", direction_id: 1 },
+        "run-t75-5": { run_id: "t75-5", direction_id: 0 },
+      },
+      directions: { 0: { direction_name: "City", direction_id: 0 }, 1: { direction_name: "Burwood", direction_id: 1 } },
+      routes: { "75": { route_id: "75", route_name: "Route 75", route_number: "75" } },
+      stops: Object.fromEntries(MOCK_STOPS.filter((s) => s.route_type === 1).map((s) => [s.stop_id, s])),
+    };
+  }
+
+  return {
+    departures: [
+      { scheduled_departure_utc: addMin(3), estimated_departure_utc: addMin(4), route_id: "246", run_ref: "run-b246-1" },
+      { scheduled_departure_utc: addMin(8), estimated_departure_utc: addMin(9), route_id: "246", run_ref: "run-b246-2" },
+      { scheduled_departure_utc: addMin(11), estimated_departure_utc: "", route_id: "246", run_ref: "run-b246-3" },
+      { scheduled_departure_utc: addMin(17), estimated_departure_utc: addMin(18), route_id: "246", run_ref: "run-b246-4" },
+      { scheduled_departure_utc: addHour(1), estimated_departure_utc: addHour(1), route_id: "246", run_ref: "run-b246-5" },
+    ],
+    runs: {
+      "run-b246-1": { run_id: "b246-1", direction_id: 0 },
+      "run-b246-2": { run_id: "b246-2", direction_id: 1 },
+      "run-b246-3": { run_id: "b246-3", direction_id: 0 },
+      "run-b246-4": { run_id: "b246-4", direction_id: 1 },
+      "run-b246-5": { run_id: "b246-5", direction_id: 0 },
+    },
+    directions: { 0: { direction_name: "Elsternwick", direction_id: 0 }, 1: { direction_name: "St Kilda", direction_id: 1 } },
+    routes: { "246": { route_id: "246", route_name: "Route 246", route_number: "246" } },
+    stops: Object.fromEntries(MOCK_STOPS.filter((s) => s.route_type === 2).map((s) => [s.stop_id, s])),
+  };
+}
+
 async function fetchTimetable(path) {
   const response = await fetch(`/api/timetable${path}`);
   if (!response.ok) {
@@ -121,7 +204,10 @@ async function searchStops(term, resultsEl) {
   resultsEl.innerHTML = '<div class="search-loading">Searching...</div>';
   resultsEl.classList.add("show");
   try {
-    const data = await fetchTimetable(`/v3/search/${encodeURIComponent(term)}`);
+    const mockToggle = document.getElementById("mock");
+    const data = mockToggle && mockToggle.checked
+      ? { stops: MOCK_STOPS.filter((s) => s.stop_name.toLowerCase().includes(term.toLowerCase()) || s.suburb.toLowerCase().includes(term.toLowerCase())) }
+      : await fetchTimetable(`/v3/search/${encodeURIComponent(term)}`);
     const stops = data.stops || [];
     if (!stops.length) {
       resultsEl.innerHTML = '<div class="search-empty">No stops found</div>';
@@ -157,9 +243,12 @@ async function loadDepartures(stop) {
   if (!container) return;
   container.innerHTML = '<div class="departures-loading">Loading departures...</div>';
   try {
-    const data = await fetchTimetable(
-      `/v3/departures/route_type/${stop.routeType}/stop/${stop.id}?max_results=25&include_cancelled=true`
-    );
+    const mockToggle = document.getElementById("mock");
+    const data = mockToggle && mockToggle.checked
+      ? getMockDepartures(stop)
+      : await fetchTimetable(
+          `/v3/departures/route_type/${stop.routeType}/stop/${stop.id}?max_results=25&include_cancelled=true`
+        );
     const departures = data.departures || [];
     if (!departures.length) {
       container.innerHTML = '<div class="departures-empty">No departures found for this stop</div>';
