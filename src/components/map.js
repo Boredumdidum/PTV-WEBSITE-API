@@ -36,14 +36,20 @@ async function fetchRouteNames(routeType) {
   }
 }
 let stopMarkerLayer = null;
+let routeStopLayer = null;
 let lineIndex = null;
 let lineIndexPromise = null;
 let pendingMapCenter = null;
 let pendingStopName = null;
+let pendingRouteStops = null;
 
 export function setMapCenter(lat, lng, stopName) {
 	pendingMapCenter = [lat, lng];
 	pendingStopName = stopName || null;
+}
+
+export function setRouteStops(routeType, routeId) {
+	pendingRouteStops = { routeType, routeId };
 }
 
 export function isVehicleFeed(feed) {
@@ -83,6 +89,7 @@ export function initMap() {
 	routeLayer = L.layerGroup().addTo(mapInstance);
 	markerLayer = L.layerGroup().addTo(mapInstance);
 	stopMarkerLayer = L.layerGroup().addTo(mapInstance);
+	routeStopLayer = L.layerGroup().addTo(mapInstance);
 	setTimeout(() => mapInstance.invalidateSize(), 0);
 }
 
@@ -363,6 +370,9 @@ export async function updateMap(feed, entities, routeQuery) {
 	if (stopMarkerLayer) {
 		stopMarkerLayer.clearLayers();
 	}
+	if (routeStopLayer) {
+		routeStopLayer.clearLayers();
+	}
 	const currentRouteRequestId = ++routeRequestId;
 
 	const busMode = isBusFeed(feed);
@@ -443,6 +453,8 @@ export async function updateMap(feed, entities, routeQuery) {
 				setMapHint(`Route ${selectedRouteId}: no GTFS line found`);
 			}
 		});
+
+		loadAndDrawRouteStops(routeType, selectedRouteId, currentRouteRequestId);
 	}
 
 	positions.forEach((item) => {
@@ -513,6 +525,52 @@ export async function updateMap(feed, entities, routeQuery) {
 		drawStopMarker(lat, lng, stopName);
 	} else {
 		mapInstance.fitBounds(bounds, { padding: [24, 24], maxZoom: 15 });
+	}
+}
+
+async function loadAndDrawRouteStops(routeType, selectedRouteId, requestId) {
+	if (!routeStopLayer || !mapInstance) return;
+	const routeId = pendingRouteStops ? pendingRouteStops.routeId : selectedRouteId;
+	if (!routeId) return;
+	pendingRouteStops = null;
+	try {
+		const res = await fetch(`/api/timetable/v3/stops/route_type/${routeType}/route/${encodeURIComponent(routeId)}`);
+		if (!res.ok) return;
+		if (requestId !== routeRequestId) return;
+		const data = await res.json();
+		const stops = data.stops || [];
+		if (!stops.length) return;
+		const size = 10;
+		const icons = {
+			0: L.divIcon({
+				className: "",
+				html: `<svg width="${size * 2}" height="${size * 2 + 4}" viewBox="0 0 ${size * 2} ${size * 2 + 4}" xmlns="http://www.w3.org/2000/svg">
+					<polygon points="${size},0 ${size * 2},${size * 2} 0,${size * 2}" fill="#0f5b61" stroke="#fff" stroke-width="1.5"/>
+				</svg>`,
+				iconSize: [size * 2, size * 2 + 4],
+				iconAnchor: [size, size * 2 + 4],
+			}),
+			1: L.divIcon({
+				className: "",
+				html: `<svg width="${size * 2}" height="${size * 2 + 4}" viewBox="0 0 ${size * 2} ${size * 2 + 4}" xmlns="http://www.w3.org/2000/svg">
+					<polygon points="${size},0 ${size * 2},${size * 2} 0,${size * 2}" fill="#ff922b" stroke="#fff" stroke-width="1.5"/>
+				</svg>`,
+				iconSize: [size * 2, size * 2 + 4],
+				iconAnchor: [size, size * 2 + 4],
+			}),
+		};
+		stops.forEach((s) => {
+			const dir = s.direction_id === 1 ? 1 : 0;
+			const lat = Number(s.stop_latitude);
+			const lng = Number(s.stop_longitude);
+			if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+			L.marker([lat, lng], {
+				icon: icons[dir],
+				zIndexOffset: 500,
+			}).bindPopup(`<strong>${escapeHTML(s.stop_name || "")}</strong>`).addTo(routeStopLayer);
+		});
+	} catch {
+		/* ignore */
 	}
 }
 

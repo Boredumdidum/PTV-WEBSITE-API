@@ -1,5 +1,5 @@
 import { ROUTE_TYPE_TO_FEED } from "../constants.js";
-import { setMapCenter } from "./map.js";
+import { setMapCenter, setRouteStops } from "./map.js";
 import { updateRouteSearchUI } from "../utils/dom.js";
 import { loadFeed } from "./dashboard.js";
 
@@ -285,6 +285,7 @@ function showStopOnMap(stop, departure, routes, stops) {
 
   updateRouteSearchUI(feed);
   setMapCenter(Number(stopInfo.stop_latitude), Number(stopInfo.stop_longitude), stopInfo.stop_name);
+  setRouteStops(stop.routeType, departure ? departure.route_id : "");
 
   const dashboardBtn = document.querySelector('[data-panel="panel-dashboard"]');
   if (dashboardBtn) dashboardBtn.click();
