@@ -428,7 +428,7 @@ export async function updateMap(feed, entities, routeQuery) {
 	const bounds = [];
 
 	if (shouldDrawRoute) {
-		setMapHint(`Route ${selectedRouteId}: loading line data`);
+		setMapHint(`Route ${displayRouteName(selectedRouteId, busMode)}: loading line data`);
 
 		const directionBuckets = {
 			0: [],
@@ -450,9 +450,9 @@ export async function updateMap(feed, entities, routeQuery) {
 				return;
 			}
 			if (drawn) {
-				setMapHint(`Route ${selectedRouteId}: line from GTFS shapes`);
+				setMapHint(`Route ${displayRouteName(selectedRouteId, busMode)}: line from GTFS shapes`);
 			} else {
-				setMapHint(`Route ${selectedRouteId}: no GTFS line found`);
+				setMapHint(`Route ${displayRouteName(selectedRouteId, busMode)}: no GTFS line found`);
 			}
 		});
 
@@ -509,7 +509,7 @@ export async function updateMap(feed, entities, routeQuery) {
 		});
 		marker.on("click", () => {
 			if (routeSearchInput) {
-				routeSearchInput.value = routeId;
+				routeSearchInput.value = displayRouteName(routeId, busMode);
 			}
 		});
 		marker.bindPopup(popupContent);

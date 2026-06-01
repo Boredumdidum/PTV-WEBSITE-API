@@ -1,6 +1,6 @@
 export const TRAIN_ROUTE_NAMES = {
 	1: "Alamein", ALM: "Alamein",
-	2: "Belgrave", BEL: "Belgrave",
+	2: "Belgrave", BEL: "Belgrave", BEG: "Belgrave",
 	3: "Craigieburn", CGB: "Craigieburn", CRA: "Craigieburn",
 	4: "Cranbourne", CRN: "Cranbourne",
 	5: "Mernda", MDD: "Mernda",
@@ -11,11 +11,11 @@ export const TRAIN_ROUTE_NAMES = {
 	11: "Pakenham", PKM: "Pakenham",
 	12: "Sandringham", SAN: "Sandringham", SHM: "Sandringham",
 	13: "Stony Point", STP: "Stony Point",
-	14: "Sunbury", SUN: "Sunbury", SUY: "Sunbury",
+	14: "Sunbury", SUN: "Sunbury", SUY: "Sunbury", SYB: "Sunbury",
 	15: "Upfield", UFD: "Upfield",
 	16: "Werribee", WER: "Werribee",
 	17: "Williamstown", WIL: "Williamstown", WLW: "Williamstown",
-	1482: "Flemington Racecourse",
+	1482: "Flemington Racecourse", FLE: "Flemington Racecourse",
 };
 
 function extractCode(routeId) {
