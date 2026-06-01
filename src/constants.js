@@ -9,6 +9,10 @@ export const FEED_COLORS = {
 	"metro-vehicle-positions": "#0f5b61",
 	"bus-vehicle-positions": "#e27d60",
 };
+export const ROUTE_TYPE_TO_FEED = {
+	0: "metro-vehicle-positions",
+	2: "bus-vehicle-positions",
+};
 export const ROUTE_LINE_COLORS = {
 	0: "#0f5b61",
 	1: "#ff922b",

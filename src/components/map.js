@@ -37,6 +37,11 @@ async function fetchRouteNames(routeType) {
 }
 let lineIndex = null;
 let lineIndexPromise = null;
+let pendingMapCenter = null;
+
+export function setMapCenter(lat, lng) {
+	pendingMapCenter = [lat, lng];
+}
 
 export function isVehicleFeed(feed) {
 	return VEHICLE_FEEDS.has(feed);
@@ -354,12 +359,14 @@ export async function updateMap(feed, entities, routeQuery) {
 	const currentRouteRequestId = ++routeRequestId;
 
 	const busMode = isBusFeed(feed);
-	const routeType = busMode ? 2 : 0;
+	const isTrainFeed = feed === "metro-vehicle-positions";
+	const routeType = busMode ? 2 : isTrainFeed ? 0 : 0;
 	await fetchRouteNames(routeType);
 
 	const normalizedRouteQuery = routeQuery ? routeQuery.trim() : "";
-	const selectedRouteId = busMode ? resolveSelectedRouteId(entities, normalizedRouteQuery) : "";
-	const shouldDrawRoute = Boolean(busMode && normalizedRouteQuery && selectedRouteId && routeLayer);
+	const canResolveRoute = busMode || isTrainFeed;
+	const selectedRouteId = canResolveRoute ? resolveSelectedRouteId(entities, normalizedRouteQuery) : "";
+	const shouldDrawRoute = Boolean(selectedRouteId && routeLayer && normalizedRouteQuery);
 	setMapHint(shouldDrawRoute ? "Route line loading..." : "");
 	markerLayer.clearLayers();
 
@@ -384,7 +391,13 @@ export async function updateMap(feed, entities, routeQuery) {
 		setMapMessage(
 			hasFilter ? "No vehicle positions match that route." : "No vehicle positions available in this response.",
 		);
-		mapInstance.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
+		if (pendingMapCenter) {
+			const [lat, lng] = pendingMapCenter;
+			pendingMapCenter = null;
+			mapInstance.setView([lat, lng], 15);
+		} else {
+			mapInstance.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
+		}
 		return;
 	}
 
@@ -472,7 +485,7 @@ export async function updateMap(feed, entities, routeQuery) {
 			weight: 2,
 		});
 		marker.on("click", () => {
-			if (busMode && routeSearchInput) {
+			if (routeSearchInput) {
 				routeSearchInput.value = routeId;
 			}
 		});
@@ -481,5 +494,11 @@ export async function updateMap(feed, entities, routeQuery) {
 		bounds.push([item.latitude, item.longitude]);
 	});
 
-	mapInstance.fitBounds(bounds, { padding: [24, 24], maxZoom: 15 });
+	if (pendingMapCenter) {
+		const [lat, lng] = pendingMapCenter;
+		pendingMapCenter = null;
+		mapInstance.setView([lat, lng], 15);
+	} else {
+		mapInstance.fitBounds(bounds, { padding: [24, 24], maxZoom: 15 });
+	}
 }

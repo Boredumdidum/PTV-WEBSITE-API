@@ -1,3 +1,8 @@
+import { ROUTE_TYPE_TO_FEED } from "../constants.js";
+import { setMapCenter } from "./map.js";
+import { updateRouteSearchUI } from "../utils/dom.js";
+import { loadFeed } from "./dashboard.js";
+
 const ROUTE_TYPES = {
   0: { name: "Train", icon: "train" },
   1: { name: "Tram", icon: "tram-front" },
@@ -161,9 +166,41 @@ async function loadDepartures(stop) {
       return;
     }
     displayDepartures(departures, container, data.runs || {}, data.directions || {}, data.routes || {});
+    showStopOnMap(stop, departures[0], data.routes || {}, data.stops || {});
   } catch (err) {
     container.innerHTML = `<div class="departures-empty">Error: ${escapeHTML(err.message)}</div>`;
   }
+}
+
+function showStopOnMap(stop, departure, routes, stops) {
+  const feed = ROUTE_TYPE_TO_FEED[stop.routeType];
+  if (!feed) return;
+
+  const stopInfo = stops[stop.id];
+  if (!stopInfo) return;
+
+  const feedSelect = document.getElementById("feed");
+  const routeSearchInput = document.getElementById("route-search");
+  if (!feedSelect || !routeSearchInput) return;
+
+  feedSelect.value = feed;
+  routeSearchInput.value = "";
+
+  const route = departure ? routes[departure.route_id] : null;
+  if (route) {
+    const isBus = feed.startsWith("bus-");
+    routeSearchInput.value = isBus
+      ? (route.route_number || departure.route_id)
+      : (route.route_name || "");
+  }
+
+  updateRouteSearchUI(feed);
+  setMapCenter(Number(stopInfo.stop_latitude), Number(stopInfo.stop_longitude));
+
+  const dashboardBtn = document.querySelector('[data-panel="panel-dashboard"]');
+  if (dashboardBtn) dashboardBtn.click();
+
+  loadFeed();
 }
 
 function displayDepartures(departures, container, runs, directions, routes) {
