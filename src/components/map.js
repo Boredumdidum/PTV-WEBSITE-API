@@ -35,12 +35,21 @@ async function fetchRouteNames(routeType) {
     /* ignore */
   }
 }
+let stopMarkerLayer = null;
+let routeStopLayer = null;
 let lineIndex = null;
 let lineIndexPromise = null;
 let pendingMapCenter = null;
+let pendingStopName = null;
+let pendingRouteStops = null;
 
-export function setMapCenter(lat, lng) {
+export function setMapCenter(lat, lng, stopName) {
 	pendingMapCenter = [lat, lng];
+	pendingStopName = stopName || null;
+}
+
+export function setRouteStops(routeType, routeId) {
+	pendingRouteStops = { routeType, routeId };
 }
 
 export function isVehicleFeed(feed) {
@@ -79,6 +88,8 @@ export function initMap() {
 
 	routeLayer = L.layerGroup().addTo(mapInstance);
 	markerLayer = L.layerGroup().addTo(mapInstance);
+	stopMarkerLayer = L.layerGroup().addTo(mapInstance);
+	routeStopLayer = L.layerGroup().addTo(mapInstance);
 	setTimeout(() => mapInstance.invalidateSize(), 0);
 }
 
@@ -356,6 +367,12 @@ export async function updateMap(feed, entities, routeQuery) {
 	if (routeLayer) {
 		routeLayer.clearLayers();
 	}
+	if (stopMarkerLayer) {
+		stopMarkerLayer.clearLayers();
+	}
+	if (routeStopLayer) {
+		routeStopLayer.clearLayers();
+	}
 	const currentRouteRequestId = ++routeRequestId;
 
 	const busMode = isBusFeed(feed);
@@ -393,8 +410,11 @@ export async function updateMap(feed, entities, routeQuery) {
 		);
 		if (pendingMapCenter) {
 			const [lat, lng] = pendingMapCenter;
+			const stopName = pendingStopName;
 			pendingMapCenter = null;
+			pendingStopName = null;
 			mapInstance.setView([lat, lng], 15);
+			drawStopMarker(lat, lng, stopName);
 		} else {
 			mapInstance.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
 		}
@@ -433,6 +453,8 @@ export async function updateMap(feed, entities, routeQuery) {
 				setMapHint(`Route ${selectedRouteId}: no GTFS line found`);
 			}
 		});
+
+		loadAndDrawRouteStops(routeType, selectedRouteId, currentRouteRequestId);
 	}
 
 	positions.forEach((item) => {
@@ -496,9 +518,110 @@ export async function updateMap(feed, entities, routeQuery) {
 
 	if (pendingMapCenter) {
 		const [lat, lng] = pendingMapCenter;
+		const stopName = pendingStopName;
 		pendingMapCenter = null;
+		pendingStopName = null;
 		mapInstance.setView([lat, lng], 15);
+		drawStopMarker(lat, lng, stopName);
 	} else {
 		mapInstance.fitBounds(bounds, { padding: [24, 24], maxZoom: 15 });
+	}
+}
+
+function getMockRouteStops(routeType, routeId) {
+	const key = `${routeType}:${routeId}`;
+	const mock = {
+		"0:Werribee": [
+			{ stop_name: "Flinders Street Station", stop_latitude: -37.8183, stop_longitude: 144.9671, direction_id: 1 },
+			{ stop_name: "Southern Cross Station", stop_latitude: -37.8181, stop_longitude: 144.9526, direction_id: 1 },
+			{ stop_name: "Richmond Station", stop_latitude: -37.8237, stop_longitude: 144.9897, direction_id: 0 },
+		],
+		"0:Craigieburn": [
+			{ stop_name: "Flinders Street Station", stop_latitude: -37.8183, stop_longitude: 144.9671, direction_id: 0 },
+			{ stop_name: "Southern Cross Station", stop_latitude: -37.8181, stop_longitude: 144.9526, direction_id: 0 },
+		],
+		"1:75": [
+			{ stop_name: "Stop 28: Auburn Rd", stop_latitude: -37.8294, stop_longitude: 145.0451, direction_id: 0 },
+			{ stop_name: "Stop 20: Burke Rd", stop_latitude: -37.8342, stop_longitude: 145.0568, direction_id: 1 },
+		],
+		"2:246": [
+			{ stop_name: "Elsternwick Station", stop_latitude: -37.8845, stop_longitude: 144.9982, direction_id: 0 },
+			{ stop_name: "St Kilda Station", stop_latitude: -37.8677, stop_longitude: 144.9774, direction_id: 1 },
+		],
+	};
+	return mock[key] || null;
+}
+
+async function loadAndDrawRouteStops(routeType, selectedRouteId, requestId) {
+	if (!routeStopLayer || !mapInstance) return;
+	const routeId = pendingRouteStops ? pendingRouteStops.routeId : selectedRouteId;
+	if (!routeId) return;
+	pendingRouteStops = null;
+	let stops;
+	const mockToggle = document.getElementById("mock");
+	if (mockToggle && mockToggle.checked) {
+		stops = getMockRouteStops(routeType, routeId);
+	} else {
+		try {
+			const res = await fetch(`/api/timetable/v3/stops/route_type/${routeType}/route/${encodeURIComponent(routeId)}`);
+			if (!res.ok) return;
+			if (requestId !== routeRequestId) return;
+			const data = await res.json();
+			stops = data.stops || [];
+		} catch {
+			return;
+		}
+	}
+	if (!stops || !stops.length) return;
+		const size = 10;
+		const icons = {
+			0: L.divIcon({
+				className: "",
+				html: `<svg width="${size * 2}" height="${size * 2 + 4}" viewBox="0 0 ${size * 2} ${size * 2 + 4}" xmlns="http://www.w3.org/2000/svg">
+					<polygon points="${size},0 ${size * 2},${size * 2} 0,${size * 2}" fill="#0f5b61" stroke="#fff" stroke-width="1.5"/>
+				</svg>`,
+				iconSize: [size * 2, size * 2 + 4],
+				iconAnchor: [size, size * 2 + 4],
+			}),
+			1: L.divIcon({
+				className: "",
+				html: `<svg width="${size * 2}" height="${size * 2 + 4}" viewBox="0 0 ${size * 2} ${size * 2 + 4}" xmlns="http://www.w3.org/2000/svg">
+					<polygon points="${size},0 ${size * 2},${size * 2} 0,${size * 2}" fill="#ff922b" stroke="#fff" stroke-width="1.5"/>
+				</svg>`,
+				iconSize: [size * 2, size * 2 + 4],
+				iconAnchor: [size, size * 2 + 4],
+			}),
+		};
+		stops.forEach((s) => {
+			const dir = s.direction_id === 1 ? 1 : 0;
+			const lat = Number(s.stop_latitude);
+			const lng = Number(s.stop_longitude);
+			if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+			L.marker([lat, lng], {
+				icon: icons[dir],
+				zIndexOffset: 500,
+			}).bindPopup(`<strong>${escapeHTML(s.stop_name || "")}</strong>`).addTo(routeStopLayer);
+		});
+	} catch {
+		/* ignore */
+	}
+}
+
+function drawStopMarker(lat, lng, name) {
+	if (!stopMarkerLayer || !mapInstance) return;
+	const size = 14;
+	const icon = L.divIcon({
+		className: "",
+		html: `<svg width="${size * 2}" height="${size * 2 + 6}" viewBox="0 0 ${size * 2} ${size * 2 + 6}" xmlns="http://www.w3.org/2000/svg">
+			<polygon points="${size},0 ${size * 2},${size * 2} 0,${size * 2}" fill="#e74c3c" stroke="#fff" stroke-width="2"/>
+			<line x1="${size}" y1="0" x2="${size}" y2="${size}" stroke="#fff" stroke-width="2"/>
+		</svg>`,
+		iconSize: [size * 2, size * 2 + 6],
+		iconAnchor: [size, size * 2 + 6],
+		popupAnchor: [0, -(size * 2 + 6)],
+	});
+	const marker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(stopMarkerLayer);
+	if (name) {
+		marker.bindPopup(`<strong>${name}</strong>`);
 	}
 }
