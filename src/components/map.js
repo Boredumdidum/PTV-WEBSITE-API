@@ -293,10 +293,6 @@ async function drawBusRouteFromLines(routeId, requestId) {
 	return true;
 }
 
-function extractCode(routeId) {
-	return String(routeId).split(":").filter(Boolean).pop().split("-").pop();
-}
-
 function resolveSelectedRouteId(entities, query) {
 	const normalizedQuery = normalizeBusRoute(query);
 	if (!normalizedQuery) {
