@@ -573,6 +573,7 @@ async function loadAndDrawRouteStops(routeType, selectedRouteId, requestId) {
 		}
 	}
 	if (!stops || !stops.length) return;
+	try {
 		const size = 10;
 		const icons = {
 			0: L.divIcon({
