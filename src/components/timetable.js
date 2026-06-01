@@ -5,10 +5,7 @@ import { loadFeed } from "./dashboard.js";
 
 const ROUTE_TYPES = {
   0: { name: "Train", icon: "train" },
-  1: { name: "Tram", icon: "tram-front" },
   2: { name: "Bus", icon: "bus" },
-  3: { name: "V/Line", icon: "train" },
-  4: { name: "Night Bus", icon: "bus" },
 };
 
 let selectedStop = null;
@@ -40,28 +37,12 @@ function buildMockDisruptions() {
       routes: [{ route_id: 1, route_name: "Werribee", route_type: 0 }],
     },
     {
-      disruption_id: 1002,
-      title: "Route 75 stop closure",
-      description: "Stop 31 (Auburn Rd) closed for roadworks until Friday.",
-      disruption_status: "Planned",
-      published_on: new Date(now - 6 * hour).toISOString(),
-      routes: [{ route_id: 75, route_name: "Route 75", route_type: 1 }],
-    },
-    {
       disruption_id: 1003,
       title: "Route 246 service changes",
       description: "Short-term detours between Elsternwick and St Kilda.",
       disruption_status: "Current",
       published_on: new Date(now - day).toISOString(),
       routes: [{ route_id: 246, route_name: "Route 246", route_type: 2 }],
-    },
-    {
-      disruption_id: 1004,
-      title: "Geelong Line works complete",
-      description: "Buses replaced trains overnight. Services now restored.",
-      disruption_status: "Past",
-      published_on: new Date(now - 3 * day).toISOString(),
-      routes: [{ route_id: 1100, route_name: "Geelong", route_type: 3 }],
     },
     {
       disruption_id: 1005,

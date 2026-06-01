@@ -12,7 +12,7 @@ A local proxy dashboard for Victoria's Public Transport — combines GTFS Realti
 
 ### Timetable API v3 (3 tabs)
 - **Departures board** — search stops by name, view scheduled + estimated departure times with cancellation status
-- **Route browser** — expandable panels by transport mode (Train, Tram, Bus, V/Line, Night Bus)
+- **Route browser** — expandable panels by transport mode (Train, Bus)
 - **Disruptions** — current and planned disruptions filterable by route type
 
 ### Platform

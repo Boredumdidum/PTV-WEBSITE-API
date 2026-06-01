@@ -49,12 +49,12 @@ The Timetable API requires a `devid` and `signature` query parameter on every re
 
 - [x] Add "Disruptions" tab (separate from GTFS-RT alerts)
 - [x] Fetch from `/v3/disruptions` and display as cards
-- [x] Filter by route type (Train, Tram, Bus, V/Line, Night Bus)
+- [x] Filter by route type (Train, Bus)
 
 ## Phase 4 — Frontend: Routes Browser ✓
 
 - [x] Add "Routes" tab 
-- [x] List all route types (train, tram, bus, V/Line, Night Bus)
+- [x] List all route types (train, bus)
 - [x] Click to expand to show routes for a type
 
 ## Phase 5 — Polish & Docs ✓
