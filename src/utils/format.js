@@ -5,7 +5,7 @@ export const TRAIN_ROUTE_NAMES = {
 	4: "Cranbourne", CRN: "Cranbourne",
 	5: "Mernda", MDD: "Mernda",
 	6: "Frankston", FKN: "Frankston",
-	7: "Glen Waverley", GWS: "Glen Waverley",
+	7: "Glen Waverley", GWS: "Glen Waverley", GWY: "Glen Waverley",
 	8: "Hurstbridge", HUR: "Hurstbridge",
 	9: "Lilydale", LIL: "Lilydale",
 	11: "Pakenham", PKM: "Pakenham",
