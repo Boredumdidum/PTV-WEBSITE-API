@@ -24,7 +24,9 @@ export const LINE_DATA_BASE = "/data/lines/";
 export const TRAIN_ROUTE_SHORT_CODES = {
 	ALM: "Alamein",
 	BEL: "Belgrave",
+	CGB: "Craigieburn",
 	CRA: "Craigieburn",
+	CRN: "Cranbourne",
 	FKN: "Frankston",
 	GWS: "Glen Waverley",
 	HUR: "Hurstbridge",
@@ -32,8 +34,11 @@ export const TRAIN_ROUTE_SHORT_CODES = {
 	MDD: "Mernda",
 	PKM: "Pakenham",
 	SAN: "Sandringham",
+	STP: "Stony Point",
 	SUN: "Sunbury",
+	SUY: "Sunbury",
 	UFD: "Upfield",
 	WER: "Werribee",
+	WIL: "Williamstown",
 	WLW: "Williamstown",
 };
