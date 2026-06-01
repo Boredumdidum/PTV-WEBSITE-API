@@ -2,7 +2,6 @@ import { ROUTE_TYPE_TO_FEED } from "../constants.js";
 import { setMapCenter, setRouteStops } from "./map.js";
 import { updateRouteSearchUI } from "../utils/dom.js";
 import { loadFeed } from "./dashboard.js";
-import { populateRouteNames } from "../utils/format.js";
 
 const ROUTE_TYPES = {
   0: { name: "Train", icon: "train" },
@@ -391,7 +390,6 @@ async function loadRoutesForType(typeId, container) {
       container.innerHTML = '<div class="search-empty">No routes found</div>';
       return;
     }
-    populateRouteNames(routes);
     container.innerHTML = routes.map((r) => `
       <div class="route-item">
         <div class="route-item-header">

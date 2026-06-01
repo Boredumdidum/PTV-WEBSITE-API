@@ -21,25 +21,4 @@ export const ROUTE_SERVICE_URL = "https://router.project-osrm.org/route/v1/drivi
 export const MAX_ROUTE_POINTS = 40;
 export const LINE_INDEX_URL = "/data/lines/index.json";
 export const LINE_DATA_BASE = "/data/lines/";
-export const TRAIN_ROUTE_SHORT_CODES = {
-	ALM: "Alamein",
-	BEL: "Belgrave",
-	CGB: "Craigieburn",
-	CRA: "Craigieburn",
-	CRN: "Cranbourne",
-	FKN: "Frankston",
-	GWS: "Glen Waverley",
-	HUR: "Hurstbridge",
-	LIL: "Lilydale",
-	MDD: "Mernda",
-	PKM: "Pakenham",
-	SAN: "Sandringham",
-	SHM: "Sandringham",
-	STP: "Stony Point",
-	SUN: "Sunbury",
-	SUY: "Sunbury",
-	UFD: "Upfield",
-	WER: "Werribee",
-	WIL: "Williamstown",
-	WLW: "Williamstown",
-};
+
