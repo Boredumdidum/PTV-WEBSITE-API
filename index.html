@@ -61,9 +61,9 @@
 						<i data-lucide="moon" class="icon"></i>
 						<span>Dark mode</span>
 					</button>
-					<button id="preview-toggle" class="btn btn-outline btn-sm" type="button" aria-label="Toggle preview">
-						<i data-lucide="eye" class="icon"></i>
-						<span>Preview</span>
+					<button id="dev-toggle" class="btn btn-outline btn-sm" type="button" aria-label="Developer tools">
+						<i data-lucide="settings" class="icon"></i>
+						<span>Developer</span>
 					</button>
 				</div>
 			</aside>
@@ -105,10 +105,6 @@
 									<input id="route-search" type="text" inputmode="numeric" placeholder="e.g. 765 or 733" autocomplete="off" />
 								</div>
 								<label class="checkbox-row">
-									<input id="mock" class="checkbox" type="checkbox" />
-									<span>Use mock data (offline)</span>
-								</label>
-								<label class="checkbox-row">
 									<input id="auto-refresh" class="checkbox" type="checkbox" />
 									<span>Auto-refresh every 30s</span>
 								</label>
@@ -142,17 +138,6 @@
 							</div>
 						</div>
 						<div id="alerts-dashboard"></div>
-					</section>
-
-					<section id="panel-preview" class="panel">
-						<div class="card">
-							<div class="card-header">
-								<h2 class="card-title">Preview payload</h2>
-								<span class="note">First 5 entities</span>
-							</div>
-							<pre id="preview-json" class="preview-json">Waiting for data...</pre>
-							<div id="preview-list" class="preview-list"></div>
-						</div>
 					</section>
 
 					<section id="panel-alerts" class="panel">
@@ -246,6 +231,30 @@
 					</section>
 				</div>
 			</main>
+		</div>
+		<div id="dev-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Developer tools">
+			<div class="modal">
+				<div class="modal-header">
+					<h2 class="modal-title">Developer tools</h2>
+					<button id="dev-close" class="btn btn-outline btn-sm" type="button" aria-label="Close">
+						<i data-lucide="x" class="icon"></i>
+					</button>
+				</div>
+				<div class="modal-body">
+					<label class="checkbox-row">
+						<input id="mock" class="checkbox" type="checkbox" />
+						<span>Use mock data (offline)</span>
+					</label>
+					<div class="card">
+						<div class="card-header">
+							<h3 class="card-title">Preview payload</h3>
+							<span class="note">First 5 entities</span>
+						</div>
+						<pre id="preview-json" class="preview-json">Waiting for data...</pre>
+						<div id="preview-list" class="preview-list"></div>
+					</div>
+				</div>
+			</div>
 		</div>
 		<div id="toast-container" class="toast-container" aria-live="polite"></div>
 	</body>

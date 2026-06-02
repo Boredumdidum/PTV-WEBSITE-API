@@ -469,12 +469,14 @@ export function initNavigation() {
 		});
 	});
 
-	const previewToggle = document.getElementById("preview-toggle");
-	const previewPanel = document.getElementById("panel-preview");
-	if (previewToggle && previewPanel) {
-		previewToggle.addEventListener("click", () => {
-			const isActive = previewPanel.classList.toggle("active");
-			previewToggle.classList.toggle("active", isActive);
+	const devToggle = document.getElementById("dev-toggle");
+	const devModal = document.getElementById("dev-modal");
+	const devClose = document.getElementById("dev-close");
+	if (devToggle && devModal) {
+		devToggle.addEventListener("click", () => devModal.classList.add("open"));
+		if (devClose) devClose.addEventListener("click", () => devModal.classList.remove("open"));
+		devModal.addEventListener("click", (e) => {
+			if (e.target === devModal) devModal.classList.remove("open");
 		});
 	}
 }

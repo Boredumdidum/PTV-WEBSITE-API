@@ -81,18 +81,18 @@ test("status bar is present and interactive", async ({ page }) => {
   await expect(statusEl).toBeVisible();
 });
 
-test("preview toggle shows panel", async ({ page }) => {
+test("developer modal opens and closes", async ({ page }) => {
   await page.goto("/");
-  const previewToggle = page.locator("#preview-toggle");
-  const previewPanel = page.locator("#panel-preview");
+  const devToggle = page.locator("#dev-toggle");
+  const devModal = page.locator("#dev-modal");
 
-  await expect(previewPanel).not.toBeVisible();
+  await expect(devModal).not.toBeVisible();
 
-  await previewToggle.click();
-  await expect(previewPanel).toBeVisible();
+  await devToggle.click();
+  await expect(devModal).toBeVisible();
 
-  await previewToggle.click();
-  await expect(previewPanel).not.toBeVisible();
+  await devModal.locator("#dev-close").click();
+  await expect(devModal).not.toBeVisible();
 });
 
 test("response body error is displayed on failed request", async ({ page }) => {
